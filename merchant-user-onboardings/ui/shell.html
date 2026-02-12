@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Growth Through Merchants</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+/* __CSS__ */
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Network Growth Through Merchants</h1>
+</header>
+
+<!-- Tab bar -->
+<div class="tab-bar-wrap">
+  <div class="toggle-group tab-bar" id="tab-bar">
+    <button class="active" data-tab="overview">Overview</button>
+    <button data-tab="merchant-deepdive">Merchant Deepdive</button>
+    <button data-tab="users-deepdive">Users Deepdive</button>
+  </div>
+</div>
+
+<!-- Incentive detail -->
+<div class="question">
+  <strong>Incentive Structure</strong><br>
+  <span style="color: var(--text-secondary); font-size: 0.9rem;">
+    <strong>Tier 1</strong> (Jan 1 – Jan 27): $1.00 per user onboarded<br>
+    <strong>Tier 2</strong> (Jan 28+): $0.50 per user onboarded + $0.50 per activated user (same-merchant return)
+  </span>
+</div>
+
+<!-- Filter bar -->
+<div class="card" id="filter-card">
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label>Date Range</label>
+      <div class="date-range-picker" id="date-range-picker">
+        <div class="date-range-trigger" id="date-range-trigger">
+          <span id="date-range-label">Loading...</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+        </div>
+        <div class="date-range-popup" id="date-range-popup">
+          <div class="calendar-header">
+            <button class="cal-nav" id="cal-prev-month">&lsaquo;</button>
+            <span class="cal-month-label" id="cal-month-label"></span>
+            <button class="cal-nav" id="cal-next-month">&rsaquo;</button>
+          </div>
+          <div class="calendar-grid" id="calendar-grid">
+            <div class="cal-dow">Mo</div><div class="cal-dow">Tu</div><div class="cal-dow">We</div>
+            <div class="cal-dow">Th</div><div class="cal-dow">Fr</div><div class="cal-dow">Sa</div>
+            <div class="cal-dow">Su</div>
+          </div>
+          <div class="date-range-presets">
+            <button data-preset="7d">Last 7 days</button>
+            <button data-preset="14d">Last 14 days</button>
+            <button data-preset="30d">Last 30 days</button>
+            <button data-preset="mtd">Month to date</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="filter-group">
+      <label>City</label>
+      <select id="city-select"></select>
+    </div>
+  </div>
+</div>
+
+<!-- Tab 1: Overview -->
+<div data-tab="overview">
+  <div class="card">
+    <h2><span class="num">1</span> Overview</h2>
+    <div class="insight insight-gold" id="overview-finding" style="display:none;margin-bottom:1rem;"></div>
+    <div class="stat-grid" id="overview-stats"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">2</span> Merchant Map</h2>
+    <div class="insight" style="margin-bottom:1rem;">
+      <div class="insight-gold" style="padding:0.5rem 1rem;border-left:3px solid var(--zar-gold);margin-bottom:0.35rem;border-radius:0 8px 8px 0;">
+        <strong style="color:var(--zar-gold-dark)">Karachi:</strong> No geographical correlation to participation.
+      </div>
+      <div style="padding:0.5rem 1rem;border-left:3px solid var(--red);border-radius:0 8px 8px 0;background:var(--red-bg);">
+        <strong style="color:var(--red)">Lahore:</strong> Significant gaps in participation and inactivity.
+      </div>
+    </div>
+    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">
+      Green = participating merchants (onboarded users). Gray = inactive merchants.
+    </p>
+    <div id="merchant-map-container"></div>
+  </div>
+</div>
+
+<!-- Tab 2: Merchant Deepdive -->
+<div data-tab="merchant-deepdive" style="display:none;">
+  <!-- Onboarding Stats -->
+  <div class="card">
+    <h2><span class="num">1</span> Onboarding Stats</h2>
+    <div class="stat-grid" id="onb-summary-stats"></div>
+  </div>
+
+  <!-- Onboarding Merchants vs Others -->
+  <div class="card">
+    <h2><span class="num">2</span> Onboarding Merchants vs Others</h2>
+    <div class="table-wrap">
+      <table id="onb-comparison-table">
+        <thead><tr id="onb-comparison-head"></tr></thead>
+        <tbody id="onb-comparison-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Merchant Retention -->
+  <div class="card">
+    <h2><span class="num">3</span> Merchant Retention</h2>
+    <div class="insight insight-gold" style="margin-bottom:1rem;">
+      <strong>Key Finding:</strong> Merchants growing the network have high engagement.
+    </div>
+    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">
+      Week-over-week: % of merchants active each week (ZCE order or cash note sent). Totals grow as new merchants register.
+    </p>
+    <div class="chart-container">
+      <canvas id="retentionChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Onboarding Details -->
+  <div class="card">
+    <h2><span class="num">4</span> Onboarding Details</h2>
+    <div class="table-wrap" id="onb-table-wrap">
+      <table id="onb-table">
+        <thead><tr id="onb-table-head"></tr></thead>
+        <tbody id="onb-table-body"></tbody>
+        <tfoot><tr id="onb-table-foot"></tr></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- Fraud Signals -->
+  <div class="card">
+    <h2><span class="num" style="background:var(--red);color:white;">!</span> Fraud Signals</h2>
+    <div class="insight insight-red" id="fraud-insight" style="margin-bottom:1rem;"></div>
+    <div class="table-wrap">
+      <table id="fraud-table">
+        <thead><tr id="fraud-head"></tr></thead>
+        <tbody id="fraud-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Tab 3: Users Deepdive -->
+<div data-tab="users-deepdive" style="display:none;">
+  <!-- Card 1: Onboarding Quality -->
+  <div class="card">
+    <h2><span class="num" style="background:var(--red);color:white;">!</span> Onboarding Quality</h2>
+    <div class="insight insight-red" id="onboarding-quality-insight" style="margin-bottom:1rem;"></div>
+    <div id="onboarding-quality-tier-split"></div>
+  </div>
+
+  <!-- Card 2: Overview -->
+  <div class="card">
+    <h2><span class="num">2</span> Overview</h2>
+    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">
+      Summary of onboarded user activity and account security.
+    </p>
+    <div class="stat-grid" id="transacting-summary-stats"></div>
+  </div>
+
+  <!-- Card 3: Activation Event -->
+  <div class="card">
+    <h2><span class="num">3</span> Activation Event</h2>
+    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">
+      First return transaction to the onboarding merchant.
+    </p>
+    <div class="stat-grid" id="activation-event-stats"></div>
+  </div>
+
+  <!-- Card 4: Activated Users' Patterns -->
+  <div class="card">
+    <h2><span class="num">4</span> Activated Users' Patterns</h2>
+    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">
+      Post-activation behavior of users who returned to their onboarding merchant.
+    </p>
+    <div class="stat-grid" id="activated-patterns-stats"></div>
+  </div>
+
+  <!-- Card 5: All Users: First Transactions -->
+  <div class="card">
+    <h2><span class="num">5</span> All Users: First Transactions</h2>
+    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">
+      First debit and credit transactions after onboarding.
+    </p>
+    <div class="stat-grid" id="all-users-txn-stats"></div>
+  </div>
+
+  <!-- Card 6: All Users: Patterns -->
+  <div class="card">
+    <h2><span class="num">6</span> All Users: Patterns</h2>
+    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">
+      Spending and behavior patterns for all onboarded users.
+    </p>
+    <div class="stat-grid" id="all-users-patterns-stats"></div>
+  </div>
+
+  <!-- Card 7: User-Level Activation Details -->
+  <div class="card">
+    <h2><span class="num">7</span> User-Level Activation Details</h2>
+    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">
+      Per-user breakdown of activation events, spending, and account status.
+    </p>
+    <div class="table-wrap" id="activation-user-table-wrap">
+      <table id="activation-user-table">
+        <thead><tr id="activation-user-head"></tr></thead>
+        <tbody id="activation-user-body"></tbody>
+        <tfoot><tr id="activation-user-foot"></tr></tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<footer>Generated __GENERATED_AT__ PKT</footer>
+
+</div>
+
+<script>
+// __DATA__
+// __APP__
+</script>
+</body>
+</html>
