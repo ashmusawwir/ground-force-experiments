@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo Dollars Usage Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* __CSS__ */
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Demo Dollars Usage Analysis</h1>
+  <p class="subtitle">What happened to the $5 demo notes ambassadors gave out?</p>
+</header>
+
+<!-- Intro block -->
+<div class="intro-block">
+  <p>Ambassadors demo the Zar app by sending potential merchants $5 in digital cash notes. This report traces what non-onboarded recipients did with the money &mdash; and identifies who "understood the product" enough to be worth revisiting.</p>
+  <p class="intro-period">Time period: Feb 1, 2026 onward</p>
+</div>
+
+<!-- Executive Summary -->
+<div class="card exec-summary-card">
+  <h2><span class="num verdict-num">&#9733;</span> Executive Summary</h2>
+  <p class="card-question">Key findings at a glance</p>
+  <div id="exec-summary"></div>
+</div>
+
+<!-- Card 1: Who received demo dollars? -->
+<div class="card">
+  <h2><span class="num">1</span> Who received demo dollars?</h2>
+  <p class="card-question">How many people received demo cash, and how many converted to merchants?</p>
+  <div class="stat-grid" id="card1-stats"></div>
+</div>
+
+<!-- Card 2: How did they get the $5? -->
+<div class="card">
+  <h2><span class="num">2</span> How did they get the $5?</h2>
+  <p class="card-question">Single $5 note or split into smaller amounts? What's the distribution?</p>
+  <div class="stat-grid" id="card2-stats"></div>
+  <div id="card2-breakdown"></div>
+</div>
+
+<!-- Transition: narrow scope to non-onboarded -->
+<div class="intro-block" id="transition-block"></div>
+
+<!-- Card 3: Did They Remember Zar? (Brand Recall) -->
+<div class="card">
+  <h2><span class="num">3</span> Did They Remember Zar?</h2>
+  <p class="card-question">After the ambassador left, did recipients come back to the app on their own?</p>
+  <div id="card3-content"></div>
+</div>
+
+<!-- Card 4: What Did They Do With the Money? -->
+<div class="card">
+  <h2><span class="num">4</span> What Did They Do With the Money?</h2>
+  <p class="card-question">What actions did non-onboarded recipients take with the money they received?</p>
+  <div id="card4-definition"></div>
+  <div class="stat-grid" id="card4-stats"></div>
+  <div id="card4-activity-pills"></div>
+</div>
+
+<!-- Detail Table: Per-recipient raw data -->
+<div class="card">
+  <h2><span class="num">5</span> Recipient Detail</h2>
+  <p class="card-question">Per-recipient breakdown of all activity (non-onboarded only)</p>
+  <div class="table-wrap table-clip">
+    <table id="detail-table">
+      <thead><tr id="detail-table-head"></tr></thead>
+      <tbody id="detail-table-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Verdict: Who understood the product? -->
+<div class="card verdict-card">
+  <h2><span class="num verdict-num">&#10003;</span> Verdict: Who understood the product?</h2>
+  <div class="verdict-definition">
+    <strong>Definition:</strong> Demonstrated active use of at least one core product capability beyond passive receipt, excluding cycling back to the ambassador.
+  </div>
+  <div class="stat-grid" id="verdict-stats"></div>
+  <div id="verdict-signals"></div>
+  <div id="verdict-table-wrap" class="table-wrap" style="margin-top:1rem;">
+    <h3 class="table-title">Revisit Targets (Non-onboarded who understood)</h3>
+    <table id="verdict-table">
+      <thead><tr id="verdict-table-head"></tr></thead>
+      <tbody id="verdict-table-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Card: How Fast Do They Act? (Timing Analysis) -->
+<div class="card">
+  <h2><span class="num">&#9201;</span> How Fast Do They Act?</h2>
+  <p class="card-question">How long after receiving demo dollars do recipients take their first qualifying action?</p>
+  <div id="timing-definition"></div>
+  <div class="stat-grid" id="timing-stats"></div>
+  <div id="timing-distribution"></div>
+  <div id="timing-recommendation"></div>
+</div>
+
+<!-- Card: Is $5 the Right Amount? -->
+<div class="card">
+  <h2><span class="num">&#128176;</span> Is $5 the Right Amount?</h2>
+  <p class="card-question">Does the demo amount affect whether recipients engage with the product?</p>
+  <div id="amount-comparison"></div>
+  <div id="amount-insight"></div>
+</div>
+
+<!-- Ambassador Breakdown -->
+<div class="card">
+  <h2><span class="num star-num">&#9733;</span> Ambassador Breakdown</h2>
+  <p class="card-question">Per-ambassador demo dollar performance</p>
+  <div class="table-wrap">
+    <table id="ambassador-table">
+      <thead><tr id="ambassador-table-head"></tr></thead>
+      <tbody id="ambassador-table-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<footer>Generated __GENERATED_AT__ PKT</footer>
+
+</div>
+
+<script>
+// __DATA__
+// __APP__
+</script>
+</body>
+</html>

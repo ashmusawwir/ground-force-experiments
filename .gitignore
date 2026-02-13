@@ -6,3 +6,5 @@ __pycache__/
 merchant-user-onboardings/merchant_cache_granular.json
 merchant-user-onboardings/network_growth_through_merchants.html
 show-dont-tell/dont_show_tell_exp.html
+demo-dollars-usage/demo_dollars_usage.html
+demo-dollars-usage/demo_dollars_cache.json
