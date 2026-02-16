@@ -564,17 +564,16 @@ function renderOnboardingComparison(rows) {
     const cnCount = arr.reduce((s, r) => s + r.cn_count, 0);
     const cnVol = arr.reduce((s, r) => s + r.cn_volume, 0);
     const cardCount = arr.reduce((s, r) => s + r.card_count, 0);
-    const btCount = arr.reduce((s, r) => s + r.bt_count, 0);
     const medZce = medianOf(arr.filter(r => r.zce_volume > 0).map(r => r.zce_volume).sort((a, b) => a - b));
     const medCn = medianOf(arr.filter(r => r.cn_volume > 0).map(r => r.cn_volume).sort((a, b) => a - b));
-    return { count: arr.length, zceCount, zceVol, medZce, cnCount, cnVol, medCn, cardCount, btCount };
+    return { count: arr.length, zceCount, zceVol, medZce, cnCount, cnVol, medCn, cardCount };
   }
 
   const onb = agg(onbGroup);
   const other = agg(otherGroup);
   const total = agg(rows);
 
-  const cols = ["Group", "Count", "% of Total", "Orders", "Orders ($)", "Median $ Sold", "CN Txns", "CN Total ($)", "CN Median $", "Card Txns", "Bank Transfers"];
+  const cols = ["Group", "Count", "% of Total", "Orders", "Orders ($)", "Median $ Sold", "CN Txns", "CN Total ($)", "CN Median $", "Card Txns"];
   headTr.innerHTML = cols.map(c => `<th>${c}</th>`).join("");
 
   function row(label, g, cls) {
@@ -590,7 +589,6 @@ function renderOnboardingComparison(rows) {
       <td>$${fmtCompact(g.cnVol)}</td>
       <td>$${fmtCompact(g.medCn)}</td>
       <td>${g.cardCount}</td>
-      <td>${g.btCount}</td>
     </tr>`;
   }
 
@@ -1417,7 +1415,7 @@ function renderFraudSignals() {
   bodyEl.innerHTML = rows.map(r => {
     const burstStyle = r.max_per_hour >= 5 ? ' style="color:var(--red);font-weight:600;"' : "";
     return `<tr>
-      <td>${r.business_name}</td>
+      <td>${r.business_name || "Unknown"}</td>
       <td>${r.total_onboarded}</td>
       <td>${r.cycled_count}</td>
       <td>${r.exact_match_count}</td>
