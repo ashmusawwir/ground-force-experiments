@@ -28,8 +28,12 @@ EXCLUDED_IDS_SQL = ", ".join(f"'{uid}'" for uid in EXCLUDED_IDS)
 
 
 def _merchants_cte(city: str = "Karachi") -> str:
-    """Onboarded merchants in a given city, excluding test accounts."""
-    return f"""merchants as (
+    """Onboarded merchants in a given city, excluding test accounts.
+
+    UNIONs legacy MOS with new product_enrollments (PE) merchants.
+    Since SHIP-2069 (Dec 13), new merchants use PE instead of MOS.
+    """
+    return f"""mos_merchants as (
         select distinct on (u.id)
                u.id as merchant_id,
                mos.business_name,
@@ -46,6 +50,29 @@ def _merchants_cte(city: str = "Karachi") -> str:
           and u.id not in ({EXCLUDED_IDS_SQL})
           and lower(coalesce(mos.city, '')) = '{city.lower()}'
         order by u.id, mos.created_at desc
+    ), pe_merchants as (
+        -- TODO: PE merchants need city/geo source — currently returns 0 rows
+        -- because PE has no city/lat/lng fields. Will populate once PE geo data available.
+        select pe.user_id as merchant_id,
+               null::text as business_name,
+               null::text as city,
+               null::float8 as latitude,
+               null::float8 as longitude,
+               'pe_enrolled' as status,
+               u.phone_number,
+               (pe.created_at + interval '5' hour)::date as onboarding_date
+        from product_enrollments pe
+        inner join product_definitions pd on pd.id = pe.product_definition_id
+        inner join users u on u.id = pe.user_id
+        where pd.code = 'zar_cash_exchange_merchant'
+          and pe.state = 2
+          and pe.user_id not in ({EXCLUDED_IDS_SQL})
+          and pe.user_id not in (select merchant_id from mos_merchants)
+          and lower(coalesce(null::text, '')) = '{city.lower()}'
+    ), merchants as (
+        select * from mos_merchants
+        union all
+        select * from pe_merchants
     )"""
 
 
@@ -145,14 +172,21 @@ def onboarding_status_check_query(phone_numbers: list[str]) -> str:
     phones_sql = ", ".join(f"'{p}'" for p in phone_numbers)
     return f"""
     select u.phone_number,
-           case when mos.id is not null then true else false end as is_onboarded,
-           case when mos.id is not null
-                then (mos.created_at + interval '5' hour)::date::text
-                else null end as onboarding_date
+           case when mos.id is not null or pe_check.user_id is not null then true else false end as is_onboarded,
+           coalesce(
+               (mos.created_at + interval '5' hour)::date::text,
+               (pe_check.created_at + interval '5' hour)::date::text
+           ) as onboarding_date
     from users u
     left join merchant_onboarding_submissions mos
         on mos.phone_number = u.phone_number
         and mos.status in ('active', 'pending')
+    left join (
+        select pe.user_id, pe.created_at
+        from product_enrollments pe
+        inner join product_definitions pd on pd.id = pe.product_definition_id
+        where pd.code = 'zar_cash_exchange_merchant' and pe.state = 2
+    ) pe_check on pe_check.user_id = u.id
     where u.phone_number in ({phones_sql})
     """
 
@@ -172,10 +206,13 @@ def onboarding_outcome_query(phone_numbers: list[str], visit_date: str) -> str:
     phones_sql = ", ".join(f"'{p}'" for p in phone_numbers)
     return f"""
     select u.phone_number,
-           case when mos.id is not null then true else false end as onboarded,
-           (mos.created_at + interval '5' hour)::date::text as onboarding_date,
+           case when mos.id is not null or pe_check.user_id is not null then true else false end as onboarded,
+           coalesce(
+               (mos.created_at + interval '5' hour)::date::text,
+               (pe_check.created_at + interval '5' hour)::date::text
+           ) as onboarding_date,
            round(extract(epoch from (
-               mos.created_at - '{visit_date}'::timestamp
+               coalesce(mos.created_at, pe_check.created_at) - '{visit_date}'::timestamp
            )) / 3600.0, 1) as hours_after_visit
     from users u
     left join merchant_onboarding_submissions mos
@@ -183,6 +220,14 @@ def onboarding_outcome_query(phone_numbers: list[str], visit_date: str) -> str:
         and mos.status in ('active', 'pending')
         and (mos.created_at + interval '5' hour)::date >= '{visit_date}'::date
         and (mos.created_at + interval '5' hour)::date <= '{visit_date}'::date + interval '2' day
+    left join (
+        select pe.user_id, pe.created_at
+        from product_enrollments pe
+        inner join product_definitions pd on pd.id = pe.product_definition_id
+        where pd.code = 'zar_cash_exchange_merchant' and pe.state = 2
+          and (pe.created_at + interval '5' hour)::date >= '{visit_date}'::date
+          and (pe.created_at + interval '5' hour)::date <= '{visit_date}'::date + interval '2' day
+    ) pe_check on pe_check.user_id = u.id
     where u.phone_number in ({phones_sql})
     """
 

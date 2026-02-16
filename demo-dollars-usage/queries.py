@@ -84,7 +84,7 @@ def recipient_overview_query() -> str:
            rb.first_demo_date::text as account_created_date,
            rb.total_received,
            rb.notes_received,
-           case when mos.id is not null then true else false end as is_onboarded,
+           case when mos.id is not null or pe_check.user_id is not null then true else false end as is_onboarded,
            mos.business_name,
            u.phone_number as recipient_phone,
            coalesce(nullif(trim(concat(coalesce(u.first_name,''),' ',coalesce(u.last_name,''))), ''), u.username) as recipient_name,
@@ -97,6 +97,12 @@ def recipient_overview_query() -> str:
     left join merchant_onboarding_submissions mos
         on mos.phone_number = u.phone_number
         and mos.status in ('active', 'pending')
+    left join (
+        select pe.user_id
+        from product_enrollments pe
+        inner join product_definitions pd on pd.id = pe.product_definition_id
+        where pd.code = 'zar_cash_exchange_merchant' and pe.state = 2
+    ) pe_check on pe_check.user_id = u.id
     order by rb.first_demo_date, rb.recipient_id
     """
 
@@ -256,9 +262,14 @@ def ambassador_summary_query() -> str:
                count(distinct dd.recipient_id) as onboarded_count
         from demo_dollars dd
         inner join users u on u.id = dd.recipient_id
-        inner join merchant_onboarding_submissions mos
-            on mos.phone_number = u.phone_number
-            and mos.status in ('active', 'pending')
+        where exists (
+            select 1 from merchant_onboarding_submissions mos
+            where mos.phone_number = u.phone_number and mos.status in ('active', 'pending')
+        ) or exists (
+            select 1 from product_enrollments pe
+            inner join product_definitions pd on pd.id = pe.product_definition_id
+            where pe.user_id = u.id and pd.code = 'zar_cash_exchange_merchant' and pe.state = 2
+        )
         group by 1
     )
 
