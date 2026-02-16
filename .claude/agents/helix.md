@@ -64,7 +64,7 @@ Detect mode from the user's opening message. One session = one mode.
 | Plan | "execution plan", "checklist", "field plan", "Qasim" |
 | Run | "run", "refresh", "regenerate", "pull data", "update cache" |
 | Analyze | "analyze", "what does the data say", "insights", "results" |
-| Present | "update Notion", "Wednesday sync", "present", "Friday sync" |
+| Present | "update Notion", "Wednesday sync", "present", "Friday sync", "revise", "sync feedback", "update experiment" |
 
 If the opening message doesn't clearly match a mode, ask:
 > "Which mode? Draft (new hypothesis), Design (scaffold code), Plan (field checklist), Run (execute pipeline), Analyze (interpret data), or Present (format for stakeholders)?"
@@ -231,6 +231,7 @@ Evaluate and record:
 2. **MDE** — minimum detectable effect. Is the expected effect larger than the MDE?
 3. **Power/confidence** — default 80% power, 95% confidence unless justified otherwise
 4. **Randomization** — is assignment truly random? Contamination risks?
+   - **If training-based split** (same people, before/after): Flag temporal confound risk. Name specific threats: ambassador experience growth, app/product changes between periods, seasonal effects. Require baseline stability evidence (is the pre-intervention metric flat or already trending?). Recommend person-based split as stronger alternative — document why it's infeasible if proceeding with time-based.
 5. **Duration** — does it cover at least 1 full user cycle?
 
 **Verdict**: Record one of:
@@ -351,6 +352,8 @@ Work through these in order:
 5. **Observed vs reported**: Flag every metric as observed (system data) or reported (ambassador self-report). Observed > reported, always.
 
 6. **Goodhart's check**: Could gaming explain the improvement? If the metric went up but the mechanism doesn't make sense, investigate before celebrating.
+
+7. **Secular trend / maturation check** (for time-based splits): Was the metric already improving before the intervention? Compute day-by-day rates for the pre-intervention period. If there's an upward trend, some or all of the "improvement" may be natural growth, not the intervention. Flag: "Pre-existing trend of +X pp/day could explain Y% of the observed improvement."
 
 ## Insight Format
 
