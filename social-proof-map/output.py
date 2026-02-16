@@ -6,12 +6,18 @@ from data import Row
 from typing import List, Optional
 
 
+def _sig2(val: float) -> str:
+    """Format a number to 2 significant digits."""
+    s = f"{val:.2g}"
+    return s if 'e' not in s else f"{val:.0f}"
+
+
 def _conv_rate(count: int, total: int) -> Optional[float]:
     return count / total * 100 if total else None
 
 
 def _fmt_conv(rate: Optional[float]) -> str:
-    return f"{rate:.1f}%" if rate is not None else "\u2014"
+    return f"{_sig2(rate)}%" if rate is not None else "\u2014"
 
 
 def _fmt_delta(base_rate: Optional[float], expt_rate: Optional[float]) -> str:
@@ -19,56 +25,57 @@ def _fmt_delta(base_rate: Optional[float], expt_rate: Optional[float]) -> str:
         return "\u2014"
     d = expt_rate - base_rate
     sign = "+" if d >= 0 else ""
-    return f"{sign}{d:.1f}"
+    return f"{sign}{_sig2(d)}"
 
 
-def print_funnel_comparison(others_m: FunnelMetrics, sharoon_m: FunnelMetrics,
+def print_funnel_comparison(control_m: FunnelMetrics, treatment_m: FunnelMetrics,
                             period_info: PeriodInfo) -> None:
-    others_d, sharoon_d = others_m.as_dict(), sharoon_m.as_dict()
-    others_conv, sharoon_conv = others_m.step_conversions(), sharoon_m.step_conversions()
+    ctrl_d, treat_d = control_m.as_dict(), treatment_m.as_dict()
+    ctrl_conv, treat_conv = control_m.step_conversions(), treatment_m.step_conversions()
 
     print()
     print(f"  {EXPERIMENT_NAME} Experiment")
     print(f"  Window: {period_info.range_str} ({period_info.num_days} day{'s' if period_info.num_days != 1 else ''})")
-    print(f"  Split: Sharoon (map) vs Others (no map)")
+    print(f"  Split: Map Group vs Control (no map)")
     print()
     _delta = "\u0394"
-    print(f"| {'Step':<14} | {'Others #':>8} | {'Others Conv':>11} | {'Sharoon #':>9} | {'Sharoon Conv':>12} | {_delta:>6} |")
-    print(f"|{'-'*16}|{'-'*10}|{'-'*13}|{'-'*11}|{'-'*14}|{'-'*8}|")
+    print(f"| {'Step':<14} | {'Control #':>9} | {'Ctrl Conv':>9} | {'Map #':>5} | {'Map Conv':>8} | {_delta:>6} |")
+    print(f"|{'-'*16}|{'-'*11}|{'-'*11}|{'-'*7}|{'-'*10}|{'-'*8}|")
 
     for step in FUNNEL_STEPS:
-        o_count = others_d[step]
-        s_count = sharoon_d[step]
-        o_conv = _fmt_conv(others_conv[step])
-        s_conv = _fmt_conv(sharoon_conv[step])
-        delta = _fmt_delta(others_conv[step], sharoon_conv[step])
-        print(f"| {step:<14} | {o_count:>8} | {o_conv:>11} | {s_count:>9} | {s_conv:>12} | {delta:>6} |")
+        c_count = ctrl_d[step]
+        t_count = treat_d[step]
+        c_conv = _fmt_conv(ctrl_conv[step])
+        t_conv = _fmt_conv(treat_conv[step])
+        delta = _fmt_delta(ctrl_conv[step], treat_conv[step])
+        print(f"| {step:<14} | {c_count:>9} | {c_conv:>9} | {t_count:>5} | {t_conv:>8} | {delta:>6} |")
 
     # Insights
     print()
     print("  Insights:")
     for step in FUNNEL_STEPS[1:]:
-        oc = others_conv[step]
-        sc = sharoon_conv[step]
-        if oc is not None and sc is not None:
-            delta = sc - oc
+        cc = ctrl_conv[step]
+        tc = treat_conv[step]
+        if cc is not None and tc is not None:
+            delta = tc - cc
             direction = "up" if delta >= 0 else "down"
             sign = "+" if delta >= 0 else ""
-            print(f"    \u2022 {step}: {oc:.1f}% (others) vs {sc:.1f}% (Sharoon) [{sign}{delta:.1f}pp] \u2014 {direction}")
+            print(f"    \u2022 {step}: {_sig2(cc)}% (control) vs {_sig2(tc)}% (map) [{sign}{_sig2(delta)}pp] \u2014 {direction}")
 
-    others_e2e = others_m.e2e_rate()
-    sharoon_e2e = sharoon_m.e2e_rate()
-    if others_e2e is not None and sharoon_e2e is not None:
-        print(f"    \u2022 End-to-end: {others_e2e:.1f}% (others) vs {sharoon_e2e:.1f}% (Sharoon)")
+    ctrl_e2e = control_m.e2e_rate()
+    treat_e2e = treatment_m.e2e_rate()
+    if ctrl_e2e is not None and treat_e2e is not None:
+        print(f"    \u2022 End-to-end: {_sig2(ctrl_e2e)}% (control) vs {_sig2(treat_e2e)}% (map)")
     print()
 
 
-def print_ambassador_breakdown(baseline_rows: List[Row], period_info: PeriodInfo) -> None:
-    amb_data = ambassador_breakdown(baseline_rows)
-    total = FunnelMetrics(baseline_rows)
+def print_ambassador_breakdown(rows: List[Row], period_info: PeriodInfo,
+                               group_label: str = "Control") -> None:
+    amb_data = ambassador_breakdown(rows)
+    total = FunnelMetrics(rows)
 
     print()
-    print(f"  Per-Ambassador Funnel \u2014 Others (no map)")
+    print(f"  Per-Ambassador Funnel \u2014 {group_label}")
     print(f"  {period_info.range_str} ({period_info.num_days} day{'s' if period_info.num_days != 1 else ''})")
     print()
 
@@ -111,6 +118,6 @@ def print_ambassador_breakdown(baseline_rows: List[Row], period_info: PeriodInfo
 
     if period_info.num_days > 0:
         daily_avg = total.onboardings / period_info.num_days
-        print(f"    \u2022 Daily avg onboardings: {daily_avg:.1f}/day across {period_info.num_days} day{'s' if period_info.num_days != 1 else ''}")
+        print(f"    \u2022 Daily avg onboardings: {_sig2(daily_avg)}/day across {period_info.num_days} day{'s' if period_info.num_days != 1 else ''}")
 
     print()

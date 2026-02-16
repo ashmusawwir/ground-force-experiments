@@ -16,21 +16,26 @@ def main():
         print("No data returned from sheet.", file=sys.stderr)
         sys.exit(1)
 
-    others, sharoon = split_by_group(rows)
-    all_window = others + sharoon
+    control, treatment = split_by_group(rows)
+    all_window = control + treatment
     period_info = PeriodInfo(all_window)
-    others_m, sharoon_m = FunnelMetrics(others), FunnelMetrics(sharoon)
+    control_m, treatment_m = FunnelMetrics(control), FunnelMetrics(treatment)
 
-    print_funnel_comparison(others_m, sharoon_m, period_info)
-    print_ambassador_breakdown(others, period_info)
+    # Terminal output
+    print_funnel_comparison(control_m, treatment_m, period_info)
+    print_ambassador_breakdown(treatment, period_info, group_label="Map Group")
+    print_ambassador_breakdown(control, period_info, group_label="Control (no map)")
 
     # HTML report
-    amb_data = ambassador_breakdown(others)
-    total_m = FunnelMetrics(others)
-    others_nodes = FlowchartNodes(others)
-    sharoon_nodes = FlowchartNodes(sharoon)
-    write_html(others_m, sharoon_m, period_info, amb_data, total_m,
-               others_nodes, sharoon_nodes)
+    ctrl_amb = ambassador_breakdown(control)
+    ctrl_total = FunnelMetrics(control)
+    treat_amb = ambassador_breakdown(treatment)
+    treat_total = FunnelMetrics(treatment)
+    ctrl_nodes = FlowchartNodes(control)
+    treat_nodes = FlowchartNodes(treatment)
+    write_html(control_m, treatment_m, period_info,
+               ctrl_amb, ctrl_total, treat_amb, treat_total,
+               ctrl_nodes, treat_nodes)
 
 
 if __name__ == "__main__":

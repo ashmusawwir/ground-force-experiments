@@ -7,8 +7,8 @@ from datetime import datetime, timedelta, date
 from typing import List, Dict, Optional, Tuple
 
 from config import (
-    SHEET_ID, SHEET_TAB, EXPERIMENT_WINDOW_START, EXPERIMENT_WINDOW_END,
-    TARGET_AMBASSADOR,
+    SHEET_ID, SHEET_TAB, EXPERIMENT_WINDOW_START,
+    MAP_AMBASSADORS,
     COL_TIMESTAMP, COL_VISIT_TYPE, COL_OPENER_OUTCOME,
     COL_QUESTIONS_ASKED, COL_GOLDEN_FLOW, COL_QR_SETUP, COL_AMBASSADOR,
     SKIP_QUESTIONS, QR_YES_VALUES, AMBASSADOR_NAMES,
@@ -96,17 +96,26 @@ def ambassador_name(row: Row) -> str:
     return AMBASSADOR_NAMES.get(raw, raw)
 
 
-# --- Group splitting (person-based, not time-based) ---
+# --- Group splitting (person-based with staggered start dates) ---
 
 def split_by_group(rows: List[Row]) -> Tuple[List[Row], List[Row]]:
-    """Split into (others, sharoon) within Feb 11-12 window."""
-    baseline, experiment = [], []
+    """Split into (control, treatment) accounting for staggered map start dates.
+
+    Treatment: ambassador is in MAP_AMBASSADORS AND row date >= their start date.
+    Control:   ambassador NOT in MAP_AMBASSADORS (any date in window),
+               OR ambassador in MAP_AMBASSADORS but date < their start (own baseline).
+    Excludes today (incomplete day).
+    """
+    today = datetime.now().date()
+    control, treatment = [], []
     for row in rows:
         d = row_date(row)
-        if d is None or d < EXPERIMENT_WINDOW_START or d >= EXPERIMENT_WINDOW_END:
+        if d is None or d < EXPERIMENT_WINDOW_START or d >= today:
             continue
-        if ambassador_name(row) == TARGET_AMBASSADOR:
-            experiment.append(row)
+        amb = ambassador_name(row)
+        start = MAP_AMBASSADORS.get(amb)
+        if start is not None and d >= start:
+            treatment.append(row)
         else:
-            baseline.append(row)
-    return baseline, experiment
+            control.append(row)
+    return control, treatment

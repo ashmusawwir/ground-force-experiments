@@ -2,7 +2,7 @@
 
 import os
 from typing import List, Tuple, Optional
-from config import FUNNEL_STEPS, EXPERIMENT_NAME, TARGET_AMBASSADOR
+from config import FUNNEL_STEPS, EXPERIMENT_NAME, MAP_AMBASSADORS
 from funnel import FunnelMetrics, PeriodInfo, FlowchartNodes
 
 CSS = """\
@@ -269,46 +269,56 @@ def _delta_badge(base_rate: Optional[float], expt_rate: Optional[float]) -> str:
     return f'<span class="badge {cls}">{sign}{_sig2(d)}pp</span>'
 
 
-# --- Card 1: Sharoon vs Others Funnel ---
+# --- Card 1: Map Group vs Control Funnel ---
 
-def _build_comparison_card(others_m: FunnelMetrics, sharoon_m: FunnelMetrics,
+def _map_ambassador_subtitle() -> str:
+    """Build subtitle listing map ambassadors and their start dates."""
+    parts = []
+    for name, start in sorted(MAP_AMBASSADORS.items(), key=lambda x: x[1]):
+        parts.append(f"{name} (from {start.strftime('%b %d')})")
+    return ", ".join(parts)
+
+
+def _build_comparison_card(control_m: FunnelMetrics, treatment_m: FunnelMetrics,
                            period_info: PeriodInfo) -> str:
-    others_d, sharoon_d = others_m.as_dict(), sharoon_m.as_dict()
-    others_conv, sharoon_conv = others_m.step_conversions(), sharoon_m.step_conversions()
+    ctrl_d, treat_d = control_m.as_dict(), treatment_m.as_dict()
+    ctrl_conv, treat_conv = control_m.step_conversions(), treatment_m.step_conversions()
 
     rows_html = []
     for step in FUNNEL_STEPS:
-        o_count = others_d[step]
-        s_count = sharoon_d[step]
-        o_conv = _fmt_conv(others_conv[step])
-        s_conv = _fmt_conv(sharoon_conv[step])
-        delta = _fmt_delta_html(others_conv[step], sharoon_conv[step])
+        c_count = ctrl_d[step]
+        t_count = treat_d[step]
+        c_conv = _fmt_conv(ctrl_conv[step])
+        t_conv = _fmt_conv(treat_conv[step])
+        delta = _fmt_delta_html(ctrl_conv[step], treat_conv[step])
         rows_html.append(
             f'      <tr>'
             f'<td>{step}</td>'
-            f'<td class="num-col">{o_count}</td>'
-            f'<td class="num-col">{o_conv}</td>'
-            f'<td class="num-col">{s_count}</td>'
-            f'<td class="num-col">{s_conv}</td>'
+            f'<td class="num-col">{c_count}</td>'
+            f'<td class="num-col">{c_conv}</td>'
+            f'<td class="num-col">{t_count}</td>'
+            f'<td class="num-col">{t_conv}</td>'
             f'<td class="num-col">{delta}</td>'
             f'</tr>'
         )
 
+    amb_list = _map_ambassador_subtitle()
+
     return f"""\
 <div class="data-card">
-  <h2><span class="num">1</span> Sharoon (Map) vs Others (No Map)</h2>
+  <h2><span class="num">1</span> Map Group vs Control (No Map)</h2>
   <div class="period-info">
     Window: {period_info.range_str} ({period_info.num_days} day{"s" if period_info.num_days != 1 else ""})
-    &nbsp;&middot;&nbsp; Concurrent split: same days, different ambassadors
+    &nbsp;&middot;&nbsp; Map group: {amb_list}
   </div>
   <table>
     <thead>
       <tr>
         <th>Step</th>
-        <th class="num-col">Others #</th>
-        <th class="num-col">Others Conv</th>
-        <th class="num-col">Sharoon #</th>
-        <th class="num-col">Sharoon Conv</th>
+        <th class="num-col">Control #</th>
+        <th class="num-col">Ctrl Conv</th>
+        <th class="num-col">Map #</th>
+        <th class="num-col">Map Conv</th>
         <th class="num-col">&Delta;</th>
       </tr>
     </thead>
@@ -319,11 +329,14 @@ def _build_comparison_card(others_m: FunnelMetrics, sharoon_m: FunnelMetrics,
 </div>"""
 
 
-# --- Card 2: Per-Ambassador Baseline Breakdown ---
+# --- Card 2/3: Per-Ambassador Breakdown (generic — used for both groups) ---
 
 def _build_ambassador_card(amb_data: List[Tuple[str, FunnelMetrics]],
                            total_m: FunnelMetrics,
-                           period_info: PeriodInfo) -> str:
+                           period_info: PeriodInfo,
+                           card_num: int = 2,
+                           group_label: str = "Control",
+                           subtitle: str = "") -> str:
     rows_html = []
     for name, m in amb_data:
         if m.visits == 0:
@@ -361,11 +374,13 @@ def _build_ambassador_card(amb_data: List[Tuple[str, FunnelMetrics]],
         f'</tr>'
     )
 
+    sub = subtitle or f"{period_info.range_str} &middot; Shows variance within the {group_label.lower()} group"
+
     return f"""\
 <div class="data-card">
-  <h2><span class="num">2</span> Per-Ambassador Baseline Breakdown (Others)</h2>
+  <h2><span class="num">{card_num}</span> Per-Ambassador Breakdown ({group_label})</h2>
   <div class="period-info">
-    {period_info.range_str} &middot; Shows variance within the no-map group
+    {sub}
   </div>
   <table>
     <thead>
@@ -386,46 +401,46 @@ def _build_ambassador_card(amb_data: List[Tuple[str, FunnelMetrics]],
 </div>"""
 
 
-# --- Card 3: Friction vs Credibility Analysis ---
+# --- Card 4: Friction vs Credibility Analysis ---
 
-def _build_friction_card(others_m: FunnelMetrics, sharoon_m: FunnelMetrics,
-                         others_nodes: FlowchartNodes, sharoon_nodes: FlowchartNodes) -> str:
+def _build_friction_card(control_m: FunnelMetrics, treatment_m: FunnelMetrics,
+                         control_nodes: FlowchartNodes, treatment_nodes: FlowchartNodes) -> str:
     # Metric 1: Opener pass rate
-    o_opener_rate = _conv_rate(others_m.opener_passed, others_m.visits)
-    s_opener_rate = _conv_rate(sharoon_m.opener_passed, sharoon_m.visits)
+    c_opener_rate = _conv_rate(control_m.opener_passed, control_m.visits)
+    t_opener_rate = _conv_rate(treatment_m.opener_passed, treatment_m.visits)
 
     # Metric 2: Questions asked rate (among those who passed opener)
-    o_q_rate = _conv_rate(others_nodes.asked_questions, others_m.opener_passed) if others_m.opener_passed else None
-    s_q_rate = _conv_rate(sharoon_nodes.asked_questions, sharoon_m.opener_passed) if sharoon_m.opener_passed else None
+    c_q_rate = _conv_rate(control_nodes.asked_questions, control_m.opener_passed) if control_m.opener_passed else None
+    t_q_rate = _conv_rate(treatment_nodes.asked_questions, treatment_m.opener_passed) if treatment_m.opener_passed else None
 
     # Metric 3: Demo -> Onboard rate
-    o_demo_onboard = _conv_rate(others_m.onboardings, others_m.demos)
-    s_demo_onboard = _conv_rate(sharoon_m.onboardings, sharoon_m.demos)
+    c_demo_onboard = _conv_rate(control_m.onboardings, control_m.demos)
+    t_demo_onboard = _conv_rate(treatment_m.onboardings, treatment_m.demos)
 
     metrics = [
         ("Opener Pass Rate", "Did the map reduce rejections at the door?",
-         o_opener_rate, s_opener_rate,
-         others_m.opener_passed, others_m.visits,
-         sharoon_m.opener_passed, sharoon_m.visits),
+         c_opener_rate, t_opener_rate,
+         control_m.opener_passed, control_m.visits,
+         treatment_m.opener_passed, treatment_m.visits),
         ("Questions Asked Rate", "Did the map create new conversation friction?",
-         o_q_rate, s_q_rate,
-         others_nodes.asked_questions, others_m.opener_passed,
-         sharoon_nodes.asked_questions, sharoon_m.opener_passed),
+         c_q_rate, t_q_rate,
+         control_nodes.asked_questions, control_m.opener_passed,
+         treatment_nodes.asked_questions, treatment_m.opener_passed),
         ("Demo &rarr; Onboard Rate", "Did map-sourced demos convert better?",
-         o_demo_onboard, s_demo_onboard,
-         others_m.onboardings, others_m.demos,
-         sharoon_m.onboardings, sharoon_m.demos),
+         c_demo_onboard, t_demo_onboard,
+         control_m.onboardings, control_m.demos,
+         treatment_m.onboardings, treatment_m.demos),
     ]
 
     metric_rows = []
-    for label, question, o_rate, s_rate, o_num, o_den, s_num, s_den in metrics:
-        o_str = _fmt_conv(o_rate)
-        s_str = _fmt_conv(s_rate)
-        delta = _delta_badge(o_rate, s_rate)
+    for label, question, c_rate, t_rate, c_num, c_den, t_num, t_den in metrics:
+        c_str = _fmt_conv(c_rate)
+        t_str = _fmt_conv(t_rate)
+        delta = _delta_badge(c_rate, t_rate)
 
         # Insight interpretation
-        if o_rate is not None and s_rate is not None:
-            d = s_rate - o_rate
+        if c_rate is not None and t_rate is not None:
+            d = t_rate - c_rate
             if label == "Opener Pass Rate":
                 if d > 5:
                     insight = "Map appears to reduce rejections"
@@ -453,8 +468,8 @@ def _build_friction_card(others_m: FunnelMetrics, sharoon_m: FunnelMetrics,
         metric_rows.append(
             f'      <tr>'
             f'<td><strong>{label}</strong><br><span style="font-size:0.75rem;color:var(--text-secondary);">{question}</span></td>'
-            f'<td class="num-col">{o_str}<br><span style="font-size:0.7rem;color:var(--text-secondary);">{o_num}/{o_den}</span></td>'
-            f'<td class="num-col">{s_str}<br><span style="font-size:0.7rem;color:var(--text-secondary);">{s_num}/{s_den}</span></td>'
+            f'<td class="num-col">{c_str}<br><span style="font-size:0.7rem;color:var(--text-secondary);">{c_num}/{c_den}</span></td>'
+            f'<td class="num-col">{t_str}<br><span style="font-size:0.7rem;color:var(--text-secondary);">{t_num}/{t_den}</span></td>'
             f'<td class="num-col">{delta}</td>'
             f'<td style="font-size:0.8rem;">{insight}</td>'
             f'</tr>'
@@ -462,7 +477,7 @@ def _build_friction_card(others_m: FunnelMetrics, sharoon_m: FunnelMetrics,
 
     return f"""\
 <div class="data-card">
-  <h2><span class="num">3</span> Friction vs Credibility Analysis</h2>
+  <h2><span class="num">4</span> Friction vs Credibility Analysis</h2>
   <div class="period-info">
     Three diagnostic sub-metrics: where exactly does the map help (or hurt)?
   </div>
@@ -470,8 +485,8 @@ def _build_friction_card(others_m: FunnelMetrics, sharoon_m: FunnelMetrics,
     <thead>
       <tr>
         <th>Metric</th>
-        <th class="num-col">Others</th>
-        <th class="num-col">Sharoon</th>
+        <th class="num-col">Control</th>
+        <th class="num-col">Map Group</th>
         <th class="num-col">&Delta;</th>
         <th>Interpretation</th>
       </tr>
@@ -483,25 +498,25 @@ def _build_friction_card(others_m: FunnelMetrics, sharoon_m: FunnelMetrics,
 </div>"""
 
 
-# --- Card 4: Executive Summary ---
+# --- Card 5: Executive Summary ---
 
-def _build_executive_card(others_m: FunnelMetrics, sharoon_m: FunnelMetrics) -> str:
-    o_opener = _conv_rate(others_m.opener_passed, others_m.visits)
-    s_opener = _conv_rate(sharoon_m.opener_passed, sharoon_m.visits)
-    o_e2e = others_m.e2e_rate()
-    s_e2e = sharoon_m.e2e_rate()
+def _build_executive_card(control_m: FunnelMetrics, treatment_m: FunnelMetrics) -> str:
+    c_opener = _conv_rate(control_m.opener_passed, control_m.visits)
+    t_opener = _conv_rate(treatment_m.opener_passed, treatment_m.visits)
+    c_e2e = control_m.e2e_rate()
+    t_e2e = treatment_m.e2e_rate()
 
     # Determine verdict
-    opener_delta = (s_opener - o_opener) if (s_opener is not None and o_opener is not None) else 0
-    e2e_delta = (s_e2e - o_e2e) if (s_e2e is not None and o_e2e is not None) else 0
+    opener_delta = (t_opener - c_opener) if (t_opener is not None and c_opener is not None) else 0
+    e2e_delta = (t_e2e - c_e2e) if (t_e2e is not None and c_e2e is not None) else 0
 
     if opener_delta > 10 and e2e_delta > 5:
         verdict_cls = "verdict-positive"
-        verdict_text = "Social proof map shows strong positive signal. Recommend teaching verbal social proof to all ambassadors immediately, and building a merchant map feature in the app."
+        verdict_text = "Social proof map shows strong positive signal across multiple ambassadors. Recommend teaching verbal social proof to all ambassadors immediately, and building a merchant map feature in the app."
         confidence = "High"
     elif opener_delta > 5 or e2e_delta > 3:
         verdict_cls = "verdict-positive"
-        verdict_text = "Social proof map shows moderate positive signal. Recommend extending the test to more ambassadors before scaling. Teach verbal social proof as a low-cost interim measure."
+        verdict_text = "Social proof map shows moderate positive signal. Phase 2 expansion (3 ambassadors) will clarify whether this is method-driven or ambassador-driven. Teach verbal social proof as a low-cost interim measure."
         confidence = "Medium"
     elif opener_delta < -5 or e2e_delta < -3:
         verdict_cls = "verdict-negative"
@@ -509,32 +524,35 @@ def _build_executive_card(others_m: FunnelMetrics, sharoon_m: FunnelMetrics) -> 
         confidence = "Medium"
     else:
         verdict_cls = "verdict-neutral"
-        verdict_text = "Results are inconclusive. Sample size may be too small for definitive judgment. Consider extending the experiment window or testing with additional ambassadors."
+        verdict_text = "Results are inconclusive. Phase 2 data (Afsar + Arslan from Feb 16) will increase sample size. Revisit after 3+ days of Phase 2 data."
         confidence = "Low"
 
-    o_opener_str = _fmt_conv(o_opener)
-    s_opener_str = _fmt_conv(s_opener)
-    o_e2e_str = _fmt_conv(o_e2e)
-    s_e2e_str = _fmt_conv(s_e2e)
+    c_opener_str = _fmt_conv(c_opener)
+    t_opener_str = _fmt_conv(t_opener)
+    c_e2e_str = _fmt_conv(c_e2e)
+    t_e2e_str = _fmt_conv(t_e2e)
+
+    n_map = len(MAP_AMBASSADORS)
+    amb_names = ", ".join(sorted(MAP_AMBASSADORS.keys()))
 
     return f"""\
 <div class="data-card">
-  <h2><span class="num">4</span> Executive Summary &amp; Recommendations</h2>
+  <h2><span class="num">5</span> Executive Summary &amp; Recommendations</h2>
   <div class="period-info">
-    Data-driven verdict on the social proof map intervention
+    Data-driven verdict on the social proof map intervention &middot; {n_map} map ambassadors: {amb_names}
   </div>
 
   <div class="stat-grid">
     <div class="stat-box">
-      <div class="stat-value">{s_opener_str}</div>
-      <div class="stat-label">Sharoon Opener Pass</div>
+      <div class="stat-value">{t_opener_str}</div>
+      <div class="stat-label">Map Group Opener Pass</div>
     </div>
     <div class="stat-box">
-      <div class="stat-value">{o_opener_str}</div>
-      <div class="stat-label">Others Opener Pass</div>
+      <div class="stat-value">{c_opener_str}</div>
+      <div class="stat-label">Control Opener Pass</div>
     </div>
     <div class="stat-box">
-      <div class="stat-value">{_delta_badge(o_opener, s_opener)}</div>
+      <div class="stat-value">{_delta_badge(c_opener, t_opener)}</div>
       <div class="stat-label">Opener Delta</div>
     </div>
   </div>
@@ -544,8 +562,8 @@ def _build_executive_card(others_m: FunnelMetrics, sharoon_m: FunnelMetrics) -> 
     <ul>
       <li><strong>54% of rejections are addressable by social proof.</strong> "Not interested in dollars" (43%) and "Doesn't trust" (11%) both stem from the same root: the merchant doesn't believe this is real.</li>
       <li><strong>This tests credibility vs product objection.</strong> If showing nearby merchants increases conversion, the objection was never about the product &mdash; it was about trust.</li>
+      <li><strong>Phase 2 expansion:</strong> Afsar and Arslan join Sharoon from Feb 16, testing whether the map effect is <em>method-driven</em> (transfers across ambassadors) or <em>person-driven</em> (Sharoon-specific).</li>
       <li><strong>Clear scaling paths:</strong> verbal social proof (short-term) &rarr; merchant map feature (medium-term) &rarr; self-reinforcing growth loop (long-term).</li>
-      <li><strong>Terra's framing:</strong> every second between opener and demo is a chance for the merchant to say no. The map either buys credibility (weapon) or costs time (theater).</li>
     </ul>
   </div>
 
@@ -555,23 +573,23 @@ def _build_executive_card(others_m: FunnelMetrics, sharoon_m: FunnelMetrics) -> 
       <thead>
         <tr>
           <th>Metric</th>
-          <th class="num-col">Others</th>
-          <th class="num-col">Sharoon</th>
+          <th class="num-col">Control</th>
+          <th class="num-col">Map Group</th>
           <th class="num-col">&Delta;</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td>Opener Pass Rate</td>
-          <td class="num-col">{o_opener_str}</td>
-          <td class="num-col">{s_opener_str}</td>
-          <td class="num-col">{_delta_badge(o_opener, s_opener)}</td>
+          <td class="num-col">{c_opener_str}</td>
+          <td class="num-col">{t_opener_str}</td>
+          <td class="num-col">{_delta_badge(c_opener, t_opener)}</td>
         </tr>
         <tr>
           <td>End-to-End Rate</td>
-          <td class="num-col">{o_e2e_str}</td>
-          <td class="num-col">{s_e2e_str}</td>
-          <td class="num-col">{_delta_badge(o_e2e, s_e2e)}</td>
+          <td class="num-col">{c_e2e_str}</td>
+          <td class="num-col">{t_e2e_str}</td>
+          <td class="num-col">{_delta_badge(c_e2e, t_e2e)}</td>
         </tr>
       </tbody>
     </table>
@@ -585,20 +603,28 @@ def _build_executive_card(others_m: FunnelMetrics, sharoon_m: FunnelMetrics) -> 
 
 # --- HTML Assembly ---
 
-def generate_html(others_m: FunnelMetrics, sharoon_m: FunnelMetrics,
+def generate_html(control_m: FunnelMetrics, treatment_m: FunnelMetrics,
                   period_info: PeriodInfo,
-                  amb_data: List[Tuple[str, FunnelMetrics]],
-                  total_m: FunnelMetrics,
-                  others_nodes: FlowchartNodes,
-                  sharoon_nodes: FlowchartNodes) -> str:
+                  control_amb_data: List[Tuple[str, FunnelMetrics]],
+                  control_total: FunnelMetrics,
+                  treatment_amb_data: List[Tuple[str, FunnelMetrics]],
+                  treatment_total: FunnelMetrics,
+                  control_nodes: FlowchartNodes,
+                  treatment_nodes: FlowchartNodes) -> str:
     days_word = f"{period_info.num_days} day{'s' if period_info.num_days != 1 else ''}"
 
-    card1 = _build_comparison_card(others_m, sharoon_m, period_info)
-    card2 = _build_ambassador_card(amb_data, total_m, period_info)
-    card3 = _build_friction_card(others_m, sharoon_m, others_nodes, sharoon_nodes)
-    card4 = _build_executive_card(others_m, sharoon_m)
+    card1 = _build_comparison_card(control_m, treatment_m, period_info)
+    card2 = _build_ambassador_card(treatment_amb_data, treatment_total, period_info,
+                                   card_num=2, group_label="Map Group",
+                                   subtitle=_map_ambassador_subtitle())
+    card3 = _build_ambassador_card(control_amb_data, control_total, period_info,
+                                   card_num=3, group_label="Control")
+    card4 = _build_friction_card(control_m, treatment_m, control_nodes, treatment_nodes)
+    card5 = _build_executive_card(control_m, treatment_m)
 
-    total_visits = others_m.visits + sharoon_m.visits
+    total_visits = control_m.visits + treatment_m.visits
+    n_map = len(MAP_AMBASSADORS)
+    amb_names = ", ".join(sorted(MAP_AMBASSADORS.keys()))
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -615,7 +641,7 @@ def generate_html(others_m: FunnelMetrics, sharoon_m: FunnelMetrics,
 <h1>{EXPERIMENT_NAME} &mdash; EXP-002</h1>
 <div class="subtitle">
   Does showing a map of nearby ZAR merchants bypass objections?<br>
-  {TARGET_AMBASSADOR} (map) vs all other ambassadors (no map) &middot;
+  {n_map} map ambassadors ({amb_names}) vs control &middot;
   {total_visits} onboarding visits &middot; {days_word} &middot; {period_info.range_str}
 </div>
 
@@ -627,6 +653,8 @@ def generate_html(others_m: FunnelMetrics, sharoon_m: FunnelMetrics,
 
 {card4}
 
+{card5}
+
 <div style="margin-top:20px; font-size:0.75rem; color:var(--text-secondary);">
   Generated from visit form data &middot; {period_info.range_str} &middot; Window: {days_word}
 </div>
@@ -636,15 +664,19 @@ def generate_html(others_m: FunnelMetrics, sharoon_m: FunnelMetrics,
 """
 
 
-def write_html(others_m: FunnelMetrics, sharoon_m: FunnelMetrics,
+def write_html(control_m: FunnelMetrics, treatment_m: FunnelMetrics,
                period_info: PeriodInfo,
-               amb_data: List[Tuple[str, FunnelMetrics]],
-               total_m: FunnelMetrics,
-               others_nodes: FlowchartNodes,
-               sharoon_nodes: FlowchartNodes) -> None:
+               control_amb_data: List[Tuple[str, FunnelMetrics]],
+               control_total: FunnelMetrics,
+               treatment_amb_data: List[Tuple[str, FunnelMetrics]],
+               treatment_total: FunnelMetrics,
+               control_nodes: FlowchartNodes,
+               treatment_nodes: FlowchartNodes) -> None:
     html_path = os.path.join(os.path.dirname(__file__), "social_proof_map.html")
-    html = generate_html(others_m, sharoon_m, period_info, amb_data, total_m,
-                         others_nodes, sharoon_nodes)
+    html = generate_html(control_m, treatment_m, period_info,
+                         control_amb_data, control_total,
+                         treatment_amb_data, treatment_total,
+                         control_nodes, treatment_nodes)
     with open(html_path, "w") as f:
         f.write(html)
     import sys

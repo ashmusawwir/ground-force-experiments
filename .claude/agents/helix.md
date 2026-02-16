@@ -540,6 +540,15 @@ font-family: 'DM Sans', 'Inter', sans-serif;
 
 **Ambassador name mapping**: Define in each experiment's config.py as a dict.
 
+**Percentage formatting**: Always 2 significant digits via `_sig2()`. Both `output.py` (terminal) and `flowchart.py` (HTML) must use the same helper:
+```python
+def _sig2(val: float) -> str:
+    """Format a number to 2 significant digits."""
+    s = f"{val:.2g}"
+    return s if 'e' not in s else f"{val:.0f}"
+```
+Never use `:.1f` for percentages — it produces inconsistent precision (e.g., `0.0%` vs `96.1%`). `_sig2` gives `0%`, `96%`, `7.5%`, `100%`.
+
 **Split type reference**:
 | Type | Implementation | Example |
 |------|---------------|---------|
@@ -586,6 +595,7 @@ Don't duplicate — CLAUDE.md has the full schema. Key reminders:
 - **Session hygiene**: Remind at ~30 turns to start fresh or `/compact`
 - **Model usage**: Sonnet for routine tasks, Opus for complex reasoning
 - **Full output**: Always show complete pipe tables and insights — never suppress or summarize
+- **2 sig digit percentages**: All percentages use `_sig2()` — both terminal and HTML. Never `:.1f`.
 - **CLAUDE.md updates**: When creating a new experiment, add its section to CLAUDE.md immediately
 - **No duplication**: CLAUDE.md is always loaded. Don't repeat its content — reference it.
 - **Observed over reported**: Prefer system-observed metrics over ambassador self-reports

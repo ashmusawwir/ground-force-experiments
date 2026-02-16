@@ -69,7 +69,7 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 | ID | Directory | Pattern | Split | What it tests |
 |----|-----------|---------|-------|---------------|
 | EXP-001 | `show-dont-tell/` | A | Time-based (baseline vs experiment) | Demo-first opener vs verbal pitch |
-| — | `social-proof-map/` | A | Person-based (Sharoon vs Others) | Showing nearby-merchant map at opener |
+| EXP-002 | `social-proof-map/` | A | Person-based (staggered multi-ambassador) | Showing nearby-merchant map at opener |
 | EXP-006 | `question-redirect/` | A | Time-based (pre- vs post-training) | Universal redirect phrase for Q→Demo |
 | — | `merchant-user-onboardings/` | B | N/A (dashboard) | Merchant onboarding, activation, retention |
 | EXP-001+ | `demo-dollars-usage/` | B | N/A (cohort analysis) | What demo-dollar recipients did with $5 |
@@ -83,11 +83,15 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 
 Tests a new opener strategy where ambassadors demonstrate the app instead of pitching verbally. Started Feb 10, 2026. Outputs: baseline vs experiment funnel comparison, per-ambassador breakdown, and updates `dont_show_tell_exp.html`.
 
-### Social Proof Map
+### Social Proof Map (EXP-002)
 
-Tests whether showing a map of nearby ZAR merchants bypasses objections at the opener stage. Person-based split: Sharoon Javed (shows map) vs all other ambassadors (no map), concurrent during Feb 11-12, 2026. Outputs: Sharoon vs Others funnel comparison, per-ambassador baseline breakdown, and generates `social_proof_map.html` with 4 cards (funnel comparison, baseline breakdown, friction vs credibility analysis, executive summary).
+Tests whether showing a map of nearby ZAR merchants bypasses objections at the opener stage. Person-based split with staggered start dates: Phase 1 (Feb 11-15, Sharoon only) -> Phase 2 (Feb 16+, Sharoon + Afsar + Arslan). Control = all non-map ambassadors + map ambassadors' pre-start data. Outputs: Map Group vs Control funnel comparison, per-ambassador breakdowns for both groups, friction vs credibility analysis, and generates `social_proof_map.html` with 5 cards.
 
-**Config extras:** `target ambassador`, fixed 2-day window. `data.py` adds `split_by_group()`. No `QuestionDropoffData` or `DayOnDayProgression` — simpler `funnel.py` (~90 lines vs 220).
+**Experiment card:** `exp-002-social-proof-map.md` — full hypothesis, decision rules, kill criteria, phase design, statistical validity (verdict: WEAK for Phase 1, Phase 2 expansion required).
+
+**Config extras:** `MAP_AMBASSADORS` dict mapping ambassador names to their map start dates (replaces single `TARGET_AMBASSADOR`). No fixed end date — uses today. `data.py` `split_by_group()` handles per-ambassador staggered starts. No `QuestionDropoffData` or `DayOnDayProgression` — simpler `funnel.py` (~90 lines vs 220).
+
+**Key design decisions:** Afsar/Arslan's pre-Feb 16 data is valid control data (their own baseline). Phase 2 answers: is the map effect method-driven (transfers across ambassadors) or person-driven (Sharoon-specific)? SHIP requires E2E >= 15% AND consistent effect across 2+ ambassadors.
 
 ### Question Redirect Protocol (EXP-006)
 
@@ -219,6 +223,9 @@ Tests whether structured daily task lists improve onboarding conversion and merc
 - ZCE orders: `zar_cash_exchange_orders` table, `initiator_id` for user, `status = 'completed'`
 - Cash notes: `digital_cash_notes` table, `depositor_id` = sender, `claimant_id` = receiver, `status = 'claimed'`
 - PKT time offset: `+ interval '5' hour` for UTC → Pakistan Time
+- `product_enrollments`: `user_id` (FK to users.id), `state` (0=available, 1=onboarding, 2=enabled, 3=disabled), `product_definition_id` (FK), `created_at`
+- `product_definitions`: `code` column, merchant code = `'zar_cash_exchange_merchant'`
+- Since Dec 13 (SHIP-2069), new merchants use `product_enrollments` instead of `merchant_onboarding_submissions`. All merchant queries UNION both sources (MOS + PE). Zero overlap between the two populations.
 
 #### Shared CTE Pattern
 

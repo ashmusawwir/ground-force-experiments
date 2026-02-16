@@ -3,9 +3,16 @@
 from datetime import date
 
 EXPERIMENT_NAME = "Social Proof Map"
-TARGET_AMBASSADOR = "Sharoon Javed"       # person-based split
+
+# Person-based split with staggered start dates.
+# Phase 1 (Feb 11-15): Sharoon only.  Phase 2 (Feb 16+): Sharoon + Afsar + Arslan.
+MAP_AMBASSADORS = {
+    "Sharoon Javed": date(2026, 2, 11),
+    "Afsar Khan": date(2026, 2, 16),
+    "Arslan Ansari": date(2026, 2, 16),
+}
 EXPERIMENT_WINDOW_START = date(2026, 2, 11)
-EXPERIMENT_WINDOW_END = date(2026, 2, 13)  # exclusive (Feb 11-12 only)
+# No fixed end — uses today (excludes incomplete current day)
 
 SHEET_ID = "1bFf0NAQFFXIYYxMC1yJeqowRz6MwT_-xawZeg5H9wUQ"
 SHEET_TAB = "Form Responses 1"
