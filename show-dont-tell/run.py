@@ -4,7 +4,7 @@
 import sys
 
 from data import fetch_rows, split_by_period
-from funnel import FunnelMetrics, PeriodInfo, FlowchartNodes, ambassador_breakdown, QuestionDropoffData
+from funnel import FunnelMetrics, PeriodInfo, FlowchartNodes, ambassador_breakdown, QuestionDropoffData, DayOnDayProgression
 from output import print_funnel_comparison, print_ambassador_breakdown
 from flowchart import write_flowchart
 
@@ -27,9 +27,10 @@ def main():
         amb_data = ambassador_breakdown(experiment)
         total_m = FunnelMetrics(experiment)
         dropoff = QuestionDropoffData(experiment)
+        progression = DayOnDayProgression(experiment)
         write_flowchart(FlowchartNodes(experiment), expt_info,
                         base_m, expt_m, base_info, expt_info,
-                        amb_data, total_m, dropoff)
+                        amb_data, total_m, dropoff, progression)
 
 
 if __name__ == "__main__":

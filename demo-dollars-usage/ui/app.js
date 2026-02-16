@@ -20,6 +20,7 @@ const IDX = {
   appOpens: new Map(),      // recipient_id → app opens row
   timing: new Map(),        // recipient_id → timing row
   appOpensDetailed: new Map(), // recipient_id → detailed app opens with timestamps
+  allTimestamps: new Map(), // recipient_id → array of {activity_type, hours_after_demo}
 };
 
 function buildIndexes() {
@@ -30,6 +31,7 @@ function buildIndexes() {
   IDX.appOpens.clear();
   IDX.timing.clear();
   IDX.appOpensDetailed.clear();
+  IDX.allTimestamps.clear();
 
   for (const r of (RAW.recipient_overview || [])) {
     r.ambassador_name = AMBASSADOR_DISPLAY_NAMES[r.ambassador_name] || r.ambassador_name;
@@ -53,6 +55,13 @@ function buildIndexes() {
   }
   for (const d of (RAW.app_opens_detailed || [])) {
     IDX.appOpensDetailed.set(d.recipient_id, d);
+  }
+  // All activity timestamps (for repeat session analysis)
+  for (const ts of (RAW.all_activity_timestamps || [])) {
+    if (!IDX.allTimestamps.has(ts.recipient_id)) {
+      IDX.allTimestamps.set(ts.recipient_id, []);
+    }
+    IDX.allTimestamps.get(ts.recipient_id).push(ts);
   }
 }
 
@@ -80,18 +89,23 @@ function getNonOnboarded() {
 }
 
 // ---------------------------------------------------------------------------
-// "Understands the Product" scoring
+// Tiered signal scoring
 //
-// Binary: any qualifying action (excluding cycling) = understood.
-// Qualifying: CN send to non-ambassador, card spend, bank transfer, ZCE order.
-// Excluded: sending $5 back to ambassador (cycling).
+// T1 (Strong — core product): CN send to non-ambassador, card spend, ZCE order
+//   ZCE = merchant selling dollars to customers via order flow (cash exchange)
+// T2 (Moderate — value extraction): bank transfer (could be cashing out free $5)
+// T3: No qualifying activity
+// Noise: Cycled full demo amount back to ambassador
 // ---------------------------------------------------------------------------
+
+const TIER_ORDER = { "T1": 0, "T2": 1, "Noise": 2, "T3": 3 };
+const TIER_LABELS = { "T1": "Strong Signal", "T2": "Moderate", "Noise": "Cycling", "T3": "No Signal" };
+const TIER_BADGES = { "T1": "badge-t1", "T2": "badge-t2", "Noise": "badge-noise", "T3": "badge-t3" };
 
 function scoreRecipient(recipientId) {
   const act = IDX.activity.get(recipientId);
-  if (!act) return { understood: false, actions: [], cycling: false };
+  if (!act) return { tier: "T3", tierLabel: "No Signal", understood: false, actions: [], t1Actions: [], t2Actions: [], cycling: false };
 
-  const actions = [];
   // Cycling = sent back 100% of received value (full round-trip).
   // Partial send-back is just the ambassador demoing how to send.
   const recip = IDX.recipients.get(recipientId);
@@ -99,16 +113,47 @@ function scoreRecipient(recipientId) {
   const hasCycling = (act.cn_send_to_amb_count || 0) > 0
     && (act.cn_send_to_amb_volume || 0) >= totalReceived;
 
-  if ((act.cn_send_to_others_count || 0) > 0) actions.push("cn_send");
-  if ((act.card_count || 0) > 0) actions.push("card_spend");
-  if ((act.bt_count || 0) > 0) actions.push("bank_transfer");
-  if ((act.zce_count || 0) > 0) actions.push("zce_order");
+  const t1Actions = [];  // Core product usage
+  const t2Actions = [];  // Value extraction
+
+  if ((act.cn_send_to_others_count || 0) > 0) t1Actions.push("cn_send");
+  if ((act.card_count || 0) > 0) t1Actions.push("card_spend");
+  if ((act.zce_count || 0) > 0) t1Actions.push("zce_order");   // ZCE = T1 (cash exchange, core product)
+  if ((act.bt_count || 0) > 0) t2Actions.push("bank_transfer"); // BT = T2 (could be cashing out)
+
+  const allActions = [...t1Actions, ...t2Actions];
+  let tier, tierLabel;
+  if (t1Actions.length > 0) { tier = "T1"; tierLabel = "Strong Signal"; }
+  else if (t2Actions.length > 0) { tier = "T2"; tierLabel = "Moderate"; }
+  else if (hasCycling) { tier = "Noise"; tierLabel = "Cycling"; }
+  else { tier = "T3"; tierLabel = "No Signal"; }
 
   return {
-    understood: actions.length > 0,
-    actions,
+    tier, tierLabel,
+    understood: allActions.length > 0,  // backward compat
+    actions: allActions,
+    t1Actions, t2Actions,
     cycling: hasCycling,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Compute reason for not onboarding (behavior + sheet data)
+// ---------------------------------------------------------------------------
+
+function getNotOnboardReason(recipientId) {
+  const recip = IDX.recipients.get(recipientId);
+  const score = scoreRecipient(recipientId);
+
+  // Priority 1: Sheet decline/rejection reason
+  if (recip && recip.decline_reason) return recip.decline_reason;
+  if (recip && recip.rejection_reason) return recip.rejection_reason;
+
+  // Priority 2: Computed from behavior
+  if (score.tier === "T1") return "Active user, didn\u2019t submit KYB";
+  if (score.tier === "T2") return "Active user, didn\u2019t submit KYB";
+  if (score.tier === "Noise") return "Cycled back to ambassador";
+  return "No post-demo engagement";
 }
 
 // ---------------------------------------------------------------------------
@@ -349,33 +394,31 @@ function renderCard4() {
 
   if (defEl) {
     defEl.innerHTML = `<div class="inline-definition">
-      <strong>What counts as &ldquo;using&rdquo; the $5?</strong> Any active feature: sending money to someone, card purchase, bank transfer, or currency exchange. Just holding the balance doesn&rsquo;t count. Sending it back to the ambassador (cycling) is tracked separately.
+      <strong>What counts as &ldquo;using&rdquo; the $5?</strong> Any active feature: sending money to someone, card purchase, bank transfer, or cash exchange (ZCE order). Just holding the balance doesn&rsquo;t count. Sending it back to the ambassador (cycling) is tracked separately.
     </div>`;
   }
 
   const nonOnboarded = getNonOnboarded();
   const total = nonOnboarded.length;
 
-  let anyActivity = 0;
+  let t1Count = 0;
+  let t2Count = 0;
+  let noiseCount = 0;
+  let t3Count = 0;
   let cnSendToOthers = 0;
   let cardUsers = 0;
   let btUsers = 0;
   let zceUsers = 0;
-  let cyclingOnly = 0;
-  let noActivity = 0;
   let totalCycling = 0;
   let securedCount = 0;
 
   for (const [rid, recip] of nonOnboarded) {
     const score = scoreRecipient(rid);
     const act = IDX.activity.get(rid);
-    if (score.understood) {
-      anyActivity++;
-    } else if (score.cycling && !score.understood) {
-      cyclingOnly++;
-    } else {
-      noActivity++;
-    }
+    if (score.tier === "T1") t1Count++;
+    else if (score.tier === "T2") t2Count++;
+    else if (score.tier === "Noise") noiseCount++;
+    else t3Count++;
     if (recip.is_secured) securedCount++;
     if (act) {
       if ((act.cn_send_to_others_count || 0) > 0) cnSendToOthers++;
@@ -387,10 +430,10 @@ function renderCard4() {
   }
 
   statsEl.innerHTML = [
-    { label: "Used the $5 (Any Feature)", value: anyActivity, sub: pct(anyActivity, total) + "% of " + total + " non-onboarded" },
-    { label: "Cycling Only (Sent Back)", value: cyclingOnly, sub: pct(cyclingOnly, total) + "% of non-onboarded" },
-    { label: "No Activity", value: noActivity, sub: pct(noActivity, total) + "% of non-onboarded" },
-    { label: "Secured Account", value: securedCount, sub: pct(securedCount, total) + "% have email or phone" },
+    { label: "T1 Strong Signal", value: t1Count, sub: "P2P, Card, ZCE (cash exchange)" },
+    { label: "T2 Moderate Signal", value: t2Count, sub: "Bank Transfer only" },
+    { label: "Noise (Cycling)", value: noiseCount, sub: "Sent full amount back" },
+    { label: "T3 No Signal", value: t3Count, sub: "No qualifying activity" },
   ].map(c => `<div class="stat-box">
     <div class="stat-label">${c.label}</div>
     <div class="stat-value">${c.value}</div>
@@ -413,8 +456,7 @@ function renderCard4() {
 // Detail Table: Per-recipient raw data (NON-ONBOARDED only)
 // ---------------------------------------------------------------------------
 
-const DETAIL_SORT = { col: 11, asc: true };  // default sort: verdict (Understood first)
-const VERDICT_ORDER = { "Understood": 0, "Cycling": 1, "Passive": 2 };
+const DETAIL_SORT = { col: 14, asc: true };  // default sort: tier (T1 first)
 const DETAIL_COLUMNS = [
   { key: "recipient_name", label: "Recipient", numeric: false },
   { key: "ambassador_name", label: "Ambassador", numeric: false },
@@ -424,10 +466,13 @@ const DETAIL_COLUMNS = [
   { key: "cn_send_to_others", label: "CN to Others", numeric: true },
   { key: "card", label: "Card Spend", numeric: true },
   { key: "bt", label: "Bank Transfer", numeric: true },
-  { key: "zce", label: "ZCE", numeric: true },
+  { key: "zce", label: "ZCE Order", numeric: true },
   { key: "cycling", label: "Cycling", numeric: true },
+  { key: "cycled_back_full", label: "Full Cycle", numeric: false },
   { key: "is_secured", label: "Secured", numeric: false },
-  { key: "verdict", label: "Verdict", numeric: false },
+  { key: "reason", label: "Reason", numeric: false },
+  { key: "field_notes", label: "Notes", numeric: false },
+  { key: "verdict", label: "Tier", numeric: false },
 ];
 
 function renderDetailTable() {
@@ -439,24 +484,20 @@ function renderDetailTable() {
   const rows = nonOnboarded.map(([rid, recip]) => {
     const act = IDX.activity.get(rid) || {};
     const score = scoreRecipient(rid);
-    let verdict, verdictClass;
-    if (score.understood) {
-      verdict = "Understood"; verdictClass = "badge-understood";
-    } else if (score.cycling) {
-      verdict = "Cycling"; verdictClass = "badge-cycling";
-    } else {
-      verdict = "Passive"; verdictClass = "badge-passive";
-    }
     const timing = IDX.timing.get(rid);
     const hoursToAct = timing && timing.hours_to_first_activity != null
       ? timing.hours_to_first_activity : null;
+    const cyclingCount = act.cn_send_to_amb_count || 0;
+    const cyclingVol = act.cn_send_to_amb_volume || 0;
+    const totalReceived = recip.total_received || 0;
+    const cycledFull = cyclingCount > 0 && cyclingVol >= totalReceived;
     return {
       recipient_id: rid,
       recipient_name: recip.recipient_name || rid.substring(0, 8) + "...",
       recipient_phone: recip.recipient_phone || null,
       ambassador_name: recip.ambassador_name || "Unknown",
       account_created_date: recip.account_created_date || "",
-      total_received: recip.total_received || 0,
+      total_received: totalReceived,
       hours_to_act: hoursToAct,
       cn_send_to_others: act.cn_send_to_others_count || 0,
       cn_send_to_others_vol: act.cn_send_to_others_volume || 0,
@@ -466,11 +507,15 @@ function renderDetailTable() {
       bt_vol: act.bt_volume || 0,
       zce: act.zce_count || 0,
       zce_vol: act.zce_volume || 0,
-      cycling: act.cn_send_to_amb_count || 0,
-      cycling_vol: act.cn_send_to_amb_volume || 0,
+      cycling: cyclingCount,
+      cycling_vol: cyclingVol,
+      cycled_back_full: cycledFull,
       is_secured: recip.is_secured || false,
-      verdict,
-      verdictClass,
+      reason: getNotOnboardReason(rid),
+      field_notes: recip.notes || "",
+      verdict: score.tier,
+      verdictClass: TIER_BADGES[score.tier] || "badge-t3",
+      verdictLabel: score.tierLabel,
     };
   });
 
@@ -480,15 +525,15 @@ function renderDetailTable() {
     return `<th data-col="${i}">${col.label}${arrow}</th>`;
   }).join("");
 
-  // Sort — custom order for verdict column, nulls last for days_to_act
+  // Sort — custom order for tier column, nulls last for hours_to_act
   const col = DETAIL_COLUMNS[DETAIL_SORT.col];
   const sorted = [...rows].sort((a, b) => {
     if (col.key === "verdict") {
-      const av = VERDICT_ORDER[a.verdict] ?? 9, bv = VERDICT_ORDER[b.verdict] ?? 9;
+      const av = TIER_ORDER[a.verdict] ?? 9, bv = TIER_ORDER[b.verdict] ?? 9;
       return DETAIL_SORT.asc ? av - bv : bv - av;
     }
-    if (col.key === "is_secured") {
-      const av = a.is_secured ? 0 : 1, bv = b.is_secured ? 0 : 1;
+    if (col.key === "is_secured" || col.key === "cycled_back_full") {
+      const av = a[col.key] ? 0 : 1, bv = b[col.key] ? 0 : 1;
       return DETAIL_SORT.asc ? av - bv : bv - av;
     }
     if (col.key === "hours_to_act") {
@@ -512,6 +557,15 @@ function renderDetailTable() {
     const hoursCell = r.hours_to_act != null
       ? `<span style="font-weight:500;">${fmtHours(r.hours_to_act)}</span>`
       : '\u2014';
+    const cycledCell = r.cycling > 0
+      ? (r.cycled_back_full ? '<span class="badge-noise">Full</span>' : `Partial (${fmtDollar(r.cycling_vol)})`)
+      : '\u2014';
+    const reasonCell = r.reason
+      ? `<span style="font-size:0.72rem;color:var(--text-secondary);white-space:normal;max-width:120px;display:inline-block;">${r.reason}</span>`
+      : '\u2014';
+    const notesCell = r.field_notes
+      ? `<span style="font-size:0.7rem;color:var(--text-secondary);white-space:normal;max-width:150px;display:inline-block;" title="${r.field_notes.replace(/"/g, '&quot;')}">${r.field_notes.length > 40 ? r.field_notes.substring(0, 40) + '\u2026' : r.field_notes}</span>`
+      : '\u2014';
     return `<tr>
       <td><span title="${r.recipient_id}">${r.recipient_name}</span>${phoneLine}</td>
       <td>${r.ambassador_name}</td>
@@ -523,8 +577,11 @@ function renderDetailTable() {
       <td>${fmtCnt(r.bt, r.bt_vol)}</td>
       <td>${fmtCnt(r.zce, r.zce_vol)}</td>
       <td>${fmtCnt(r.cycling, r.cycling_vol)}</td>
+      <td>${cycledCell}</td>
       <td style="text-align:center;">${securedBadge}</td>
-      <td><span class="${r.verdictClass}">${r.verdict}</span></td>
+      <td>${reasonCell}</td>
+      <td>${notesCell}</td>
+      <td><span class="${r.verdictClass}">${r.verdictLabel}</span></td>
     </tr>`;
   }).join("");
 
@@ -545,7 +602,7 @@ function renderDetailTable() {
 
 function downloadRevisitCSV(targets) {
   const actionLabels = { cn_send: "P2P", card_spend: "Card", bank_transfer: "BT", zce_order: "ZCE" };
-  const headers = ["Recipient", "Phone", "Ambassador", "Business Name", "Location", "Demo Date", "Actions", "Total Txns", "Secured"];
+  const headers = ["Recipient", "Phone", "Ambassador", "Business Name", "Location", "Demo Date", "Actions", "Tier", "Total Txns", "Secured", "Reason", "Notes"];
   const rows = targets.map(r => [
     r.recipient_name,
     r.recipient_phone || "",
@@ -554,8 +611,11 @@ function downloadRevisitCSV(targets) {
     r.location_lat != null && r.location_lng != null ? `${r.location_lat},${r.location_lng}` : "",
     r.date,
     r.actions.map(a => actionLabels[a] || a).join("; "),
+    r.tier || "",
     r.cn_send_to_others_count + r.card_count + r.bt_count + r.zce_count,
     r.is_secured ? "Yes" : "No",
+    r.reason || "",
+    r.field_notes || "",
   ]);
   const csvContent = [headers, ...rows]
     .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
@@ -582,15 +642,19 @@ function renderVerdict() {
 
   const nonOnboarded = getNonOnboarded();
   const total = nonOnboarded.length;
-  let understood = 0;
-  let notUnderstood = 0;
+  let t1Count = 0, t2Count = 0, noiseCount = 0, t3Count = 0;
   const actionCounts = { cn_send: 0, card_spend: 0, bank_transfer: 0, zce_order: 0 };
   const revisitTargets = [];
 
   for (const [rid, recip] of nonOnboarded) {
     const score = scoreRecipient(rid);
+    if (score.tier === "T1") t1Count++;
+    else if (score.tier === "T2") t2Count++;
+    else if (score.tier === "Noise") noiseCount++;
+    else t3Count++;
+
+    // T1 and T2 are both revisit targets
     if (score.understood) {
-      understood++;
       for (const a of score.actions) actionCounts[a]++;
       const act = IDX.activity.get(rid) || {};
       revisitTargets.push({
@@ -600,6 +664,8 @@ function renderVerdict() {
         ambassador_name: recip.ambassador_name || "Unknown",
         date: recip.account_created_date || "",
         actions: score.actions,
+        tier: score.tier,
+        tierLabel: score.tierLabel,
         cn_send_to_others_count: act.cn_send_to_others_count || 0,
         card_count: act.card_count || 0,
         bt_count: act.bt_count || 0,
@@ -608,16 +674,16 @@ function renderVerdict() {
         location_lat: recip.location_lat || null,
         location_lng: recip.location_lng || null,
         is_secured: recip.is_secured || false,
+        reason: getNotOnboardReason(rid),
+        field_notes: recip.notes || "",
       });
-    } else {
-      notUnderstood++;
     }
   }
 
   statsEl.innerHTML = [
-    { label: "Understood the Product", value: understood, sub: pct(understood, total) + "% of " + total + " non-onboarded" },
-    { label: "Did Not Understand", value: notUnderstood, sub: "Passive or cycling only" },
-    { label: "Revisit Targets", value: revisitTargets.length, sub: "Worth a second visit" },
+    { label: "T1 Strong Signal", value: t1Count, sub: "P2P, Card, ZCE (cash exchange)" },
+    { label: "T2 Moderate Signal", value: t2Count, sub: "Bank Transfer only" },
+    { label: "Revisit Targets (T1+T2)", value: revisitTargets.length, sub: pct(revisitTargets.length, total) + "% of " + total + " non-onboarded" },
   ].map(c => `<div class="stat-box">
     <div class="stat-label">${c.label}</div>
     <div class="stat-value">${c.value}</div>
@@ -625,23 +691,24 @@ function renderVerdict() {
   </div>`).join("");
 
   // Signal bars
-  if (signalsEl && understood > 0) {
+  const signalTotal = t1Count + t2Count;
+  if (signalsEl && signalTotal > 0) {
     const actionLabels = {
-      cn_send: { label: "Sent Cash Note (P2P)", cls: "fill-cn" },
-      card_spend: { label: "Card Purchase", cls: "fill-card" },
-      bank_transfer: { label: "Bank Transfer", cls: "fill-bt" },
-      zce_order: { label: "ZCE Order", cls: "fill-zce" },
+      cn_send: { label: "Sent Cash Note (P2P)", cls: "fill-cn", tier: "T1" },
+      card_spend: { label: "Card Purchase", cls: "fill-card", tier: "T1" },
+      zce_order: { label: "ZCE Order (cash exchange)", cls: "fill-zce", tier: "T1" },
+      bank_transfer: { label: "Bank Transfer", cls: "fill-bt", tier: "T2" },
     };
     const maxCount = Math.max(...Object.values(actionCounts), 1);
 
     signalsEl.innerHTML = `<div class="signal-bars">${
-      Object.entries(actionCounts).map(([key, count]) => {
-        const info = actionLabels[key];
+      Object.entries(actionLabels).map(([key, info]) => {
+        const count = actionCounts[key] || 0;
         const widthPct = Math.max((count / maxCount) * 100, count > 0 ? 8 : 0);
         return `<div class="signal-bar">
-          <span class="signal-bar-label">${info.label}</span>
+          <span class="signal-bar-label">${info.label} <span class="${TIER_BADGES[info.tier]}" style="font-size:0.6rem;padding:0.1rem 0.3rem;">${info.tier}</span></span>
           <div class="signal-bar-track">
-            <div class="signal-bar-fill ${info.cls}" style="width:${widthPct}%">${count} of ${understood}</div>
+            <div class="signal-bar-fill ${info.cls}" style="width:${widthPct}%">${count} of ${signalTotal}</div>
           </div>
         </div>`;
       }).join("")
@@ -653,7 +720,7 @@ function renderVerdict() {
   if (headEl && bodyEl) {
     if (revisitTargets.length === 0) {
       headEl.innerHTML = "";
-      bodyEl.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-secondary);padding:2rem;">No revisit targets found</td></tr>';
+      bodyEl.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text-secondary);padding:2rem;">No revisit targets found</td></tr>';
       return;
     }
 
@@ -673,7 +740,7 @@ function renderVerdict() {
       }
     }
 
-    const cols = ["Recipient", "Ambassador", "Business Name", "Location", "Demo Date", "Actions", "Total Txns", "Secured", "Verdict"];
+    const cols = ["Recipient", "Ambassador", "Business Name", "Location", "Demo Date", "Actions", "Tier", "Total Txns", "Secured", "Reason", "Notes"];
     headEl.innerHTML = cols.map(c => `<th>${c}</th>`).join("");
 
     bodyEl.innerHTML = revisitTargets.map(r => {
@@ -691,6 +758,13 @@ function renderVerdict() {
       const securedBadge = r.is_secured
         ? '<span style="color:var(--green);font-weight:600;">&#10003;</span>'
         : '<span style="color:var(--text-secondary);">\u2014</span>';
+      const tierBadge = `<span class="${TIER_BADGES[r.tier]}">${r.tierLabel}</span>`;
+      const reasonCell = r.reason
+        ? `<span style="font-size:0.72rem;color:var(--text-secondary);white-space:normal;max-width:120px;display:inline-block;">${r.reason}</span>`
+        : '\u2014';
+      const notesCell = r.field_notes
+        ? `<span style="font-size:0.7rem;color:var(--text-secondary);white-space:normal;max-width:150px;display:inline-block;" title="${r.field_notes.replace(/"/g, '&quot;')}">${r.field_notes.length > 40 ? r.field_notes.substring(0, 40) + '\u2026' : r.field_notes}</span>`
+        : '\u2014';
       return `<tr>
         <td><span title="${r.recipient_id}">${r.recipient_name}</span>${phoneLine}</td>
         <td>${r.ambassador_name}</td>
@@ -698,9 +772,11 @@ function renderVerdict() {
         <td>${locationCell}</td>
         <td>${r.date}</td>
         <td>${actionBadges}</td>
+        <td>${tierBadge}</td>
         <td>${totalTxns}</td>
         <td style="text-align:center;">${securedBadge}</td>
-        <td><span class="badge-understood">Revisit</span></td>
+        <td>${reasonCell}</td>
+        <td>${notesCell}</td>
       </tr>`;
     }).join("");
   }
@@ -720,7 +796,7 @@ function renderTimingCard() {
   // Inline definition
   if (defEl) {
     defEl.innerHTML = `<div class="inline-definition">
-      <strong>What&rsquo;s a qualifying action?</strong> Sending a cash note to someone (not the ambassador), making a card purchase, bank transfer, or ZCE order. Receiving money or sending it back to the ambassador doesn&rsquo;t count.
+      <strong>What&rsquo;s a qualifying action?</strong> Sending a cash note to someone (not the ambassador), making a card purchase, bank transfer, or ZCE order (cash exchange). Receiving money or sending it back to the ambassador doesn&rsquo;t count.
     </div>`;
   }
 
@@ -785,6 +861,74 @@ function renderTimingCard() {
         </div>`;
       }).join("")
     }</div>`;
+  }
+
+  // Repeat session analysis (requires all_activity_timestamps data)
+  if (distEl && IDX.allTimestamps.size > 0) {
+    let singleSession = 0, sameDayRepeat = 0, nextDayReturn = 0, multiDay = 0;
+    const engagedIds = [];
+
+    for (const [rid, timestamps] of IDX.allTimestamps) {
+      if (timestamps.length === 0) continue;
+      engagedIds.push(rid);
+
+      // Sort by hours_after_demo
+      const sorted = [...timestamps].sort((a, b) => a.hours_after_demo - b.hours_after_demo);
+
+      // Count distinct calendar days
+      const days = new Set(sorted.map(t => Math.floor(t.hours_after_demo / 24)));
+      const distinctDays = days.size;
+
+      // Count sessions (>2h gap = new session)
+      let sessions = 1;
+      for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i].hours_after_demo - sorted[i - 1].hours_after_demo > 2) sessions++;
+      }
+
+      if (distinctDays >= 3) multiDay++;
+      else if (distinctDays >= 2) nextDayReturn++;
+      else if (sessions >= 2) sameDayRepeat++;
+      else singleSession++;
+    }
+
+    const engagedTotal = engagedIds.length;
+    if (engagedTotal > 0) {
+      const repeatBuckets = [
+        { label: "Single session only", count: singleSession, cls: "fill-cn" },
+        { label: "Same-day repeat (2+ sessions)", count: sameDayRepeat, cls: "fill-bt" },
+        { label: "Next-day return (2 days)", count: nextDayReturn, cls: "fill-card" },
+        { label: "Multi-day (3+ days)", count: multiDay, cls: "fill-zce" },
+      ];
+      const maxR = Math.max(...repeatBuckets.map(b => b.count), 1);
+
+      distEl.innerHTML += `
+        <div style="margin-top:1.5rem;">
+          <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.5rem;">Repeat Engagement</div>
+          <div class="stat-grid" style="margin-bottom:0.75rem;">
+            <div class="stat-box">
+              <div class="stat-label">Return Rate</div>
+              <div class="stat-value">${pct(sameDayRepeat + nextDayReturn + multiDay, engagedTotal)}%</div>
+              <div class="stat-sub">${sameDayRepeat + nextDayReturn + multiDay} of ${engagedTotal} came back</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Next-Day+ Returns</div>
+              <div class="stat-value">${nextDayReturn + multiDay}</div>
+              <div class="stat-sub">${pct(nextDayReturn + multiDay, engagedTotal)}% returned next day</div>
+            </div>
+          </div>
+          <div class="signal-bars">${
+            repeatBuckets.map(b => {
+              const widthPct = Math.max((b.count / maxR) * 100, b.count > 0 ? 8 : 0);
+              return `<div class="signal-bar">
+                <span class="signal-bar-label">${b.label}</span>
+                <div class="signal-bar-track">
+                  <div class="signal-bar-fill ${b.cls}" style="width:${widthPct}%">${b.count} of ${engagedTotal}</div>
+                </div>
+              </div>`;
+            }).join("")
+          }</div>
+        </div>`;
+    }
   }
 
   // Recommendation in hours
@@ -883,7 +1027,9 @@ const AMB_COLUMNS = [
   { key: "total_given", label: "$ Given", numeric: true },
   { key: "onboarded_count", label: "Onboarded", numeric: true },
   { key: "conversion_rate", label: "Conv. %", numeric: true },
-  { key: "understood_count", label: "Understood", numeric: true },
+  { key: "t1_count", label: "T1", numeric: true },
+  { key: "t2_count", label: "T2", numeric: true },
+  { key: "signal_count", label: "Signal (T1+T2)", numeric: true },
 ];
 
 function renderAmbassadorTable() {
@@ -891,20 +1037,22 @@ function renderAmbassadorTable() {
   const bodyEl = document.getElementById("ambassador-table-body");
   if (!headEl || !bodyEl) return;
 
-  // Enrich ambassador data with "understood" counts
+  // Enrich ambassador data with tier counts
   const rows = IDX.ambassadors.map(a => {
-    let understoodCount = 0;
+    let t1 = 0, t2 = 0;
     for (const [rid, recip] of IDX.recipients) {
       if (recip.ambassador_id === a.ambassador_id) {
-        if (scoreRecipient(rid).understood) understoodCount++;
+        const score = scoreRecipient(rid);
+        if (score.tier === "T1") t1++;
+        if (score.tier === "T2") t2++;
       }
     }
-    return { ...a, understood_count: understoodCount };
+    return { ...a, t1_count: t1, t2_count: t2, signal_count: t1 + t2 };
   });
 
   if (rows.length === 0) {
     headEl.innerHTML = "";
-    bodyEl.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:2rem;">No ambassador data</td></tr>';
+    bodyEl.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-secondary);padding:2rem;">No ambassador data</td></tr>';
     return;
   }
 
@@ -929,7 +1077,9 @@ function renderAmbassadorTable() {
     <td>${fmtDollar(r.total_given)}</td>
     <td>${r.onboarded_count}</td>
     <td>${r.conversion_rate}%</td>
-    <td>${r.understood_count}</td>
+    <td><span class="badge-t1">${r.t1_count}</span></td>
+    <td><span class="badge-t2">${r.t2_count}</span></td>
+    <td>${r.signal_count}</td>
   </tr>`).join("");
 
   // Sort click handler
@@ -956,10 +1106,13 @@ function renderExecutiveSummary() {
   const nonOnboarded = getNonOnboarded();
   const nonOnboardedTotal = nonOnboarded.length;
 
-  // Count understood
-  let understood = 0;
+  // Count by tier
+  let t1Count = 0, t2Count = 0, understood = 0;
   for (const [rid] of nonOnboarded) {
-    if (scoreRecipient(rid).understood) understood++;
+    const score = scoreRecipient(rid);
+    if (score.tier === "T1") t1Count++;
+    if (score.tier === "T2") t2Count++;
+    if (score.understood) understood++;
   }
 
   // Brand recall (from detailed data if available)
@@ -1008,7 +1161,7 @@ function renderExecutiveSummary() {
 
   const bullets = [];
 
-  bullets.push(`<strong>${understood} of ${nonOnboardedTotal}</strong> non-onboarded demo recipients (${pct(understood, nonOnboardedTotal)}%) used at least one Zar feature beyond receiving money.`);
+  bullets.push(`<strong>${understood} of ${nonOnboardedTotal}</strong> non-onboarded demo recipients (${pct(understood, nonOnboardedTotal)}%) showed product engagement: <strong>${t1Count} T1</strong> (P2P, card, ZCE) + <strong>${t2Count} T2</strong> (bank transfer).`);
 
   if (hasDetailed) {
     bullets.push(`<strong>${pct(brandRecallCount, nonOnboardedTotal)}%</strong> showed brand recall &mdash; they opened the app on their own after the ambassador left (2+ hours later).`);
@@ -1031,6 +1184,117 @@ function renderExecutiveSummary() {
 }
 
 // ---------------------------------------------------------------------------
+// EXP-007: Post-Demo Transaction Activity
+// ---------------------------------------------------------------------------
+
+function renderExp007() {
+  const cardEl = document.getElementById("exp007-card");
+  const statsEl = document.getElementById("exp007-stats");
+  const breakdownEl = document.getElementById("exp007-breakdown");
+  const timingEl = document.getElementById("exp007-timing");
+  if (!cardEl || !statsEl) return;
+
+  const txns = RAW.merchant_transactions || [];
+  const ttfx = RAW.time_to_first_tx || [];
+  if (txns.length === 0 && ttfx.length === 0) return;
+
+  cardEl.style.display = "";
+
+  // Aggregate by type
+  const byType = {};
+  const recipientSet = new Set();
+  for (const tx of txns) {
+    recipientSet.add(tx.recipient_id);
+    if (!byType[tx.tx_type]) byType[tx.tx_type] = { count: 0, volume: 0, recipients: new Set() };
+    byType[tx.tx_type].count += (tx.tx_count || 0);
+    byType[tx.tx_type].volume += (tx.tx_volume || 0);
+    byType[tx.tx_type].recipients.add(tx.recipient_id);
+  }
+
+  const totalRecipients = IDX.recipients.size;
+  const activeRecipients = recipientSet.size;
+  const totalTxns = Object.values(byType).reduce((s, t) => s + t.count, 0);
+  const totalVolume = Object.values(byType).reduce((s, t) => s + t.volume, 0);
+
+  statsEl.innerHTML = [
+    { label: "Active Recipients (7d)", value: activeRecipients, sub: pct(activeRecipients, totalRecipients) + "% of " + totalRecipients },
+    { label: "Total Transactions", value: totalTxns },
+    { label: "Total Volume", value: fmtDollar(totalVolume) },
+    { label: "Avg Txns per Active", value: activeRecipients > 0 ? (totalTxns / activeRecipients).toFixed(1) : "0" },
+  ].map(c => `<div class="stat-box">
+    <div class="stat-label">${c.label}</div>
+    <div class="stat-value">${c.value}</div>
+    ${c.sub ? `<div class="stat-sub">${c.sub}</div>` : ""}
+  </div>`).join("");
+
+  // Type breakdown bars
+  if (breakdownEl && Object.keys(byType).length > 0) {
+    const typeLabels = {
+      cn_send: { label: "Cash Note (P2P)", cls: "fill-cn" },
+      card_spend: { label: "Card Spend", cls: "fill-card" },
+      bank_transfer: { label: "Bank Transfer", cls: "fill-bt" },
+      zce_order: { label: "ZCE Order", cls: "fill-zce" },
+    };
+    const maxCount = Math.max(...Object.values(byType).map(t => t.count), 1);
+
+    breakdownEl.innerHTML = `<div class="signal-bars" style="margin-top:1rem;">${
+      Object.entries(byType).map(([type, data]) => {
+        const info = typeLabels[type] || { label: type, cls: "" };
+        const widthPct = Math.max((data.count / maxCount) * 100, data.count > 0 ? 8 : 0);
+        return `<div class="signal-bar">
+          <span class="signal-bar-label">${info.label}</span>
+          <div class="signal-bar-track">
+            <div class="signal-bar-fill ${info.cls}" style="width:${widthPct}%">${data.count} txns (${fmtDollar(data.volume)})</div>
+          </div>
+        </div>`;
+      }).join("")
+    }</div>`;
+  }
+
+  // Time to first tx distribution
+  if (timingEl && ttfx.length > 0) {
+    const hours = ttfx.filter(t => t.hours_to_first_tx != null).map(t => t.hours_to_first_tx);
+    const noTx = ttfx.filter(t => t.hours_to_first_tx == null).length;
+
+    if (hours.length > 0) {
+      const sorted = [...hours].sort((a, b) => a - b);
+      const median = sorted[Math.floor(sorted.length / 2)];
+      const within24h = hours.filter(h => h <= 24).length;
+
+      const buckets = [
+        { label: "Under 1 hour", count: hours.filter(h => h <= 1).length, cls: "fill-cn" },
+        { label: "1\u20136 hours", count: hours.filter(h => h > 1 && h <= 6).length, cls: "fill-bt" },
+        { label: "6\u201324 hours", count: hours.filter(h => h > 6 && h <= 24).length, cls: "fill-card" },
+        { label: "1\u20137 days", count: hours.filter(h => h > 24).length, cls: "fill-zce" },
+        { label: "No transaction", count: noTx, cls: "" },
+      ];
+      const maxB = Math.max(...buckets.map(b => b.count), 1);
+
+      timingEl.innerHTML = `
+        <div style="margin-top:1rem;font-size:0.85rem;color:var(--text-secondary);">
+          <strong>Time to First Transaction:</strong> Median ${fmtHours(median)} &middot;
+          ${pct(within24h, hours.length)}% within 24h &middot;
+          ${noTx} of ${ttfx.length} had no transaction in 7 days
+        </div>
+        <div class="signal-bars" style="margin-top:0.75rem;">${
+          buckets.map(b => {
+            const widthPct = Math.max((b.count / maxB) * 100, b.count > 0 ? 8 : 0);
+            const fillStyle = b.cls
+              ? `class="signal-bar-fill ${b.cls}"`
+              : `class="signal-bar-fill" style="background:var(--text-secondary);"`;
+            return `<div class="signal-bar">
+              <span class="signal-bar-label">${b.label}</span>
+              <div class="signal-bar-track">
+                <div ${fillStyle} style="width:${widthPct}%;${!b.cls ? 'background:var(--text-secondary);' : ''}">${b.count} of ${ttfx.length}</div>
+              </div>
+            </div>`;
+          }).join("")
+        }</div>`;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Init
 // ---------------------------------------------------------------------------
 
@@ -1047,4 +1311,5 @@ function renderExecutiveSummary() {
   renderTimingCard();
   renderAmountCard();
   renderAmbassadorTable();
+  renderExp007();
 })();

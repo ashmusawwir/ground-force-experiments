@@ -1,0 +1,2563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXP-009: Directed Day Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <style>/* EXP-009 Directed Day Dashboard — Zar Theme */
+
+:root {
+    --zar-gold: #B8992E;
+    --zar-gold-light: #CBAF4A;
+    --zar-gold-dark: #9A7E24;
+    --zar-sky-blue: #7BC4E8;
+    --zar-hot-pink: #FF4D9D;
+    --background: #F5F0E8;
+    --card: #FFFFFF;
+    --border: #E8E3DB;
+    --text: #1A1A1A;
+    --text-secondary: #6B6B6B;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --warning: #d97706;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--background);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2rem;
+}
+
+.container { max-width: 1400px; margin: 0 auto; }
+
+h1 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+h2 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+h2 .num {
+    background: linear-gradient(135deg, var(--zar-gold), var(--zar-gold-light));
+    color: white;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+}
+
+/* ── Cards ── */
+
+.card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    margin-bottom: 1.5rem;
+}
+
+.card-full { grid-column: 1 / -1; }
+
+/* ── Stat boxes ── */
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-grid-5 {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+.stat-box {
+    background: var(--background);
+    padding: 1rem;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--zar-gold-dark);
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+
+/* ── Tables ── */
+
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+
+th {
+    padding: 0.75rem;
+    text-align: left;
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+}
+
+td {
+    padding: 0.75rem;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+}
+
+tr:hover td { background: rgba(184, 153, 46, 0.04); }
+
+/* ── Badges ── */
+
+.badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-onboarding { background: rgba(123, 196, 232, 0.2); color: #2980b9; }
+.badge-reactivation { background: rgba(184, 153, 46, 0.15); color: var(--zar-gold-dark); }
+.badge-success { background: rgba(22, 163, 74, 0.15); color: var(--success); }
+.badge-danger { background: rgba(220, 38, 38, 0.15); color: var(--danger); }
+.badge-warning { background: rgba(217, 119, 6, 0.15); color: var(--warning); }
+.badge-pending { background: rgba(107, 107, 107, 0.12); color: var(--text-secondary); }
+.badge-affinity { background: rgba(22, 163, 74, 0.12); color: var(--success); font-size: 0.65rem; margin-left: 4px; }
+.badge-tier1 { background: rgba(22, 163, 74, 0.12); color: var(--success); font-size: 0.65rem; margin-left: 4px; }
+.badge-tier2 { background: rgba(217, 119, 6, 0.12); color: var(--warning); font-size: 0.65rem; margin-left: 4px; }
+
+/* ── Leaflet Map ── */
+
+.map-container {
+    width: 100%;
+    height: 550px;
+    border-radius: 12px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Override Leaflet defaults inside our container */
+.map-container .leaflet-container {
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Custom zone tooltip */
+.zone-tip {
+    background: white !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    padding: 8px 12px !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important;
+    font-size: 0.82rem !important;
+    line-height: 1.5 !important;
+}
+
+.zone-tip::before { border: none !important; }
+
+/* Remove default icon styling from custom markers */
+.dm-icon, .zone-label-icon, .merchant-icon {
+    background: none !important;
+    border: none !important;
+}
+
+/* ── Legend (compact) ── */
+
+.zone-legend {
+    margin-bottom: 0.75rem;
+}
+
+.legend-row {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+
+.legend-item svg { flex-shrink: 0; }
+
+.legend-sep {
+    width: 1px;
+    height: 16px;
+    background: var(--border);
+}
+
+.legend-summary {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* ── Route card ── */
+
+.route-card {
+    background: var(--background);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.route-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.route-ambassador {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.route-meta {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* ── Insight box ── */
+
+.insight {
+    background: linear-gradient(135deg, rgba(184, 153, 46, 0.08), rgba(184, 153, 46, 0.02));
+    border-left: 3px solid var(--zar-gold);
+    padding: 1rem;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    border-radius: 0 12px 12px 0;
+}
+
+.insight strong { color: var(--zar-gold-dark); }
+
+/* ── Zone table color chip ── */
+
+.zone-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 768px) {
+    body { padding: 1rem; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .stat-grid-5 { grid-template-columns: repeat(3, 1fr); }
+    h1 { font-size: 1.5rem; }
+    .map-container { height: 350px; }
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <h1>EXP-009: Directed Day</h1>
+        <div class="subtitle">Structured ambassador task lists — geo-clustered visits with clear objectives</div>
+
+        <!-- Card 1: Pool Overview -->
+        <div class="card card-full" id="card-pool">
+            <h2><span class="num">1</span> Target Pools</h2>
+            <div class="stat-grid stat-grid-5" id="pool-stats"></div>
+            <div id="pool-table-container"></div>
+        </div>
+
+        <!-- Card 2: Zone Map -->
+        <div class="card card-full" id="card-zones">
+            <h2><span class="num">2</span> Geographic Zones</h2>
+            <div class="zone-legend" id="zone-legend"></div>
+            <div class="map-container" id="zone-map"></div>
+            <div id="zone-table-container" style="margin-top: 1rem;"></div>
+        </div>
+
+        <!-- Card 3: Daily Routes -->
+        <div class="card card-full" id="card-routes">
+            <h2><span class="num">3</span> Daily Routes</h2>
+            <div id="routes-container"></div>
+        </div>
+
+        <!-- Card 4: Outcome Tracking -->
+        <div class="card card-full" id="card-outcomes">
+            <h2><span class="num">4</span> Outcome Tracking</h2>
+            <div class="stat-grid" id="outcome-stats"></div>
+            <div id="outcome-table-container"></div>
+            <div class="insight" id="outcome-insight" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>const DATA = {
+  "onboarding_targets": [
+    {
+      "id": "onb_New_karachi_Gernal_S_0",
+      "shop_name": "New karachi Gernal Store",
+      "phone": "",
+      "lat": 24.8602644,
+      "lng": 67.0876035,
+      "decline_reason": "",
+      "ambassador": "Sharoon Sam93"
+    },
+    {
+      "id": "onb_Zeeshan_medical_and__1",
+      "shop_name": "Zeeshan medical and general store",
+      "phone": "",
+      "lat": 24.8602644,
+      "lng": 67.0876035,
+      "decline_reason": "",
+      "ambassador": "Sharoon Sam93"
+    },
+    {
+      "id": "onb_Maqsood_Communicatio_2",
+      "shop_name": "Maqsood Communication",
+      "phone": "",
+      "lat": 24.918055,
+      "lng": 67.1033333,
+      "decline_reason": "",
+      "ambassador": "Zahid Khan"
+    },
+    {
+      "id": "onb_Shehzad_Communicatio_3",
+      "shop_name": "Shehzad Communication",
+      "phone": "923222860219",
+      "lat": 24.8819018,
+      "lng": 67.0657202,
+      "decline_reason": "",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_Xtreme_Communication_4",
+      "shop_name": "Xtreme Communication",
+      "phone": "923313082006",
+      "lat": 24.8818781,
+      "lng": 67.0657194,
+      "decline_reason": "",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_Khan_Brothers_Commun_5",
+      "shop_name": "Khan Brothers Communication",
+      "phone": "923412058194",
+      "lat": 24.8818781,
+      "lng": 67.0657194,
+      "decline_reason": "",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_Mobile_City_Communic_6",
+      "shop_name": "Mobile City Communication",
+      "phone": "",
+      "lat": 24.9444434,
+      "lng": 67.0739899,
+      "decline_reason": "Number Liya hai Bad Mai Call Krta Ga",
+      "ambassador": "Zahid Khan"
+    },
+    {
+      "id": "onb_Books_Town_Toy___Zon_7",
+      "shop_name": "Books Town Toy & Zone",
+      "phone": "",
+      "lat": 24.8156678,
+      "lng": 67.0693582,
+      "decline_reason": "Wants to think about it",
+      "ambassador": "Sharoon Sam93"
+    },
+    {
+      "id": "onb_Exxon_Mobile_Solutio_8",
+      "shop_name": "Exxon Mobile Solution",
+      "phone": "923332060572",
+      "lat": 24.9050025,
+      "lng": 67.0275315,
+      "decline_reason": "",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_Play_Store_9",
+      "shop_name": "Play Store",
+      "phone": "923155887151",
+      "lat": 24.9051738,
+      "lng": 67.0272262,
+      "decline_reason": "",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_Maxx_Communication_10",
+      "shop_name": "Maxx Communication",
+      "phone": "923312400092",
+      "lat": 24.9051738,
+      "lng": 67.0272262,
+      "decline_reason": "",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_Taha_Communication_11",
+      "shop_name": "Taha Communication",
+      "phone": "",
+      "lat": 24.9060096,
+      "lng": 67.0693038,
+      "decline_reason": "",
+      "ambassador": "Zahid Khan"
+    },
+    {
+      "id": "onb_Marshallah_12",
+      "shop_name": "Marshallah",
+      "phone": "",
+      "lat": 24.9662038,
+      "lng": 67.0711046,
+      "decline_reason": "",
+      "ambassador": "Umer Daniyal"
+    },
+    {
+      "id": "onb_MS_Communication_13",
+      "shop_name": "MS Communication",
+      "phone": "923368236989",
+      "lat": 24.9018394,
+      "lng": 67.0814802,
+      "decline_reason": "Wants to think about it",
+      "ambassador": "Zahid Khan"
+    },
+    {
+      "id": "onb_The_Phone_Store_14",
+      "shop_name": "The Phone Store",
+      "phone": "",
+      "lat": 24.8842931,
+      "lng": 67.051733,
+      "decline_reason": "Not interested in dollars",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_LYFE_Pharmacy_15",
+      "shop_name": "LYFE Pharmacy",
+      "phone": "",
+      "lat": 24.8858149,
+      "lng": 67.0794077,
+      "decline_reason": "Wants to think about it",
+      "ambassador": "Zahid Khan"
+    },
+    {
+      "id": "onb_Hafeez_Communication_16",
+      "shop_name": "Hafeez Communication",
+      "phone": "",
+      "lat": 24.9115931,
+      "lng": 67.1254375,
+      "decline_reason": "Wants to think about it",
+      "ambassador": "Arslan Ansari"
+    },
+    {
+      "id": "onb_The_Phone_Store_2_17",
+      "shop_name": "The Phone Store 2",
+      "phone": "",
+      "lat": 24.8847987,
+      "lng": 67.0518481,
+      "decline_reason": "Abhi app ma error hai",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_Najfi_communication_18",
+      "shop_name": "Najfi communication",
+      "phone": "",
+      "lat": 24.9116225,
+      "lng": 67.1254747,
+      "decline_reason": "Wants to think about it",
+      "ambassador": "Arslan Ansari"
+    },
+    {
+      "id": "onb_Saleem_Hair_Cut_19",
+      "shop_name": "Saleem Hair Cut",
+      "phone": "",
+      "lat": 24.8849987,
+      "lng": 67.0517358,
+      "decline_reason": "Only User",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_Meezan_Motors_20",
+      "shop_name": "Meezan Motors",
+      "phone": "",
+      "lat": 24.884221,
+      "lng": 67.0519706,
+      "decline_reason": "Only User",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_Bismillah_Milk_Shop_21",
+      "shop_name": "Bismillah Milk Shop",
+      "phone": "",
+      "lat": 24.884221,
+      "lng": 67.0519706,
+      "decline_reason": "Only User",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_Saleem_Man_Saloon_22",
+      "shop_name": "Saleem Man Saloon",
+      "phone": "",
+      "lat": 24.8842191,
+      "lng": 67.0519727,
+      "decline_reason": "Only User",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_Believe_Medical_Gene_23",
+      "shop_name": "Believe Medical General Store",
+      "phone": "",
+      "lat": 24.8842191,
+      "lng": 67.0519727,
+      "decline_reason": "Only User",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_Anar_Kali_Pan_Mahal_24",
+      "shop_name": "Anar Kali Pan Mahal",
+      "phone": "",
+      "lat": 24.8842191,
+      "lng": 67.0519727,
+      "decline_reason": "Only User",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_Karachi_Communicatio_25",
+      "shop_name": "Karachi Communication",
+      "phone": "",
+      "lat": 24.8720005,
+      "lng": 67.0593142,
+      "decline_reason": "Wants to think about it",
+      "ambassador": "Arslan Ansari"
+    },
+    {
+      "id": "onb_Munna_bhai_Communica_26",
+      "shop_name": "Munna bhai Communication",
+      "phone": "",
+      "lat": 24.8720005,
+      "lng": 67.0593142,
+      "decline_reason": "Abhi original ID card mujood nahi Hai",
+      "ambassador": "Arslan Ansari"
+    },
+    {
+      "id": "onb_Al_Syed_Communicatio_27",
+      "shop_name": "Al Syed Communication",
+      "phone": "923082466280",
+      "lat": 24.921879,
+      "lng": 67.0925799,
+      "decline_reason": "",
+      "ambassador": "Zahid Khan"
+    },
+    {
+      "id": "onb_Well_at_Mobile_Point_28",
+      "shop_name": "Well at Mobile Point",
+      "phone": "923102230703",
+      "lat": 24.9182568,
+      "lng": 67.0756356,
+      "decline_reason": "",
+      "ambassador": "Zahid Khan"
+    },
+    {
+      "id": "onb_Haroon_Communication_29",
+      "shop_name": "Haroon Communication",
+      "phone": "923173452795",
+      "lat": 24.8976213,
+      "lng": 67.0356422,
+      "decline_reason": "Not interested in dollars",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_Arshad_Communication_30",
+      "shop_name": "Arshad Communication",
+      "phone": "923472510912",
+      "lat": 24.8976213,
+      "lng": 67.0356422,
+      "decline_reason": "Only User",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_Basit_Taj_Communicat_31",
+      "shop_name": "Basit Taj Communication",
+      "phone": "923488368440",
+      "lat": 24.8976213,
+      "lng": 67.0356422,
+      "decline_reason": "Only User",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_Star_Communication_32",
+      "shop_name": "Star Communication",
+      "phone": "923002080768",
+      "lat": 24.937437,
+      "lng": 67.0407731,
+      "decline_reason": "",
+      "ambassador": "Zahid Khan"
+    },
+    {
+      "id": "onb_Nicotine_Mart_33",
+      "shop_name": "Nicotine Mart",
+      "phone": "923170241230",
+      "lat": 24.9224455,
+      "lng": 67.0888016,
+      "decline_reason": "User account banaya hai",
+      "ambassador": "Arslan Ansari"
+    },
+    {
+      "id": "onb_H___A_sports_34",
+      "shop_name": "H & A sports",
+      "phone": "923123869576",
+      "lat": 24.9085369,
+      "lng": 67.1323981,
+      "decline_reason": "Wants to think about it",
+      "ambassador": "Arslan Ansari"
+    },
+    {
+      "id": "onb_The_Phone_Store_2_35",
+      "shop_name": "The Phone Store 2",
+      "phone": "923243271500",
+      "lat": 24.9348865,
+      "lng": 67.0093149,
+      "decline_reason": "Only User",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_Furqan_Print_36",
+      "shop_name": "Furqan Print",
+      "phone": "923333896191",
+      "lat": 24.9348865,
+      "lng": 67.0093165,
+      "decline_reason": "System error",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_Bilal_Bakery_37",
+      "shop_name": "Bilal Bakery",
+      "phone": "923182468127",
+      "lat": 24.9348865,
+      "lng": 67.0093165,
+      "decline_reason": "Only User",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_Rajput_Dairy_38",
+      "shop_name": "Rajput Dairy",
+      "phone": "923400010815",
+      "lat": 24.8796785,
+      "lng": 67.0208142,
+      "decline_reason": "Only User",
+      "ambassador": "Afsar Khan"
+    },
+    {
+      "id": "onb_Star_39",
+      "shop_name": "Star",
+      "phone": "923213422329",
+      "lat": 24.8796785,
+      "lng": 67.0208142,
+      "decline_reason": "Only User",
+      "ambassador": "Afsar Khan"
+    }
+  ],
+  "reactivation_targets": [
+    {
+      "merchant_id": "019befa2-fc23-7413-8634-c91746050116",
+      "business_name": "Abbasi Communcation",
+      "latitude": "24.96389275492146",
+      "longitude": "67.05415450036526",
+      "phone_number": "",
+      "onboarding_date": "2026-01-28",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "f4973be2-13d0-40e5-bf95-4c470da38bfd",
+      "business_name": "Adan ",
+      "latitude": "24.890875995308818",
+      "longitude": "67.03868117183447",
+      "phone_number": "",
+      "onboarding_date": "2025-11-06",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019b268d-a43f-7e63-9852-16d86c6e5619",
+      "business_name": "Agha Communication",
+      "latitude": "24.8618020522513",
+      "longitude": "67.06246197223663",
+      "phone_number": "",
+      "onboarding_date": "2026-01-19",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019c46c7-d4e0-71b1-ba86-aa3295a53118",
+      "business_name": "Agha Communication ",
+      "latitude": "24.87191277956729",
+      "longitude": "67.059217505157",
+      "phone_number": "",
+      "onboarding_date": "2026-02-10",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019c47c6-7007-791b-9403-12152080034b",
+      "business_name": "Al Furqan Photocopy",
+      "latitude": "24.8842192639498",
+      "longitude": "67.05197419971228",
+      "phone_number": "",
+      "onboarding_date": "2026-02-11",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "0da6387c-3fdd-4322-be0e-7ae806fac005",
+      "business_name": "Al Hammad Communication ",
+      "latitude": "24.9391208",
+      "longitude": "67.0587259",
+      "phone_number": "",
+      "onboarding_date": "2025-11-17",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "b8a7c103-2421-4495-b13f-da90b2072545",
+      "business_name": "Al Haq Communication ",
+      "latitude": "24.814401603318306",
+      "longitude": "67.03629333525896",
+      "phone_number": "",
+      "onboarding_date": "2025-10-31",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "9be5cd5e-fedc-4f98-8a95-ad7d5dfc67bc",
+      "business_name": "Al jadaf communication",
+      "latitude": "24.788038231808557",
+      "longitude": "67.05794010311365",
+      "phone_number": "",
+      "onboarding_date": "2025-11-10",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019c1de6-2dc7-7733-9f4f-8b1b2ee6557c",
+      "business_name": "Al Rehman Communication",
+      "latitude": "24.86789420061297",
+      "longitude": "67.19406958669424",
+      "phone_number": "",
+      "onboarding_date": "2026-02-02",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "baaedca5-bd62-4204-8470-9d75ad1f1078",
+      "business_name": "Al Shareef communication ",
+      "latitude": "24.81550354388616",
+      "longitude": "67.07079995423555",
+      "phone_number": "",
+      "onboarding_date": "2025-11-04",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "401cddbb-e572-442e-a173-393b54cb8ade",
+      "business_name": "Alvi Enterprise ",
+      "latitude": "24.810167516270823",
+      "longitude": "67.07014985382557",
+      "phone_number": "",
+      "onboarding_date": "2025-11-11",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "47239bbc-141b-4a58-8b13-f2339917cb22",
+      "business_name": "A&N Communication ",
+      "latitude": "24.830560286088687",
+      "longitude": "67.04330630600452",
+      "phone_number": "",
+      "onboarding_date": "2025-11-03",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "0210d742-6c16-49d8-9516-6338597b2877",
+      "business_name": "Asim Power Copy",
+      "latitude": "24.9138367",
+      "longitude": "67.10168",
+      "phone_number": "",
+      "onboarding_date": "2025-11-12",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019c2349-7228-7dbb-baba-1ec143368f8e",
+      "business_name": "Azeem Communication",
+      "latitude": "24.87249649839551",
+      "longitude": "67.06123620271683",
+      "phone_number": "",
+      "onboarding_date": "2026-02-03",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "1e9b8807-2bd3-497b-8521-58b30b59c873",
+      "business_name": "Bin Ibrahim ",
+      "latitude": "24.88400788016357",
+      "longitude": "67.08398468792439",
+      "phone_number": "",
+      "onboarding_date": "2025-11-11",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019c1e31-5757-733e-b054-7dc4fde97f24",
+      "business_name": "Bismillah Super Store ",
+      "latitude": "24.86712946645453",
+      "longitude": "67.19501003623009",
+      "phone_number": "",
+      "onboarding_date": "2026-02-02",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "10de44f5-d71b-49ac-a8ec-22a183f4536f",
+      "business_name": "Click in 2 communication ",
+      "latitude": "24.808371036437",
+      "longitude": "67.06954602152109",
+      "phone_number": "",
+      "onboarding_date": "2025-11-06",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "cc190768-9de1-49fb-9ca7-a4f46bf6909c",
+      "business_name": "Cosmic Computers",
+      "latitude": "24.813193748340282",
+      "longitude": "67.04876326024532",
+      "phone_number": "",
+      "onboarding_date": "2025-11-27",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "4f3a2562-c31d-47cd-b7b4-35b971caaf56",
+      "business_name": "Daniyal communication ",
+      "latitude": "24.905345476108266",
+      "longitude": "67.07824476063251",
+      "phone_number": "",
+      "onboarding_date": "2025-11-01",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "05f1885a-600f-4bc2-b0bc-5f19384e5fe7",
+      "business_name": "Faisal Communication ",
+      "latitude": "24.883950091727375",
+      "longitude": "67.08408426493406",
+      "phone_number": "",
+      "onboarding_date": "2025-11-11",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019c4246-5e15-737a-b119-3f2e724936b6",
+      "business_name": "Fazz Communication",
+      "latitude": "24.90922782184973",
+      "longitude": "67.12181020528078",
+      "phone_number": "",
+      "onboarding_date": "2026-02-09",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "2dba840e-2e29-40d6-9781-42d69aaf7f86",
+      "business_name": "Five communication ",
+      "latitude": "24.8971517",
+      "longitude": "67.0687715",
+      "phone_number": "",
+      "onboarding_date": "2025-11-06",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019b026a-2206-7af6-bf91-2a98150779d9",
+      "business_name": "Ghazi 2 Communication ",
+      "latitude": "24.89888385320569",
+      "longitude": "67.1047842130065",
+      "phone_number": "",
+      "onboarding_date": "2025-12-09",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "bb391e27-d30a-4282-abdc-19155dce90e6",
+      "business_name": "Ghulam Mustafa Communication ",
+      "latitude": "24.82097719178885",
+      "longitude": "67.04638883471489",
+      "phone_number": "",
+      "onboarding_date": "2025-11-03",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019c4c09-fd17-725f-ab6b-35aad56af076",
+      "business_name": "Hafeez Communication",
+      "latitude": "24.91163890779938",
+      "longitude": "67.12539162486792",
+      "phone_number": "",
+      "onboarding_date": "2026-02-11",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "372c290e-9817-4a1b-b1bf-baa3f9a72caa",
+      "business_name": "Hameed & Sons ",
+      "latitude": "24.861211590397826",
+      "longitude": "67.05097440630198",
+      "phone_number": "",
+      "onboarding_date": "2025-10-30",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "b6fac24a-15a5-4052-816a-62fa84e88184",
+      "business_name": "H&H Communication ",
+      "latitude": "24.830873999467933",
+      "longitude": "67.04192731529474",
+      "phone_number": "",
+      "onboarding_date": "2025-11-03",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "f19914de-68e0-4713-b42f-3c3606af7e68",
+      "business_name": "Hural Associates",
+      "latitude": "24.851023626091102",
+      "longitude": "67.06627070903778",
+      "phone_number": "",
+      "onboarding_date": "2025-11-17",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019bfeb3-d6f5-7401-b08d-44ee2e5c153f",
+      "business_name": "Hyderi Medicos ",
+      "latitude": "24.93719096744306",
+      "longitude": "67.0328876003623",
+      "phone_number": "",
+      "onboarding_date": "2026-01-23",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "bb7916e3-fa2f-4afe-9c29-dd32a91cd64b",
+      "business_name": "Ibrahim Communication ",
+      "latitude": "24.9084598",
+      "longitude": "67.1311398",
+      "phone_number": "",
+      "onboarding_date": "2025-11-10",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019b02c5-48fd-7e1a-81a5-240bf6f8b0c1",
+      "business_name": "Ideal mobile Store ",
+      "latitude": "24.902965285679887",
+      "longitude": "67.11424000561237",
+      "phone_number": "",
+      "onboarding_date": "2025-12-09",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "c045089c-2aa9-44a1-a66d-f1bafcf05d26",
+      "business_name": "Iqbal Communication ",
+      "latitude": "24.89767560652684",
+      "longitude": "67.01924990862608",
+      "phone_number": "",
+      "onboarding_date": "2025-11-07",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019c2932-2f71-7d9e-9d1c-dd6c0b353445",
+      "business_name": "Jalili Khanzada Communication",
+      "latitude": "24.91110037824815",
+      "longitude": "67.12345775216818",
+      "phone_number": "",
+      "onboarding_date": "2026-02-04",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "165d6d26-c5bc-4a8c-8b16-9b3bc931a3fb",
+      "business_name": "Madina Statonary & Communication ",
+      "latitude": "24.9473378",
+      "longitude": "67.0920728",
+      "phone_number": "",
+      "onboarding_date": "2025-11-13",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019b17be-1ba2-76ec-a94b-92e8cd7b88dd",
+      "business_name": "Mahi Fragrance & Communication ",
+      "latitude": "24.947018277861694",
+      "longitude": "67.05345008522272",
+      "phone_number": "",
+      "onboarding_date": "2025-12-13",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019abace-3649-7cf6-be07-3d535bb4997c",
+      "business_name": "Motive Store",
+      "latitude": "24.882652277989415",
+      "longitude": "67.06608965992928",
+      "phone_number": "",
+      "onboarding_date": "2025-11-25",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "3d8a6989-53ea-4b81-bbe1-ca27eb7ac0e5",
+      "business_name": "NOOR PHARMA",
+      "latitude": "24.86946046117616",
+      "longitude": "67.06057000905275",
+      "phone_number": "",
+      "onboarding_date": "2026-02-03",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019c09e3-a4e2-7f23-a08b-f897149e28f6",
+      "business_name": "One Point Communication ",
+      "latitude": "24.9288280465392",
+      "longitude": "67.0754512399435",
+      "phone_number": "",
+      "onboarding_date": "2026-01-29",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "4af3e5fb-0ba4-4e6c-b2de-39ebe864de07",
+      "business_name": "Pappa communication ",
+      "latitude": "24.82586818319624",
+      "longitude": "67.04449016600847",
+      "phone_number": "",
+      "onboarding_date": "2025-11-05",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019be59b-f2e8-7d89-89e6-56e2413ae136",
+      "business_name": "Prince Communication ",
+      "latitude": "24.88442304366027",
+      "longitude": "67.0341257750988",
+      "phone_number": "",
+      "onboarding_date": "2026-01-22",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "52546bd6-2fb1-41cc-92ff-ae7c60ac4d17",
+      "business_name": "Saima PCO",
+      "latitude": "24.90346401342465",
+      "longitude": "67.07570135593414",
+      "phone_number": "",
+      "onboarding_date": "2025-11-01",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019c2960-1633-7d6e-a24e-13fa0f956f3b",
+      "business_name": "Saleem Store ",
+      "latitude": "24.93392910967737",
+      "longitude": "67.02964246273041",
+      "phone_number": "",
+      "onboarding_date": "2026-02-04",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019b0747-15b8-7849-8eb6-f418917803a1",
+      "business_name": "Seven Seas Traders ",
+      "latitude": "24.877454195047658",
+      "longitude": "67.03443389385939",
+      "phone_number": "",
+      "onboarding_date": "2025-12-10",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "0f6063c9-bb16-4552-9de9-a9cd6546dd34",
+      "business_name": "Shahzaib Communication ",
+      "latitude": "24.92579643499769",
+      "longitude": "67.03409694135189",
+      "phone_number": "",
+      "onboarding_date": "2025-11-07",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "5cdd9d62-71a1-4e9d-bba4-394aa0c45f14",
+      "business_name": "SK communication ",
+      "latitude": "24.807823231205692",
+      "longitude": "67.06181488931179",
+      "phone_number": "",
+      "onboarding_date": "2025-11-07",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019be593-5df2-7cac-8ab9-14743fd162f2",
+      "business_name": "SMART MOBILE ZONE",
+      "latitude": "24.93504549013966",
+      "longitude": "67.13581033051014",
+      "phone_number": "",
+      "onboarding_date": "2026-01-22",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "1ea70963-1178-44a9-bd81-2c9b9cb56bd1",
+      "business_name": "S,R communication ",
+      "latitude": "24.90233153361365",
+      "longitude": "67.08525270223618",
+      "phone_number": "",
+      "onboarding_date": "2025-11-05",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "71aa8385-c934-43e9-be86-ca25ec680126",
+      "business_name": "Suleman Communication",
+      "latitude": "24.8711966",
+      "longitude": "67.058938",
+      "phone_number": "",
+      "onboarding_date": "2025-10-28",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019c23d2-8e82-74d5-8526-8d6026f8b69d",
+      "business_name": "Taha Communication",
+      "latitude": "24.90603820720437",
+      "longitude": "67.06935156136751",
+      "phone_number": "",
+      "onboarding_date": "2026-02-04",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019b1266-65fd-75fa-b7ee-0743afa99005",
+      "business_name": "The ACS 2 Communication ",
+      "latitude": "24.807890185308263",
+      "longitude": "67.06188697367907",
+      "phone_number": "",
+      "onboarding_date": "2025-12-12",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "c4f85082-86d6-424e-8e02-ad50ef71d6c0",
+      "business_name": "The ACS smart communication",
+      "latitude": "24.800010960858415",
+      "longitude": "67.06970259547234",
+      "phone_number": "",
+      "onboarding_date": "2025-11-10",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019c139e-f3e7-7e6a-8fa4-e1cf26df431b",
+      "business_name": "U.D Communication ",
+      "latitude": "24.96956346789353",
+      "longitude": "67.06580299884081",
+      "phone_number": "",
+      "onboarding_date": "2026-01-31",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "019abab5-bb3d-7fb8-8359-0009148d4b05",
+      "business_name": "Vap\u00e9ra",
+      "latitude": "24.882260528393445",
+      "longitude": "67.06640146672726",
+      "phone_number": "",
+      "onboarding_date": "2025-11-25",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    },
+    {
+      "merchant_id": "7c6569e9-b8db-4ac8-b3c2-4c0edb20d2f4",
+      "business_name": "Zain communication ",
+      "latitude": "24.801433817416243",
+      "longitude": "67.0370664820075",
+      "phone_number": "",
+      "onboarding_date": "2025-11-13",
+      "last_activity_date": null,
+      "days_since_last_activity": null,
+      "lifetime_tx_count": 0
+    }
+  ],
+  "visited_ids": [],
+  "routes": [
+    {
+      "ambassador": "Arslan Ansari",
+      "date": "2026-02-13",
+      "zone_ids": [
+        4,
+        2,
+        6
+      ],
+      "tasks": [
+        {
+          "merchant_id": "onb_H___A_sports_34",
+          "type": "onboarding",
+          "shop_name": "H & A sports",
+          "lat": 24.9085369,
+          "lng": 67.1323981,
+          "phone": "923123869576",
+          "objective": "Onboarding revisit: reference previous demo. address concern: 'Wants to think about it'. complete onboarding on the spot.",
+          "zone_id": 4,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "onb_Nicotine_Mart_33",
+          "type": "onboarding",
+          "shop_name": "Nicotine Mart",
+          "lat": 24.9224455,
+          "lng": 67.0888016,
+          "phone": "923170241230",
+          "objective": "Onboarding revisit: reference previous demo. address concern: 'User account banaya hai'. complete onboarding on the spot.",
+          "zone_id": 27,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "onb_Hafeez_Communication_16",
+          "type": "onboarding",
+          "shop_name": "Hafeez Communication",
+          "lat": 24.9115931,
+          "lng": 67.1254375,
+          "phone": "",
+          "objective": "Onboarding revisit: reference previous demo. address concern: 'Wants to think about it'. complete onboarding on the spot.",
+          "zone_id": 4,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "onb_Karachi_Communicatio_25",
+          "type": "onboarding",
+          "shop_name": "Karachi Communication",
+          "lat": 24.8720005,
+          "lng": 67.0593142,
+          "phone": "",
+          "objective": "Onboarding revisit: reference previous demo. address concern: 'Wants to think about it'. complete onboarding on the spot.",
+          "zone_id": 13,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "onb_Munna_bhai_Communica_26",
+          "type": "onboarding",
+          "shop_name": "Munna bhai Communication",
+          "lat": 24.8720005,
+          "lng": 67.0593142,
+          "phone": "",
+          "objective": "Onboarding revisit: reference previous demo. address concern: 'Abhi original ID card mujood nahi Hai'. complete onboarding on the spot.",
+          "zone_id": 13,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "onb_Najfi_communication_18",
+          "type": "onboarding",
+          "shop_name": "Najfi communication",
+          "lat": 24.9116225,
+          "lng": 67.1254747,
+          "phone": "",
+          "objective": "Onboarding revisit: reference previous demo. address concern: 'Wants to think about it'. complete onboarding on the spot.",
+          "zone_id": 4,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "019c4246-5e15-737a-b119-3f2e724936b6",
+          "type": "reactivation",
+          "shop_name": "Fazz Communication",
+          "lat": 24.90922782184973,
+          "lng": 67.12181020528078,
+          "phone": "",
+          "objective": "Reactivation: communicate incentive, do dummy transaction (self-purchase + trader purchase).",
+          "zone_id": 4,
+          "is_affinity": false
+        },
+        {
+          "merchant_id": "019c4c09-fd17-725f-ab6b-35aad56af076",
+          "type": "reactivation",
+          "shop_name": "Hafeez Communication",
+          "lat": 24.91163890779938,
+          "lng": 67.12539162486792,
+          "phone": "",
+          "objective": "Reactivation: communicate incentive, do dummy transaction (self-purchase + trader purchase).",
+          "zone_id": 4,
+          "is_affinity": false
+        }
+      ]
+    },
+    {
+      "ambassador": "Sharoon Javed",
+      "date": "2026-02-13",
+      "zone_ids": [
+        19,
+        17,
+        26
+      ],
+      "tasks": [
+        {
+          "merchant_id": "onb_Books_Town_Toy___Zon_7",
+          "type": "onboarding",
+          "shop_name": "Books Town Toy & Zone",
+          "lat": 24.8156678,
+          "lng": 67.0693582,
+          "phone": "",
+          "objective": "Onboarding revisit: reference previous demo. address concern: 'Wants to think about it'. complete onboarding on the spot.",
+          "zone_id": 16,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "onb_New_karachi_Gernal_S_0",
+          "type": "onboarding",
+          "shop_name": "New karachi Gernal Store",
+          "lat": 24.8602644,
+          "lng": 67.0876035,
+          "phone": "",
+          "objective": "Onboarding revisit: reference previous demo. complete onboarding on the spot.",
+          "zone_id": 19,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "onb_Zeeshan_medical_and__1",
+          "type": "onboarding",
+          "shop_name": "Zeeshan medical and general store",
+          "lat": 24.8602644,
+          "lng": 67.0876035,
+          "phone": "",
+          "objective": "Onboarding revisit: reference previous demo. complete onboarding on the spot.",
+          "zone_id": 19,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "1e9b8807-2bd3-497b-8521-58b30b59c873",
+          "type": "reactivation",
+          "shop_name": "Bin Ibrahim ",
+          "lat": 24.88400788016357,
+          "lng": 67.08398468792439,
+          "phone": "",
+          "objective": "Reactivation: communicate incentive, do dummy transaction (self-purchase + trader purchase).",
+          "zone_id": 17,
+          "is_affinity": false
+        },
+        {
+          "merchant_id": "05f1885a-600f-4bc2-b0bc-5f19384e5fe7",
+          "type": "reactivation",
+          "shop_name": "Faisal Communication ",
+          "lat": 24.883950091727375,
+          "lng": 67.08408426493406,
+          "phone": "",
+          "objective": "Reactivation: communicate incentive, do dummy transaction (self-purchase + trader purchase).",
+          "zone_id": 17,
+          "is_affinity": false
+        },
+        {
+          "merchant_id": "f19914de-68e0-4713-b42f-3c3606af7e68",
+          "type": "reactivation",
+          "shop_name": "Hural Associates",
+          "lat": 24.851023626091102,
+          "lng": 67.06627070903778,
+          "phone": "",
+          "objective": "Reactivation: communicate incentive, do dummy transaction (self-purchase + trader purchase).",
+          "zone_id": 26,
+          "is_affinity": false
+        },
+        {
+          "merchant_id": "onb_LYFE_Pharmacy_15",
+          "type": "onboarding",
+          "shop_name": "LYFE Pharmacy",
+          "lat": 24.8858149,
+          "lng": 67.0794077,
+          "phone": "",
+          "objective": "Onboarding revisit: reference previous demo. address concern: 'Wants to think about it'. complete onboarding on the spot.",
+          "zone_id": 17,
+          "is_affinity": false
+        }
+      ]
+    },
+    {
+      "ambassador": "Muhammad Zahid",
+      "date": "2026-02-13",
+      "zone_ids": [
+        10,
+        5,
+        24,
+        27
+      ],
+      "tasks": [
+        {
+          "merchant_id": "onb_Al_Syed_Communicatio_27",
+          "type": "onboarding",
+          "shop_name": "Al Syed Communication",
+          "lat": 24.921879,
+          "lng": 67.0925799,
+          "phone": "923082466280",
+          "objective": "Onboarding revisit: reference previous demo. complete onboarding on the spot.",
+          "zone_id": 27,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "onb_MS_Communication_13",
+          "type": "onboarding",
+          "shop_name": "MS Communication",
+          "lat": 24.9018394,
+          "lng": 67.0814802,
+          "phone": "923368236989",
+          "objective": "Onboarding revisit: reference previous demo. address concern: 'Wants to think about it'. complete onboarding on the spot.",
+          "zone_id": 10,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "onb_Star_Communication_32",
+          "type": "onboarding",
+          "shop_name": "Star Communication",
+          "lat": 24.937437,
+          "lng": 67.0407731,
+          "phone": "923002080768",
+          "objective": "Onboarding revisit: reference previous demo. complete onboarding on the spot.",
+          "zone_id": 15,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "onb_Well_at_Mobile_Point_28",
+          "type": "onboarding",
+          "shop_name": "Well at Mobile Point",
+          "lat": 24.9182568,
+          "lng": 67.0756356,
+          "phone": "923102230703",
+          "objective": "Onboarding revisit: reference previous demo. complete onboarding on the spot.",
+          "zone_id": 24,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "onb_Maqsood_Communicatio_2",
+          "type": "onboarding",
+          "shop_name": "Maqsood Communication",
+          "lat": 24.918055,
+          "lng": 67.1033333,
+          "phone": "",
+          "objective": "Onboarding revisit: reference previous demo. complete onboarding on the spot.",
+          "zone_id": 27,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "onb_Mobile_City_Communic_6",
+          "type": "onboarding",
+          "shop_name": "Mobile City Communication",
+          "lat": 24.9444434,
+          "lng": 67.0739899,
+          "phone": "",
+          "objective": "Onboarding revisit: reference previous demo. address concern: 'Number Liya hai Bad Mai Call Krta Ga'. complete onboarding on the spot.",
+          "zone_id": 30,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "4f3a2562-c31d-47cd-b7b4-35b971caaf56",
+          "type": "reactivation",
+          "shop_name": "Daniyal communication ",
+          "lat": 24.905345476108266,
+          "lng": 67.07824476063251,
+          "phone": "",
+          "objective": "Reactivation: communicate incentive, do dummy transaction (self-purchase + trader purchase).",
+          "zone_id": 10,
+          "is_affinity": false
+        },
+        {
+          "merchant_id": "2dba840e-2e29-40d6-9781-42d69aaf7f86",
+          "type": "reactivation",
+          "shop_name": "Five communication ",
+          "lat": 24.8971517,
+          "lng": 67.0687715,
+          "phone": "",
+          "objective": "Reactivation: communicate incentive, do dummy transaction (self-purchase + trader purchase).",
+          "zone_id": 10,
+          "is_affinity": false
+        }
+      ]
+    },
+    {
+      "ambassador": "Afsar Khan",
+      "date": "2026-02-13",
+      "zone_ids": [
+        22,
+        1,
+        5,
+        13,
+        23
+      ],
+      "tasks": [
+        {
+          "merchant_id": "onb_Arshad_Communication_30",
+          "type": "onboarding",
+          "shop_name": "Arshad Communication",
+          "lat": 24.8976213,
+          "lng": 67.0356422,
+          "phone": "923472510912",
+          "objective": "Onboarding revisit: reference previous demo. address concern: 'Only User'. complete onboarding on the spot.",
+          "zone_id": 23,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "onb_Basit_Taj_Communicat_31",
+          "type": "onboarding",
+          "shop_name": "Basit Taj Communication",
+          "lat": 24.8976213,
+          "lng": 67.0356422,
+          "phone": "923488368440",
+          "objective": "Onboarding revisit: reference previous demo. address concern: 'Only User'. complete onboarding on the spot.",
+          "zone_id": 23,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "onb_Bilal_Bakery_37",
+          "type": "onboarding",
+          "shop_name": "Bilal Bakery",
+          "lat": 24.9348865,
+          "lng": 67.0093165,
+          "phone": "923182468127",
+          "objective": "Onboarding revisit: reference previous demo. address concern: 'Only User'. complete onboarding on the spot.",
+          "zone_id": 11,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "onb_Exxon_Mobile_Solutio_8",
+          "type": "onboarding",
+          "shop_name": "Exxon Mobile Solution",
+          "lat": 24.9050025,
+          "lng": 67.0275315,
+          "phone": "923332060572",
+          "objective": "Onboarding revisit: reference previous demo. complete onboarding on the spot.",
+          "zone_id": 14,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "onb_Furqan_Print_36",
+          "type": "onboarding",
+          "shop_name": "Furqan Print",
+          "lat": 24.9348865,
+          "lng": 67.0093165,
+          "phone": "923333896191",
+          "objective": "Onboarding revisit: reference previous demo. address concern: 'System error'. complete onboarding on the spot.",
+          "zone_id": 11,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "onb_Haroon_Communication_29",
+          "type": "onboarding",
+          "shop_name": "Haroon Communication",
+          "lat": 24.8976213,
+          "lng": 67.0356422,
+          "phone": "923173452795",
+          "objective": "Onboarding revisit: reference previous demo. address concern: 'Not interested in dollars'. complete onboarding on the spot.",
+          "zone_id": 23,
+          "is_affinity": true
+        },
+        {
+          "merchant_id": "019c47c6-7007-791b-9403-12152080034b",
+          "type": "reactivation",
+          "shop_name": "Al Furqan Photocopy",
+          "lat": 24.8842192639498,
+          "lng": 67.05197419971228,
+          "phone": "",
+          "objective": "Reactivation: communicate incentive, do dummy transaction (self-purchase + trader purchase).",
+          "zone_id": 22,
+          "is_affinity": false
+        },
+        {
+          "merchant_id": "019be59b-f2e8-7d89-89e6-56e2413ae136",
+          "type": "reactivation",
+          "shop_name": "Prince Communication ",
+          "lat": 24.88442304366027,
+          "lng": 67.0341257750988,
+          "phone": "",
+          "objective": "Reactivation: communicate incentive, do dummy transaction (self-purchase + trader purchase).",
+          "zone_id": 1,
+          "is_affinity": false
+        }
+      ]
+    }
+  ],
+  "zones": [
+    {
+      "id": 1,
+      "centroid_lat": 24.880938619353962,
+      "centroid_lng": 67.0342798344791,
+      "radius_km": 0.39,
+      "merchant_count": 2,
+      "merchant_ids": [
+        "019be59b-f2e8-7d89-89e6-56e2413ae136",
+        "019b0747-15b8-7849-8eb6-f418917803a1"
+      ]
+    },
+    {
+      "id": 2,
+      "centroid_lat": 24.93504549013966,
+      "centroid_lng": 67.13581033051014,
+      "radius_km": 0.0,
+      "merchant_count": 1,
+      "merchant_ids": [
+        "019be593-5df2-7cac-8ab9-14743fd162f2"
+      ]
+    },
+    {
+      "id": 3,
+      "centroid_lat": 24.788038231808557,
+      "centroid_lng": 67.05794010311365,
+      "radius_km": 0.0,
+      "merchant_count": 1,
+      "merchant_ids": [
+        "9be5cd5e-fedc-4f98-8a95-ad7d5dfc67bc"
+      ]
+    },
+    {
+      "id": 4,
+      "centroid_lat": 24.91031134398532,
+      "centroid_lng": 67.12644424033098,
+      "radius_km": 0.63,
+      "merchant_count": 7,
+      "merchant_ids": [
+        "onb_Hafeez_Communication_16",
+        "onb_Najfi_communication_18",
+        "onb_H___A_sports_34",
+        "019c4246-5e15-737a-b119-3f2e724936b6",
+        "019c4c09-fd17-725f-ab6b-35aad56af076",
+        "bb7916e3-fa2f-4afe-9c29-dd32a91cd64b",
+        "019c2932-2f71-7d9e-9d1c-dd6c0b353445"
+      ]
+    },
+    {
+      "id": 5,
+      "centroid_lat": 24.882114161276572,
+      "centroid_lng": 67.06593002533131,
+      "radius_km": 0.06,
+      "merchant_count": 5,
+      "merchant_ids": [
+        "onb_Shehzad_Communicatio_3",
+        "onb_Xtreme_Communication_4",
+        "onb_Khan_Brothers_Commun_5",
+        "019abace-3649-7cf6-be07-3d535bb4997c",
+        "019abab5-bb3d-7fb8-8359-0009148d4b05"
+      ]
+    },
+    {
+      "id": 6,
+      "centroid_lat": 24.900924569442786,
+      "centroid_lng": 67.10951210930943,
+      "radius_km": 0.53,
+      "merchant_count": 2,
+      "merchant_ids": [
+        "019b026a-2206-7af6-bf91-2a98150779d9",
+        "019b02c5-48fd-7e1a-81a5-240bf6f8b0c1"
+      ]
+    },
+    {
+      "id": 7,
+      "centroid_lat": 24.9473378,
+      "centroid_lng": 67.0920728,
+      "radius_km": 0.0,
+      "merchant_count": 1,
+      "merchant_ids": [
+        "165d6d26-c5bc-4a8c-8b16-9b3bc931a3fb"
+      ]
+    },
+    {
+      "id": 8,
+      "centroid_lat": 24.967883633946762,
+      "centroid_lng": 67.06845379942041,
+      "radius_km": 0.33,
+      "merchant_count": 2,
+      "merchant_ids": [
+        "onb_Marshallah_12",
+        "019c139e-f3e7-7e6a-8fa4-e1cf26df431b"
+      ]
+    },
+    {
+      "id": 9,
+      "centroid_lat": 24.823422687492545,
+      "centroid_lng": 67.04543950036168,
+      "radius_km": 0.29,
+      "merchant_count": 2,
+      "merchant_ids": [
+        "bb391e27-d30a-4282-abdc-19155dce90e6",
+        "4af3e5fb-0ba4-4e6c-b2de-39ebe864de07"
+      ]
+    },
+    {
+      "id": 10,
+      "centroid_lat": 24.903168561478708,
+      "centroid_lng": 67.07544369716719,
+      "radius_km": 0.99,
+      "merchant_count": 7,
+      "merchant_ids": [
+        "onb_Taha_Communication_11",
+        "onb_MS_Communication_13",
+        "4f3a2562-c31d-47cd-b7b4-35b971caaf56",
+        "2dba840e-2e29-40d6-9781-42d69aaf7f86",
+        "52546bd6-2fb1-41cc-92ff-ae7c60ac4d17",
+        "1ea70963-1178-44a9-bd81-2c9b9cb56bd1",
+        "019c23d2-8e82-74d5-8526-8d6026f8b69d"
+      ]
+    },
+    {
+      "id": 11,
+      "centroid_lat": 24.9348865,
+      "centroid_lng": 67.00931596666668,
+      "radius_km": 0.0,
+      "merchant_count": 3,
+      "merchant_ids": [
+        "onb_The_Phone_Store_2_35",
+        "onb_Furqan_Print_36",
+        "onb_Bilal_Bakery_37"
+      ]
+    },
+    {
+      "id": 12,
+      "centroid_lat": 24.867511833533747,
+      "centroid_lng": 67.19453981146216,
+      "radius_km": 0.06,
+      "merchant_count": 2,
+      "merchant_ids": [
+        "019c1de6-2dc7-7733-9f4f-8b1b2ee6557c",
+        "019c1e31-5757-733e-b054-7dc4fde97f24"
+      ]
+    },
+    {
+      "id": 13,
+      "centroid_lat": 24.869010122723505,
+      "centroid_lng": 67.05900331193315,
+      "radius_km": 1.19,
+      "merchant_count": 8,
+      "merchant_ids": [
+        "onb_Karachi_Communicatio_25",
+        "onb_Munna_bhai_Communica_26",
+        "019b268d-a43f-7e63-9852-16d86c6e5619",
+        "019c46c7-d4e0-71b1-ba86-aa3295a53118",
+        "019c2349-7228-7dbb-baba-1ec143368f8e",
+        "372c290e-9817-4a1b-b1bf-baa3f9a72caa",
+        "3d8a6989-53ea-4b81-bbe1-ca27eb7ac0e5",
+        "71aa8385-c934-43e9-be86-ca25ec680126"
+      ]
+    },
+    {
+      "id": 14,
+      "centroid_lat": 24.903256426631707,
+      "centroid_lng": 67.02530845215651,
+      "radius_km": 0.87,
+      "merchant_count": 4,
+      "merchant_ids": [
+        "onb_Exxon_Mobile_Solutio_8",
+        "onb_Play_Store_9",
+        "onb_Maxx_Communication_10",
+        "c045089c-2aa9-44a1-a66d-f1bafcf05d26"
+      ]
+    },
+    {
+      "id": 15,
+      "centroid_lat": 24.942227638930845,
+      "centroid_lng": 67.04711159261136,
+      "radius_km": 0.83,
+      "merchant_count": 2,
+      "merchant_ids": [
+        "onb_Star_Communication_32",
+        "019b17be-1ba2-76ec-a94b-92e8cd7b88dd"
+      ]
+    },
+    {
+      "id": 16,
+      "centroid_lat": 24.80994417149048,
+      "centroid_lng": 67.0699113250109,
+      "radius_km": 1.1,
+      "merchant_count": 5,
+      "merchant_ids": [
+        "onb_Books_Town_Toy___Zon_7",
+        "baaedca5-bd62-4204-8470-9d75ad1f1078",
+        "401cddbb-e572-442e-a173-393b54cb8ade",
+        "10de44f5-d71b-49ac-a8ec-22a183f4536f",
+        "c4f85082-86d6-424e-8e02-ad50ef71d6c0"
+      ]
+    },
+    {
+      "id": 17,
+      "centroid_lat": 24.88459095729698,
+      "centroid_lng": 67.08249221761947,
+      "radius_km": 0.34,
+      "merchant_count": 3,
+      "merchant_ids": [
+        "onb_LYFE_Pharmacy_15",
+        "1e9b8807-2bd3-497b-8521-58b30b59c873",
+        "05f1885a-600f-4bc2-b0bc-5f19384e5fe7"
+      ]
+    },
+    {
+      "id": 18,
+      "centroid_lat": 24.809676389691607,
+      "centroid_lng": 67.04070769250393,
+      "radius_km": 0.99,
+      "merchant_count": 3,
+      "merchant_ids": [
+        "b8a7c103-2421-4495-b13f-da90b2072545",
+        "cc190768-9de1-49fb-9ca7-a4f46bf6909c",
+        "7c6569e9-b8db-4ac8-b3c2-4c0edb20d2f4"
+      ]
+    },
+    {
+      "id": 19,
+      "centroid_lat": 24.8602644,
+      "centroid_lng": 67.0876035,
+      "radius_km": 0.0,
+      "merchant_count": 2,
+      "merchant_ids": [
+        "onb_New_karachi_Gernal_S_0",
+        "onb_Zeeshan_medical_and__1"
+      ]
+    },
+    {
+      "id": 20,
+      "centroid_lat": 24.83071714277831,
+      "centroid_lng": 67.04261681064963,
+      "radius_km": 0.07,
+      "merchant_count": 2,
+      "merchant_ids": [
+        "47239bbc-141b-4a58-8b13-f2339917cb22",
+        "b6fac24a-15a5-4052-816a-62fa84e88184"
+      ]
+    },
+    {
+      "id": 21,
+      "centroid_lat": 24.96389275492146,
+      "centroid_lng": 67.05415450036526,
+      "radius_km": 0.0,
+      "merchant_count": 1,
+      "merchant_ids": [
+        "019befa2-fc23-7413-8634-c91746050116"
+      ]
+    },
+    {
+      "id": 22,
+      "centroid_lat": 24.88437878488331,
+      "centroid_lng": 67.05190559996802,
+      "radius_km": 0.07,
+      "merchant_count": 9,
+      "merchant_ids": [
+        "onb_The_Phone_Store_14",
+        "onb_The_Phone_Store_2_17",
+        "onb_Saleem_Hair_Cut_19",
+        "onb_Meezan_Motors_20",
+        "onb_Bismillah_Milk_Shop_21",
+        "onb_Saleem_Man_Saloon_22",
+        "onb_Believe_Medical_Gene_23",
+        "onb_Anar_Kali_Pan_Mahal_24",
+        "019c47c6-7007-791b-9403-12152080034b"
+      ]
+    },
+    {
+      "id": 23,
+      "centroid_lat": 24.895934973827206,
+      "centroid_lng": 67.03640194295862,
+      "radius_km": 0.61,
+      "merchant_count": 4,
+      "merchant_ids": [
+        "onb_Haroon_Communication_29",
+        "onb_Arshad_Communication_30",
+        "onb_Basit_Taj_Communicat_31",
+        "f4973be2-13d0-40e5-bf95-4c470da38bfd"
+      ]
+    },
+    {
+      "id": 24,
+      "centroid_lat": 24.923542423269602,
+      "centroid_lng": 67.07554341997175,
+      "radius_km": 0.59,
+      "merchant_count": 2,
+      "merchant_ids": [
+        "onb_Well_at_Mobile_Point_28",
+        "019c09e3-a4e2-7f23-a08b-f897149e28f6"
+      ]
+    },
+    {
+      "id": 25,
+      "centroid_lat": 24.807856708256978,
+      "centroid_lng": 67.06185093149543,
+      "radius_km": 0.01,
+      "merchant_count": 2,
+      "merchant_ids": [
+        "5cdd9d62-71a1-4e9d-bba4-394aa0c45f14",
+        "019b1266-65fd-75fa-b7ee-0743afa99005"
+      ]
+    },
+    {
+      "id": 26,
+      "centroid_lat": 24.851023626091102,
+      "centroid_lng": 67.06627070903778,
+      "radius_km": 0.0,
+      "merchant_count": 1,
+      "merchant_ids": [
+        "f19914de-68e0-4713-b42f-3c3606af7e68"
+      ]
+    },
+    {
+      "id": 27,
+      "centroid_lat": 24.91905405,
+      "centroid_lng": 67.0965987,
+      "radius_km": 0.87,
+      "merchant_count": 4,
+      "merchant_ids": [
+        "onb_Maqsood_Communicatio_2",
+        "onb_Al_Syed_Communicatio_27",
+        "onb_Nicotine_Mart_33",
+        "0210d742-6c16-49d8-9516-6338597b2877"
+      ]
+    },
+    {
+      "id": 28,
+      "centroid_lat": 24.8796785,
+      "centroid_lng": 67.0208142,
+      "radius_km": 0.0,
+      "merchant_count": 2,
+      "merchant_ids": [
+        "onb_Rajput_Dairy_38",
+        "onb_Star_39"
+      ]
+    },
+    {
+      "id": 29,
+      "centroid_lat": 24.932305504039373,
+      "centroid_lng": 67.03220900148153,
+      "radius_km": 0.75,
+      "merchant_count": 3,
+      "merchant_ids": [
+        "019bfeb3-d6f5-7401-b08d-44ee2e5c153f",
+        "019c2960-1633-7d6e-a24e-13fa0f956f3b",
+        "0f6063c9-bb16-4552-9de9-a9cd6546dd34"
+      ]
+    },
+    {
+      "id": 30,
+      "centroid_lat": 24.9417821,
+      "centroid_lng": 67.0663579,
+      "radius_km": 0.82,
+      "merchant_count": 2,
+      "merchant_ids": [
+        "onb_Mobile_City_Communic_6",
+        "0da6387c-3fdd-4322-be0e-7ae806fac005"
+      ]
+    }
+  ],
+  "outcomes": []
+};</script>
+    <script>/* EXP-009 Directed Day Dashboard — Client-side rendering */
+
+(function () {
+    "use strict";
+
+    // ── Helpers ──────────────────────────────────────────────────────
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    function badge(text, cls) {
+        return `<span class="badge badge-${cls}">${esc(text)}</span>`;
+    }
+
+    function statBox(value, label) {
+        return `<div class="stat-box"><div class="stat-value">${value}</div><div class="stat-label">${label}</div></div>`;
+    }
+
+    function pct(n, d) {
+        if (!d) return "0%";
+        return (n / d * 100).toFixed(0) + "%";
+    }
+
+    function hasPhone(t) {
+        const p = t.phone || t.phone_number || "";
+        return p.replace(/\D/g, "").length >= 7;
+    }
+
+    // ── Zone colors ──────────────────────────────────────────────────
+
+    const ZONE_COLORS = [
+        "#B8992E", "#7BC4E8", "#FF4D9D", "#16a34a", "#dc2626",
+        "#8b5cf6", "#f97316", "#06b6d4", "#ec4899", "#84cc16",
+        "#a855f7", "#14b8a6", "#f43f5e", "#6366f1", "#22c55e",
+        "#eab308", "#0ea5e9", "#d946ef", "#10b981", "#ef4444",
+        "#3b82f6", "#f59e0b", "#8b5cf6", "#06b6d4", "#ec4899",
+        "#84cc16", "#a855f7", "#14b8a6", "#f43f5e", "#6366f1",
+    ];
+
+    function zoneColor(zoneId) {
+        return ZONE_COLORS[(zoneId - 1) % ZONE_COLORS.length];
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // CARD 1: Target Pool Overview (with phone tiers)
+    // ══════════════════════════════════════════════════════════════════
+
+    function renderPoolCard() {
+        const onb = DATA.onboarding_targets || [];
+        const react = DATA.reactivation_targets || [];
+        const total = onb.length + react.length;
+        const visited = (DATA.visited_ids || []).length;
+        const remaining = total - visited;
+
+        const onbT1 = onb.filter(t => hasPhone(t));
+        const onbT2 = onb.filter(t => !hasPhone(t));
+
+        $("pool-stats").innerHTML = [
+            statBox(total, "Total Targets"),
+            statBox(onbT1.length, "Onb T1 \u2014 has \ud83d\udcf1"),
+            statBox(onbT2.length, "Onb T2 \u2014 no \ud83d\udcf1"),
+            statBox(react.length, "Reactivation"),
+            statBox(remaining, "Remaining"),
+        ].join("");
+
+        // Pool breakdown table — T1 first, then T2, then reactivation
+        let rows = "";
+
+        // T1 onboarding (first 15)
+        for (const t of onbT1.slice(0, 15)) {
+            rows += `<tr>
+                <td>${badge("Onboarding", "onboarding")}${badge("T1", "tier1")}</td>
+                <td>${esc(t.shop_name || t.business_name || "\u2014")}</td>
+                <td>${esc(t.phone || "\u2014")}</td>
+                <td>${t.lat ? t.lat.toFixed(4) : "\u2014"}, ${t.lng ? t.lng.toFixed(4) : "\u2014"}</td>
+                <td>${esc(t.decline_reason || "\u2014")}</td>
+            </tr>`;
+        }
+
+        // T2 onboarding (first 10)
+        for (const t of onbT2.slice(0, 10)) {
+            rows += `<tr>
+                <td>${badge("Onboarding", "onboarding")}${badge("T2", "tier2")}</td>
+                <td>${esc(t.shop_name || t.business_name || "\u2014")}</td>
+                <td style="color:var(--warning)">\u2014 no phone</td>
+                <td>${t.lat ? t.lat.toFixed(4) : "\u2014"}, ${t.lng ? t.lng.toFixed(4) : "\u2014"}</td>
+                <td>${esc(t.decline_reason || "\u2014")}</td>
+            </tr>`;
+        }
+
+        // Reactivation (first 10)
+        for (const t of react.slice(0, 10)) {
+            const days = t.days_since_last_activity;
+            const daysText = days != null ? `${days}d ago` : "Never";
+            rows += `<tr>
+                <td>${badge("Reactivation", "reactivation")}</td>
+                <td>${esc(t.business_name || "\u2014")}</td>
+                <td>${esc(t.phone_number || "\u2014")}</td>
+                <td>${t.latitude ? parseFloat(t.latitude).toFixed(4) : "\u2014"}, ${t.longitude ? parseFloat(t.longitude).toFixed(4) : "\u2014"}</td>
+                <td>Last active: ${daysText}</td>
+            </tr>`;
+        }
+
+        const shown = Math.min(onbT1.length, 15) + Math.min(onbT2.length, 10) + Math.min(react.length, 10);
+        const truncated = total > shown ? `<div class="insight">Showing ${shown} of ${total} targets. T1 (has phone) prioritized in route composition.</div>` : "";
+
+        $("pool-table-container").innerHTML = `
+            <table>
+                <thead><tr>
+                    <th>Type</th><th>Shop</th><th>Phone</th><th>Location</th><th>Detail</th>
+                </tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+            ${truncated}
+        `;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // CARD 2: Geographic Zones — Leaflet map with cluster overlays
+    // ══════════════════════════════════════════════════════════════════
+
+    // ── Convex hull (Graham scan) ────────────────────────────────────
+
+    function cross(O, A, B) {
+        return (A[0] - O[0]) * (B[1] - O[1]) - (A[1] - O[1]) * (B[0] - O[0]);
+    }
+
+    function convexHull(points) {
+        if (points.length <= 1) return points.slice();
+        const pts = points.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+        const n = pts.length;
+        if (n <= 2) return pts;
+        const lower = [];
+        for (const p of pts) {
+            while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+            lower.push(p);
+        }
+        const upper = [];
+        for (let i = n - 1; i >= 0; i--) {
+            const p = pts[i];
+            while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+            upper.push(p);
+        }
+        lower.pop();
+        upper.pop();
+        return lower.concat(upper);
+    }
+
+    function expandHullGeo(hull, degrees) {
+        if (hull.length < 3) return hull;
+        let cx = 0, cy = 0;
+        for (const p of hull) { cx += p[0]; cy += p[1]; }
+        cx /= hull.length; cy /= hull.length;
+        return hull.map(p => {
+            const dx = p[0] - cx, dy = p[1] - cy;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+            return [p[0] + (dx / dist) * degrees, p[1] + (dy / dist) * degrees];
+        });
+    }
+
+    function renderZonesCard() {
+        const zones = DATA.zones || [];
+        const onb = DATA.onboarding_targets || [];
+        const react = DATA.reactivation_targets || [];
+
+        if (!zones.length) {
+            $("zone-map").innerHTML = "<p style='color:var(--text-secondary); padding:2rem;'>No zones computed yet. Run with --generate first.</p>";
+            return;
+        }
+
+        // ── Build merchant lookup by ID ──────────────────────────────
+        const merchantById = {};
+        for (const t of onb) {
+            if (t.lat && t.lng) {
+                merchantById[t.id] = { lat: t.lat, lng: t.lng, type: "onboarding", name: t.shop_name || "Unknown", phone: t.phone || "" };
+            }
+        }
+        for (const t of react) {
+            if (t.latitude && t.longitude) {
+                const id = t.merchant_id || t.id;
+                merchantById[id] = { lat: parseFloat(t.latitude), lng: parseFloat(t.longitude), type: "reactivation", name: t.business_name || "Unknown", phone: t.phone_number || "" };
+            }
+        }
+
+        // ── Build zone → merchants mapping ───────────────────────────
+        const zoneMerchants = {};
+        for (const z of zones) {
+            zoneMerchants[z.id] = [];
+            for (const mid of (z.merchant_ids || [])) {
+                if (merchantById[mid]) {
+                    zoneMerchants[z.id].push({ ...merchantById[mid], id: mid });
+                }
+            }
+        }
+
+        // ── Check Leaflet available ──────────────────────────────────
+        if (typeof L === "undefined") {
+            $("zone-map").innerHTML = "<p style='color:var(--text-secondary); padding:2rem;'>Map requires internet connection for map tiles.</p>";
+            renderZoneTable(zones, zoneMerchants);
+            renderZoneLegend(zones, onb, react);
+            return;
+        }
+
+        // ── Initialize Leaflet map ───────────────────────────────────
+        $("zone-map").innerHTML = "";
+        const map = L.map("zone-map", {
+            zoomControl: true,
+            scrollWheelZoom: true,
+        });
+
+        // CartoDB Positron — clean light tiles
+        L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+            attribution: '\u00a9 <a href="https://www.openstreetmap.org/copyright">OSM</a> \u00a9 <a href="https://carto.com/">CARTO</a>',
+            maxZoom: 19,
+            subdomains: "abcd",
+        }).addTo(map);
+
+        // Fit bounds to all merchants
+        const allLatLngs = Object.values(merchantById).map(m => [m.lat, m.lng]);
+        if (allLatLngs.length) {
+            map.fitBounds(L.latLngBounds(allLatLngs), { padding: [40, 40] });
+        }
+
+        // ── Draw zone regions ────────────────────────────────────────
+        for (const z of zones) {
+            const members = zoneMerchants[z.id] || [];
+            if (!members.length) continue;
+            const color = zoneColor(z.id);
+            const pts = members.map(m => [m.lat, m.lng]);
+            const onbCount = members.filter(m => m.type === "onboarding").length;
+            const rctCount = members.length - onbCount;
+
+            let shape;
+            if (pts.length <= 2) {
+                const radius = Math.max(z.radius_km * 1000, 150) + 120;
+                shape = L.circle([z.centroid_lat, z.centroid_lng], {
+                    radius: radius,
+                    color: color, fillColor: color, fillOpacity: 0.15,
+                    weight: 1.5, opacity: 0.5, dashArray: "5 4",
+                });
+            } else {
+                const hull = convexHull(pts);
+                const expanded = expandHullGeo(hull, 0.0012);
+                shape = L.polygon(expanded, {
+                    color: color, fillColor: color, fillOpacity: 0.15,
+                    weight: 1.5, opacity: 0.5, dashArray: "5 4",
+                });
+            }
+
+            const tipHtml = `<div style="font-family:'DM Sans',sans-serif;font-weight:600;border-left:3px solid ${color};padding-left:8px;margin-bottom:3px;">Zone ${z.id}</div>` +
+                `<div style="color:#6B6B6B;font-size:0.82rem;">${members.length} merchant${members.length !== 1 ? "s" : ""} \u00b7 ${z.radius_km} km<br>` +
+                `<span style="color:#2980b9">\u25cf</span> ${onbCount} onboarding ` +
+                `<span style="color:var(--zar-gold-dark,#9A7E24)">\u25c6</span> ${rctCount} reactivation</div>`;
+
+            shape.bindTooltip(tipHtml, { sticky: true, className: "zone-tip" });
+            shape.on("mouseover", function () {
+                this.setStyle({ fillOpacity: 0.32, weight: 2.5, opacity: 0.85 });
+            });
+            shape.on("mouseout", function () {
+                this.setStyle({ fillOpacity: 0.15, weight: 1.5, opacity: 0.5 });
+            });
+            shape.addTo(map);
+        }
+
+        // ── Draw merchant markers ────────────────────────────────────
+        for (const z of zones) {
+            const members = zoneMerchants[z.id] || [];
+            const color = zoneColor(z.id);
+            for (const m of members) {
+                if (m.type === "onboarding") {
+                    L.circleMarker([m.lat, m.lng], {
+                        radius: 5, color: "white", weight: 1.5,
+                        fillColor: color, fillOpacity: 1,
+                    }).bindTooltip(esc(m.name), { direction: "top", offset: [0, -6] }).addTo(map);
+                } else {
+                    const s = 12;
+                    L.marker([m.lat, m.lng], {
+                        icon: L.divIcon({
+                            className: "dm-icon",
+                            html: `<svg width="${s}" height="${s}"><polygon points="${s/2},0.5 ${s-0.5},${s/2} ${s/2},${s-0.5} 0.5,${s/2}" fill="${color}" stroke="white" stroke-width="1.5"/></svg>`,
+                            iconSize: [s, s], iconAnchor: [s / 2, s / 2],
+                        }),
+                    }).bindTooltip(esc(m.name), { direction: "top", offset: [0, -6] }).addTo(map);
+                }
+            }
+        }
+
+        // ── Zone labels at centroids ─────────────────────────────────
+        for (const z of zones) {
+            if (!(zoneMerchants[z.id] || []).length) continue;
+            const color = zoneColor(z.id);
+            L.marker([z.centroid_lat, z.centroid_lng], {
+                icon: L.divIcon({
+                    className: "zone-label-icon",
+                    html: `<div style="background:${color};color:white;padding:1px 5px;border-radius:5px;font-size:10px;font-weight:700;font-family:'DM Sans',sans-serif;white-space:nowrap;border:1px solid rgba(255,255,255,0.8);line-height:1.4;text-align:center;">Z${z.id}</div>`,
+                    iconSize: null, iconAnchor: [14, 8],
+                }),
+                interactive: false,
+                zIndexOffset: 1000,
+            }).addTo(map);
+        }
+
+        // ── Legend + table ────────────────────────────────────────────
+        renderZoneLegend(zones, onb, react);
+        renderZoneTable(zones, zoneMerchants);
+    }
+
+    function renderZoneLegend(zones, onb, react) {
+        const totalOnb = onb.filter(t => t.lat && t.lng).length;
+        const totalRct = react.filter(t => t.latitude && t.longitude).length;
+        $("zone-legend").innerHTML = `
+            <div class="legend-row">
+                <div class="legend-item">
+                    <svg width="14" height="14"><circle cx="7" cy="7" r="5" fill="#6B6B6B" stroke="white" stroke-width="1.5"/></svg>
+                    <span>Onboarding target</span>
+                </div>
+                <div class="legend-item">
+                    <svg width="14" height="14"><polygon points="7,1 13,7 7,13 1,7" fill="#6B6B6B" stroke="white" stroke-width="1.5"/></svg>
+                    <span>Reactivation target</span>
+                </div>
+                <div class="legend-sep"></div>
+                <div class="legend-summary">${zones.length} zones \u00b7 ${totalOnb} onboarding \u00b7 ${totalRct} reactivation</div>
+            </div>
+        `;
+    }
+
+    function renderZoneTable(zones, zoneMerchants) {
+        let zoneRows = "";
+        for (const z of zones) {
+            const members = zoneMerchants[z.id] || [];
+            const onbCount = members.filter(m => m.type === "onboarding").length;
+            const rctCount = members.length - onbCount;
+            zoneRows += `<tr>
+                <td><div class="zone-color" style="background:${zoneColor(z.id)}; display:inline-block; width:12px; height:12px; border-radius:3px; vertical-align:middle;"></div> Zone ${z.id}</td>
+                <td>${z.merchant_count}</td>
+                <td>${onbCount}</td>
+                <td>${rctCount}</td>
+                <td>${z.radius_km} km</td>
+                <td>${z.centroid_lat.toFixed(4)}, ${z.centroid_lng.toFixed(4)}</td>
+            </tr>`;
+        }
+        $("zone-table-container").innerHTML = `
+            <table>
+                <thead><tr><th>Zone</th><th>Total</th><th>Onb</th><th>React</th><th>Radius</th><th>Center</th></tr></thead>
+                <tbody>${zoneRows}</tbody>
+            </table>
+        `;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // CARD 3: Daily Routes
+    // ══════════════════════════════════════════════════════════════════
+
+    function renderRoutesCard() {
+        const routes = DATA.routes || [];
+
+        if (!routes.length) {
+            $("routes-container").innerHTML = `
+                <div class="insight">No routes generated yet. Run: <code>python3 run.py --json targets_cache.json --generate</code></div>
+            `;
+            return;
+        }
+
+        let html = "";
+        for (const route of routes) {
+            const tasks = route.tasks || [];
+            const onbCount = tasks.filter(t => t.type === "onboarding").length;
+            const rctCount = tasks.length - onbCount;
+
+            let taskRows = "";
+            for (let i = 0; i < tasks.length; i++) {
+                const t = tasks[i];
+                const typeBadge = t.type === "onboarding"
+                    ? badge("Onboarding", "onboarding")
+                    : badge("Reactivation", "reactivation");
+                const mapLink = t.lat && t.lng
+                    ? `<a href="https://www.google.com/maps?q=${t.lat},${t.lng}" target="_blank" style="color:var(--zar-gold-dark); text-decoration:none;">\ud83d\udccd</a>`
+                    : "";
+                const affinityTag = t.is_affinity ? " " + badge("own", "affinity") : "";
+                const phoneBadge = t.type === "onboarding"
+                    ? (t.phone && t.phone.replace(/\D/g, "").length >= 7
+                        ? " " + badge("T1", "tier1")
+                        : " " + badge("T2", "tier2"))
+                    : "";
+
+                taskRows += `<tr>
+                    <td>${i + 1}</td>
+                    <td>${typeBadge}${affinityTag}${phoneBadge}</td>
+                    <td>${esc(t.shop_name)}</td>
+                    <td>${esc(t.phone || "\u2014")}</td>
+                    <td>${mapLink}</td>
+                    <td style="font-size:0.8rem; max-width:250px;">${esc(t.objective)}</td>
+                </tr>`;
+            }
+
+            html += `
+                <div class="route-card">
+                    <div class="route-header">
+                        <div class="route-ambassador">${esc(route.ambassador)}</div>
+                        <div class="route-meta">
+                            ${route.date} \u00b7 Zones ${(route.zone_ids || []).join(", ")} \u00b7
+                            ${onbCount} onb + ${rctCount} react
+                        </div>
+                    </div>
+                    <table>
+                        <thead><tr><th>#</th><th>Type</th><th>Shop</th><th>Phone</th><th>Map</th><th>Objective</th></tr></thead>
+                        <tbody>${taskRows}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        $("routes-container").innerHTML = html;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // CARD 4: Outcome Tracking
+    // ══════════════════════════════════════════════════════════════════
+
+    function renderOutcomesCard() {
+        const outcomes = DATA.outcomes || [];
+
+        if (!outcomes.length) {
+            $("outcome-stats").innerHTML = [
+                statBox("\u2014", "Directed Visits"),
+                statBox("\u2014", "Onboarded"),
+                statBox("\u2014", "Reactivated"),
+                statBox("\u2014", "Conversion"),
+            ].join("");
+            $("outcome-table-container").innerHTML = `
+                <div class="insight">No outcome data yet. Outcomes are tracked after directed visits are logged in the visit sheet and verified against the database.</div>
+            `;
+            return;
+        }
+
+        const totalVisits = outcomes.length;
+        const onbVisits = outcomes.filter(o => o.type === "onboarding");
+        const rctVisits = outcomes.filter(o => o.type === "reactivation");
+        const onbConverted = onbVisits.filter(o => o.converted).length;
+        const rctConverted = rctVisits.filter(o => o.converted).length;
+
+        $("outcome-stats").innerHTML = [
+            statBox(totalVisits, "Directed Visits"),
+            statBox(`${onbConverted}/${onbVisits.length}`, "Onboarded"),
+            statBox(`${rctConverted}/${rctVisits.length}`, "Reactivated"),
+            statBox(pct(onbConverted + rctConverted, totalVisits), "Overall Rate"),
+        ].join("");
+
+        let rows = "";
+        for (const o of outcomes) {
+            const typeBadge = o.type === "onboarding"
+                ? badge("Onboarding", "onboarding")
+                : badge("Reactivation", "reactivation");
+            const statusBadge = o.converted
+                ? badge("Converted", "success")
+                : badge("Pending", "pending");
+
+            rows += `<tr>
+                <td>${esc(o.date || "\u2014")}</td>
+                <td>${esc(o.ambassador || "\u2014")}</td>
+                <td>${typeBadge}</td>
+                <td>${esc(o.shop_name || "\u2014")}</td>
+                <td>${statusBadge}</td>
+                <td>${o.hours_after_visit != null ? o.hours_after_visit + "h" : "\u2014"}</td>
+            </tr>`;
+        }
+
+        $("outcome-table-container").innerHTML = `
+            <table>
+                <thead><tr><th>Date</th><th>Ambassador</th><th>Type</th><th>Shop</th><th>Status</th><th>Time to Convert</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+        `;
+
+        if (onbVisits.length >= 10 || rctVisits.length >= 10) {
+            const onbRate = onbVisits.length ? (onbConverted / onbVisits.length * 100).toFixed(0) : 0;
+            const rctRate = rctVisits.length ? (rctConverted / rctVisits.length * 100).toFixed(0) : 0;
+            const onbVerdict = onbRate >= 30 ? "ON TARGET" : onbRate >= 15 ? "DIRECTIONAL" : "BELOW TARGET";
+            const rctVerdict = rctRate >= 40 ? "ON TARGET" : rctRate >= 20 ? "DIRECTIONAL" : "BELOW TARGET";
+
+            $("outcome-insight").style.display = "block";
+            $("outcome-insight").innerHTML = `
+                <strong>Onboarding:</strong> ${onbRate}% conversion (${onbConverted}/${onbVisits.length}) \u2014 ${onbVerdict}<br>
+                <strong>Reactivation:</strong> ${rctRate}% conversion (${rctConverted}/${rctVisits.length}) \u2014 ${rctVerdict}
+            `;
+        }
+    }
+
+    // ── Init ─────────────────────────────────────────────────────────
+
+    function init() {
+        if (typeof DATA === "undefined") {
+            document.body.innerHTML = "<h1>No data loaded</h1><p>Run: python3 run.py --json targets_cache.json</p>";
+            return;
+        }
+
+        renderPoolCard();
+        renderZonesCard();
+        renderRoutesCard();
+        renderOutcomesCard();
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
+    } else {
+        init();
+    }
+})();
+</script>
+</body>
+</html>

@@ -2,43 +2,25 @@
 
 Standalone experiment tracking for Zar's ground force (field ambassador) team. Each subdirectory is one experiment.
 
-## Session Hygiene
+## Conventions
 
-After approximately 30 turns in a conversation, remind the user to start a fresh session or use `/compact` to reduce context size and save tokens. Say something like: "We're at ~30 turns — consider starting a fresh session or running /compact to keep token usage lean."
+**Session hygiene:** After approximately 30 turns in a conversation, remind the user to start a fresh session or use `/compact` to reduce context size and save tokens. Say something like: "We're at ~30 turns — consider starting a fresh session or running /compact to keep token usage lean."
 
-## Model Usage
+**Model usage:** Use Sonnet for routine tasks (simple searches, straightforward edits, boilerplate generation). Reserve Opus for complex reasoning, architectural decisions, and multi-step problem solving.
 
-Use Sonnet for routine tasks (simple searches, straightforward edits, boilerplate generation). Reserve Opus for complex reasoning, architectural decisions, and multi-step problem solving.
+**Output rules:** Always show the full pipe table and insights output to the user (do not suppress or summarize). This applies to all Pattern A experiments.
 
-## Show Don't Tell Experiment
+**Experiment reports:** All experiment reports live on Notion (Experiment Tracker database). `Experimentation-OS.md` defines the report structure and writing rules. The **Helix** agent (`.claude/agents/helix.md`) manages the full experiment lifecycle: draft, design, plan, run, analyze, present. Invoke with `claude --agent helix`.
 
-Tests a new opener strategy where ambassadors demonstrate the app instead of pitching verbally. Started Feb 10, 2026.
+Key principles: lead with verdict (SHIP IT / ITERATE / KILL IT / NEEDS MORE DATA), include statistical validity check, use INSIGHT/Evidence/Implication format, prefer observed metrics over self-reported.
 
-### Run
-```bash
-cd /Users/asharib/Documents/GitHub/ground-force-experiments/show-dont-tell
-python3 run.py
-```
+## Architecture Patterns
 
-Outputs: baseline vs experiment funnel comparison, per-ambassador breakdown, and updates the flowchart HTML.
+### Pattern A: Sheet-Based Funnel
 
-**Note:** Always show the full pipe table and insights output to the user (do not suppress or summarize).
+Fetches data from a Google Sheet, computes funnel metrics, prints terminal tables, and generates an HTML report.
 
-### Files
-
-| File | Purpose |
-|------|---------|
-| `run.py` | Single entry point (~30 lines) |
-| `config.py` | Experiment constants: name, dates, sheet ID, 7 column names |
-| `data.py` | Fetch sheet + parse timestamps + row classifiers |
-| `funnel.py` | Pure computation: FunnelMetrics, FlowchartNodes, ambassador breakdown |
-| `output.py` | All terminal printing: tables + insights |
-| `flowchart.py` | Generate HTML flowchart from scratch (CSS/SVG constants + dynamic nodes) |
-| `dont_show_tell_exp.html` | Generated artifact (overwritten each run) |
-
-### Architecture
-
-Clean DAG — no circular deps:
+**DAG** (no circular deps):
 ```
 config  ←  data  ←  funnel  ←  output
                        ↑
@@ -47,69 +29,95 @@ config  ←  data  ←  funnel  ←  output
                      run.py
 ```
 
-## Network Growth Through Merchants
-
-Tracks merchant-user onboardings, activation, transacting users, and merchant retention. Self-contained HTML one-pager with interactive date picker, city filter, sortable tables, and Chart.js retention chart.
-
-### Run
-```bash
-cd /Users/asharib/Documents/GitHub/ground-force-experiments/merchant-user-onboardings
-python3 run.py --json <path-to-cache.json>
-```
-
-Outputs: `network_growth_through_merchants.html` — self-contained HTML with 4 sections.
-
-### Architecture
-
-Assembly pattern: `shell.html` + `style.css` + `app.js` → single HTML via string injection.
+**Standard files:**
 
 | File | Purpose |
 |------|---------|
-| `run.py` | Entry point: reads cache JSON, assembles HTML (~55 lines) |
-| `queries.py` | SQL queries (merchant_summary + merchant_retention) with tier-split earnings CTEs |
+| `run.py` | Single entry point |
+| `config.py` | Experiment constants: name, dates, sheet ID, column names |
+| `data.py` | Fetch sheet + parse timestamps + row classifiers |
+| `funnel.py` | Pure computation: metrics, nodes, ambassador breakdown |
+| `output.py` | All terminal printing: tables + insights |
+| `flowchart.py` | Generate HTML report (cards, charts) |
+| `*.html` | Generated artifact (overwritten each run) |
+
+**Run:** `cd <dir> && python3 run.py`
+
+### Pattern B: SQL + Cache Assembly
+
+Assembly pattern: `shell.html` + `style.css` + `app.js` → single self-contained HTML via string injection.
+
+**Standard files:**
+
+| File | Purpose |
+|------|---------|
+| `run.py` | Entry point: reads cache JSON, assembles HTML |
+| `queries.py` | SQL queries (canonical source of truth for Rube MCP) |
 | `ui/shell.html` | HTML skeleton with injection markers |
 | `ui/style.css` | All CSS |
-| `ui/app.js` | JS rendering, filters, calendar, earnings computation |
-| `network_growth_through_merchants.html` | Generated artifact (overwritten each run) |
+| `ui/app.js` | Client-side rendering, filters, interactivity |
+| `*.html` | Generated artifact (overwritten each run) |
 
-### Earnings Model
+**Run:** `cd <dir> && python3 run.py --json <path-to-cache.json>`
 
-Two incentive tiers based on onboarding date:
+### Pattern C: Markdown Only
+
+Design doc / experiment brief living in a single `.md` file. No code, no generated artifacts.
+
+## Experiment Catalog
+
+| ID | Directory | Pattern | Split | What it tests |
+|----|-----------|---------|-------|---------------|
+| EXP-001 | `show-dont-tell/` | A | Time-based (baseline vs experiment) | Demo-first opener vs verbal pitch |
+| — | `social-proof-map/` | A | Person-based (Sharoon vs Others) | Showing nearby-merchant map at opener |
+| EXP-006 | `question-redirect/` | A | Time-based (pre- vs post-training) | Universal redirect phrase for Q→Demo |
+| — | `merchant-user-onboardings/` | B | N/A (dashboard) | Merchant onboarding, activation, retention |
+| EXP-001+ | `demo-dollars-usage/` | B | N/A (cohort analysis) | What demo-dollar recipients did with $5 |
+| EXP-007 | ↳ folded into above | B | N/A (retrospective) | 7-day post-demo merchant transactions |
+| EXP-008 | `gold-market-research/` | C | Round-based discovery (R1: Rawalpindi, R2: Islamabad) | Merchant demand for digital gold + jeweler markup argument |
+| EXP-009 | `directed-day/` | B | Time-based (autonomous vs directed) | Structured daily task lists with geo-clustered visits |
+
+## Experiments
+
+### Show Don't Tell (EXP-001)
+
+Tests a new opener strategy where ambassadors demonstrate the app instead of pitching verbally. Started Feb 10, 2026. Outputs: baseline vs experiment funnel comparison, per-ambassador breakdown, and updates `dont_show_tell_exp.html`.
+
+### Social Proof Map
+
+Tests whether showing a map of nearby ZAR merchants bypasses objections at the opener stage. Person-based split: Sharoon Javed (shows map) vs all other ambassadors (no map), concurrent during Feb 11-12, 2026. Outputs: Sharoon vs Others funnel comparison, per-ambassador baseline breakdown, and generates `social_proof_map.html` with 4 cards (funnel comparison, baseline breakdown, friction vs credibility analysis, executive summary).
+
+**Config extras:** `target ambassador`, fixed 2-day window. `data.py` adds `split_by_group()`. No `QuestionDropoffData` or `DayOnDayProgression` — simpler `funnel.py` (~90 lines vs 220).
+
+### Question Redirect Protocol (EXP-006)
+
+Follow-up to EXP-001. Tests whether training ambassadors to redirect merchant questions into immediate app demos improves Q→Demo conversion. EXP-001 revealed the mid-funnel bottleneck: 73% of question-askers (69/95) never saw a demo. Top dropoff questions (Company Info, How It Works, Trust & Safety) are all better shown than explained. Training-based split: pre-training (Feb 10-15) vs post-training (Feb 16+). Rigorous redirect training started Feb 16, 2026.
+
+**Experiment card**: `exp-006-question-redirect.md` — full hypothesis, decision rules, kill criteria, statistical validity check (verdict: WEAK due to 5 ambassador clusters and no compliance verification).
+
+**Key design decisions**: Baseline 25% Q→Demo (43/172, Feb 10-15). Target 50% aspirational, 45% SHIP threshold. Confirmation metric: E2E onboarding rate. Ambassador-stratified analysis (each ambassador as own control). Decision requires ≥4/5 ambassadors improving AND pooled ≥45% to SHIP. SHIP action: Qasim retrains all ambassadors + Daniel builds into in-app playbook.
+
+**Metrics:** `QDemoMetrics` (not `FunnelMetrics`), `TopicConversion` for per-question rates. Outputs: Q→Demo before/after comparison, per-topic conversion rates, per-ambassador Q→Demo rates, and generates `question_redirect.html` with 3 cards (comparison, per-question conversion, ambassador breakdown).
+
+### Network Growth Through Merchants
+
+Tracks merchant-user onboardings, activation, transacting users, and merchant retention. Self-contained HTML one-pager with interactive date picker, city filter, sortable tables, and Chart.js retention chart.
+
+**Earnings model** — two incentive tiers based on onboarding date:
 - **Tier 1** (Jan 1 – Jan 27, 2026): $1.00 per user onboarded
 - **Tier 2** (Jan 28, 2026+): $0.50 per user onboarded + $0.50 per activated user
 
 `earnings = (tier1_onboarded × $1.00) + (tier2_onboarded × $0.50) + (tier2_activated × $0.50)`
 
-### Data Source
+**Data source:** Reads `merchant_summary` and `merchant_retention` arrays from cache JSON. `queries.py` contains SQL with tier-split earnings CTEs. `app.js` handles JS rendering, filters, calendar, earnings computation.
 
-Reads `merchant_summary` and `merchant_retention` arrays from a cache JSON file. The `queries.py` file contains the canonical SQL for fetching this data via Rube MCP (Metabase database ID 1).
+### Demo Dollars Usage (EXP-001 extension + EXP-007)
 
-## Demo Dollars Usage Analysis
+Traces what non-onboarded recipients did with the $5 demo cash notes ambassadors gave them. Identifies who "understood the product" enough to be worth revisiting. Self-contained HTML one-pager with 8 story cards.
 
-Traces what non-onboarded recipients did with the $5 demo cash notes ambassadors gave them. Identifies who "understood the product" enough to be worth revisiting. Self-contained HTML one-pager with story cards.
+**Unique UI classes:** `.recommendation-box`, `.insight-box`, `.amount-table` in `style.css`. `app.js` handles client-side rendering, scoring, story cards, timing analysis.
 
-### Run
-```bash
-cd /Users/asharib/Documents/GitHub/ground-force-experiments/demo-dollars-usage
-python3 run.py --json <path-to-cache.json>
-```
-
-Outputs: `demo_dollars_usage.html` — self-contained HTML with 8 story cards.
-
-### Architecture
-
-Assembly pattern: `shell.html` + `style.css` + `app.js` → single HTML via string injection.
-
-| File | Purpose |
-|------|---------|
-| `run.py` | Entry point: reads cache JSON, assembles HTML |
-| `queries.py` | SQL queries (5 queries + shared CTEs) following Atlas conventions |
-| `ui/shell.html` | HTML skeleton with injection markers |
-| `ui/style.css` | Zar theme CSS (includes `.recommendation-box`, `.insight-box`, `.amount-table`) |
-| `ui/app.js` | Client-side rendering, scoring, story cards, timing analysis |
-| `demo_dollars_usage.html` | Generated artifact (overwritten each run) |
-
-### Iterations
+#### Iterations
 
 | Iter | What was added |
 |------|----------------|
@@ -119,8 +127,9 @@ Assembly pattern: `shell.html` + `style.css` + `app.js` → single HTML via stri
 | 4 | Timing analysis ("When Do They Act?"), amount effectiveness ("Is $5 the Right Amount?"), "Days to Act" detail column, Amplitude app opens data |
 | 5 | Brand recall analysis (timestamped app opens, 2h+ = brand recall), hours precision (timing card), executive summary, self-serving report (inline definitions, Terra communication principles) |
 | 6 | Visit sheet enrichment (shop names + geocoordinates from Google Sheet), Location column in Revisit Targets with Google Maps links, CSV download button |
+| 7 | EXP-007 post-demo transaction tracking: `demo_merchant_transactions_query()`, `time_to_first_tx_query()`, activation card with tx type breakdown and timing distribution |
 
-### "Understands the Product" Definition
+#### "Understands the Product" Definition
 
 Binary classification: demonstrated active use of at least one core product capability beyond passive receipt, excluding cycling back to the ambassador.
 
@@ -128,25 +137,65 @@ Binary classification: demonstrated active use of at least one core product capa
 
 **Excluded**: receiving $5 (passive), holding balance (passive), sending $5 back to ambassador (cycling — Nash anti-fraud filter).
 
-### Timing Analysis (Iteration 4)
+#### Timing Analysis (Iteration 4)
 
 `recipient_timing_query()` finds each recipient's first qualifying activity timestamp. Uses per-type first-timestamp CTEs (CN send, card, BT, ZCE) → `union all` → `row_number()` to pick earliest. Uses `claimed_at` (full timestamp) as t=0.
 
 Key finding: median time to first activity is ~43 minutes. 100% of engaged recipients act within 24 hours. Revisit rule: check after 1 day, give up after 2.
 
-### Data Source
-
-Reads `recipient_overview`, `note_distribution`, `recipient_activity`, `ambassador_summary`, `app_opens`, `recipient_timing`, and `app_opens_detailed` arrays from a cache JSON file. The `queries.py` file contains the canonical SQL for fetching this data via Rube MCP (Metabase database ID 1). App opens data is sourced from Amplitude (see Rube MCP notes below). `app_opens_detailed` contains per-event timestamps with `hours_after_demo` for brand recall analysis (Iteration 5).
-
-### Visit Sheet Enrichment (Iteration 6)
+#### Visit Sheet Enrichment (Iteration 6)
 
 `recipient_overview` entries can be enriched with `business_name`, `location_lat`, and `location_lng` from the ambassador visit log Google Sheet (`1bFf0NAQFFXIYYxMC1yJeqowRz6MwT_-xawZeg5H9wUQ`, tab "Form Responses 1"). Matching is done on normalized phone number (strip non-digits). Only updates `business_name` where currently null. The Revisit Targets table shows a "Location" column with clickable Google Maps links and a "Download CSV" button.
 
-## DB Schema Knowledge
+#### EXP-007: Post-Demo Merchant Transactions
 
-Accumulated from iterations 1-4 of Demo Dollars analysis.
+Observational study — tracks 7-day post-demo transaction activity for EXP-001 demo recipients. No intervention, retrospective cohort analysis. Added `demo_merchant_transactions_query()` and `time_to_first_tx_query()` to `queries.py`, `renderExp007()` to `app.js`, and an EXP-007 card (activation funnel, tx type breakdown, time-to-first-tx histogram) to `shell.html`.
 
-### Ambassador ID → Name Mappings
+#### Data Source
+
+Reads `recipient_overview`, `note_distribution`, `recipient_activity`, `ambassador_summary`, `app_opens`, `recipient_timing`, `app_opens_detailed`, `merchant_transactions`, and `time_to_first_tx` arrays from a cache JSON file. The `queries.py` file contains the canonical SQL for fetching this data via Rube MCP (Metabase database ID 1). App opens data is sourced from Amplitude (see Rube MCP notes below). `app_opens_detailed` contains per-event timestamps with `hours_after_demo` for brand recall analysis (Iteration 5).
+
+### Digital Gold Market Research (EXP-008)
+
+Discovery research (Pattern C) in `gold-market-research/exp-008-digital-gold.md`. Tests whether latent merchant demand exists for selling digital gold in Pakistan, with the jeweler markup savings argument (10-15% premium elimination) as the centerpiece pitch.
+
+**Classification**: Discovery research, not an intervention experiment. Sequential round-based design: Round 1 (14 Rawalpindi interviews, completed Feb 12, 2026) → Round 2 (20 Islamabad EP/JC shops, planned). Round 1 data and analysis live at [gold-research.pages.dev](https://gold-research.pages.dev).
+
+**Key design decisions**: Tiered signal framework replaces single "strong interest rate" — behavioral signals (unprompted actions) > economic argument (Q4 sentiment shift at markup pitch) > distribution willingness (Q6) > 48-hour callback confirmation (pickup → recall → WhatsApp micro-commitment). Pakistani shopkeeper hospitality ("haan bhai") is explicitly treated as noise floor, not signal. Decision rules: present findings with recommendation to leadership (Turab/Brandon). Signal matrix evaluation: 3-4 green = PROCEED, 2 green = ITERATE, 0-1 green = SHELVE.
+
+**Round 1 findings**: 8/14 preferred dollars, 4/14 gold (29%). Top barrier: physical possession anxiety (4 mentions). Critical gap: jeweler markup advantage (Rs. 50-80K/tola savings) was never mentioned. Round 2 tests this as the centerpiece argument via sequential sentiment funnel (Q3 baseline → Q4 premium → Q5 redemption → Q6-Q8 distribution).
+
+### Directed Day (EXP-009)
+
+Tests whether structured daily task lists improve onboarding conversion and merchant reactivation. Ambassadors receive 8 geo-clustered visits per day (mix of onboarding revisits to demoed-not-onboarded merchants + reactivation visits to 14-day-inactive merchants) with geofenced verification at 200m.
+
+**Run:** `cd directed-day && python3 run.py --json targets_cache.json` (dashboard) or `python3 run.py --json targets_cache.json --generate` (generate routes + dashboard)
+
+**Architecture:** Pattern B hybrid with two-layer geo-clustering.
+
+| File | Purpose |
+|------|---------|
+| `exp-009-directed-day.md` | Experiment card with hypothesis, decision rules, data |
+| `queries.py` | SQL: reactivation targets (14d inactive), onboarding status check, outcome tracking |
+| `task_generator.py` | Two-layer geo-clustering: zones (Layer 1) → daily routes (Layer 2) |
+| `run.py` | Entry point: generate routes and/or assemble HTML dashboard |
+| `ui/shell.html` | HTML skeleton with 4 cards |
+| `ui/style.css` | Zar theme CSS |
+| `ui/app.js` | Client-side: pool overview, zone map, route cards, outcome tracking |
+
+**Key design decisions:**
+- **Two-layer clustering**: Standard k-means with fixed cluster size degrades walkability (50% of clusters span 5-11km). Layer 1 creates tight geographic zones (≤2km radius, variable size). Layer 2 composes exactly 8 visits per ambassador from adjacent zones daily.
+- **14-day rolling inactivity**: Reactivation targets are merchants with no ZCE (as fulfiller) or CN (as depositor) in last 14 days. Pool replenishes naturally.
+- **Onboarding targets**: From visit sheet — merchants who got a demo (Golden Flow Amount set) but didn't onboard (QR Setup not done), filtered to those with GPS coordinates.
+- **Karachi pool**: 130 merchants (76 onboarding + 54 reactivation). At 24 directed visits/day (3 ambassadors × 8), covers full pool in ~5.4 days.
+
+**Companion app** (separate repo): Asharib will vibe-code a PWA for task list delivery with geofenced check-in, similar to agent-app.
+
+## Data Infrastructure
+
+### DB Schema
+
+#### Ambassador ID → Name Mappings
 
 | User ID | Username | Real Name |
 |---------|----------|-----------|
@@ -154,7 +203,7 @@ Accumulated from iterations 1-4 of Demo Dollars analysis.
 | `019c22a1-07a6-7c67-889e-5c655fe8ae11` | `owaisferoz1` | Owais Feroz |
 | `a9519a82-c510-4b5b-a24b-ecec3f68de23` | `muhammadzahid` | Muhammad Zahid |
 
-### Schema Facts
+#### Schema Facts
 
 - No `shops` table exists — use `merchant_onboarding_submissions` for business info
 - `merchant_onboarding_submissions` has `business_name`, `phone_number`, `status` columns
@@ -171,20 +220,20 @@ Accumulated from iterations 1-4 of Demo Dollars analysis.
 - Cash notes: `digital_cash_notes` table, `depositor_id` = sender, `claimant_id` = receiver, `status = 'claimed'`
 - PKT time offset: `+ interval '5' hour` for UTC → Pakistan Time
 
-### Shared CTE Pattern
+#### Shared CTE Pattern
 
 All demo dollars queries share two CTEs defined in `queries.py`:
 - `_ambassadors_cte()` — users with ambassador role, excluding `EXCLUDED_IDS`
 - `_demo_dollars_cte()` — cash notes from ambassadors to same-day-created recipients (Feb 1+), no amount filter
 
-## Rube MCP (Composio) Notes
+### Rube MCP (Composio)
 
-### Metabase (SQL Queries)
+#### Metabase (SQL Queries)
 - Tool: `METABASE_POST_API_DATASET` with `database: 1`, `type: "native"`, `native: {query: "..."}`
 - Connection is active and works via both `RUBE_MULTI_EXECUTE_TOOL` and workbench
 - Session ID: `"each"` (pass in all subsequent meta tool calls)
 
-### Amplitude (App Analytics)
+#### Amplitude (App Analytics)
 - Tools: `AMPLITUDE_FIND_USER` (UUID → amplitude_id), `AMPLITUDE_GET_USER_ACTIVITY` (event stream)
 - **Critical**: These tools FAIL via `RUBE_MULTI_EXECUTE_TOOL` (routes to `api2.amplitude.com` which is the ingestion API, returns 404)
 - **Workaround**: Use `run_composio_tool()` inside `RUBE_REMOTE_WORKBENCH` — this routes correctly and works
@@ -192,7 +241,7 @@ All demo dollars queries share two CTEs defined in `queries.py`:
 - Event types for app opens: `"app_open"`, `"session_start"`, `"[Amplitude] Start Session"`, `"App Open"`, `"app_opened"`
 - 28 of 32 demo dollar recipients were found in Amplitude (4 never opened the app at all)
 
-### Cache JSON Workflow
+#### Cache JSON Workflow
 
 1. Write/update SQL in `queries.py` (canonical source of truth)
 2. Run query via `METABASE_POST_API_DATASET` → extract `rows` from `data.data.rows`
@@ -201,7 +250,7 @@ All demo dollars queries share two CTEs defined in `queries.py`:
 5. Update local `*_cache.json` file with new/updated arrays
 6. Run `python3 run.py --json *_cache.json` to regenerate HTML
 
-## Glossary
+### Glossary
 
 **Nash**, **Terra**, and **Atlas** are agents in the Praxis repository (`/Users/asharib/Documents/GitHub/praxis/`):
 - **Nash** — Game theory expert. Designs incentive systems where fraud is economically irrational using mechanism design, auction theory, and Nash equilibria. Stress-tests systems for exploits.

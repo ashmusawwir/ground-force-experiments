@@ -3,7 +3,7 @@
 import os
 from typing import List, Tuple, Optional
 from config import FUNNEL_STEPS
-from funnel import FlowchartNodes, FunnelMetrics, PeriodInfo, QuestionDropoffData
+from funnel import FlowchartNodes, FunnelMetrics, PeriodInfo, QuestionDropoffData, DayOnDayProgression
 
 CSS = """\
   :root {
@@ -253,6 +253,52 @@ CSS = """\
     font-weight: 600;
     color: var(--text);
     margin: 1.25rem 0 0.75rem;
+  }
+
+  /* Heatmap cells (Cards 4-5) */
+  .heatmap-cell {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .heatmap-cell .hm-rate {
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+    min-width: 48px;
+    text-align: center;
+  }
+  .heatmap-cell .hm-frac {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+  }
+  .rate-bar {
+    display: inline-block;
+    height: 8px;
+    border-radius: 4px;
+    vertical-align: middle;
+  }
+  .legend-row {
+    display: flex;
+    gap: 1.25rem;
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+  .legend-row span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .legend-swatch {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
   }"""
 
 SVG_ARROWS = """\
@@ -603,12 +649,258 @@ def _build_dropoff_card(dropoff: QuestionDropoffData, expt_info: PeriodInfo) -> 
 </div>"""
 
 
+def _hm_bg(rate: Optional[float]) -> str:
+    """Background color for a heatmap cell."""
+    if rate is None:
+        return "#ccc"
+    if rate >= 50:
+        return "#16a34a"
+    if rate >= 30:
+        return "#B8992E"
+    return "#dc2626"
+
+
+def _delta_arrow(prev_rate: Optional[float], cur_rate: Optional[float]) -> str:
+    """Delta arrow HTML comparing current to previous day."""
+    if prev_rate is None or cur_rate is None:
+        return '<span class="delta-zero">&mdash;</span>'
+    d = cur_rate - prev_rate
+    if d > 2:
+        return f'<span class="delta-pos">&#9650; +{_sig2(d)}</span>'
+    if d < -2:
+        return f'<span class="delta-neg">&#9660; {_sig2(d)}</span>'
+    return f'<span class="delta-zero">&#9644; {_sig2(d)}</span>'
+
+
+def _build_daily_trend_card(prog: 'DayOnDayProgression', expt_info: 'PeriodInfo') -> str:
+    """Card 4 — Is the Training Working? Day-on-day Q→Demo rates."""
+
+    # Headline stat boxes
+    first_str = f"{_sig2(prog.first_day_rate)}%" if prog.first_day_rate is not None else "\u2014"
+    last_str = f"{_sig2(prog.last_day_rate)}%" if prog.last_day_rate is not None else "\u2014"
+    overall_str = f"{_sig2(prog.overall_rate)}%" if prog.overall_rate is not None else "\u2014"
+
+    # Arrow color between Day 1 and Latest
+    if prog.first_day_rate is not None and prog.last_day_rate is not None:
+        if prog.last_day_rate > prog.first_day_rate:
+            arrow_color = "var(--success)"
+            arrow_char = "&#9654;"  # right arrow
+        elif prog.last_day_rate < prog.first_day_rate:
+            arrow_color = "var(--danger)"
+            arrow_char = "&#9654;"
+        else:
+            arrow_color = "var(--zar-gold-dark)"
+            arrow_char = "&#9654;"
+    else:
+        arrow_color = "var(--text-secondary)"
+        arrow_char = "&#9654;"
+
+    headline_html = f"""\
+  <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+    <div class="stat-box" style="flex:1; min-width:120px;">
+      <div class="stat-value" style="color:{_rate_color(prog.first_day_rate)}">{first_str}</div>
+      <div class="stat-label">Day 1</div>
+    </div>
+    <div style="font-size:1.5rem; color:{arrow_color};">{arrow_char}</div>
+    <div class="stat-box" style="flex:1; min-width:120px;">
+      <div class="stat-value" style="color:{_rate_color(prog.last_day_rate)}">{last_str}</div>
+      <div class="stat-label">Latest Day</div>
+    </div>
+    <div class="stat-box" style="flex:1; min-width:120px;">
+      <div class="stat-value" style="color:{_rate_color(prog.overall_rate)}">{overall_str}</div>
+      <div class="stat-label">Overall</div>
+    </div>
+  </div>"""
+
+    # Daily table rows
+    table_rows = []
+    for i, dr in enumerate(prog.daily_rates):
+        day_label = dr.day.strftime("%b %d")
+        rate_str = f"{_sig2(dr.rate)}%" if dr.rate is not None else "\u2014"
+        rate_col = _rate_color(dr.rate)
+
+        # Bar width proportional to rate (max 120px)
+        bar_w = int(dr.rate * 1.2) if dr.rate is not None else 0
+        bar_html = f'<span class="rate-bar" style="width:{bar_w}px; background:{rate_col};"></span>' if bar_w > 0 else ""
+
+        # Delta vs previous day
+        prev_rate = prog.daily_rates[i - 1].rate if i > 0 else None
+        delta_html = _delta_arrow(prev_rate, dr.rate) if i > 0 else '<span class="delta-zero">&mdash;</span>'
+
+        table_rows.append(
+            f'      <tr>'
+            f'<td>{day_label}</td>'
+            f'<td class="num-col">{dr.asked}</td>'
+            f'<td class="num-col">{dr.demos}</td>'
+            f'<td class="num-col" style="color:{rate_col}">{rate_str}</td>'
+            f'<td class="num-col">{delta_html}</td>'
+            f'<td>{bar_html}</td>'
+            f'</tr>'
+        )
+
+    # Insight box
+    insight_parts = []
+    if prog.best_day and prog.worst_day and prog.best_day.day != prog.worst_day.day:
+        insight_parts.append(
+            f"Best day: <strong>{prog.best_day.day.strftime('%b %d')}</strong> "
+            f"({_sig2(prog.best_day.rate)}%). "
+            f"Worst day: <strong>{prog.worst_day.day.strftime('%b %d')}</strong> "
+            f"({_sig2(prog.worst_day.rate)}%)."
+        )
+    if prog.first_day_rate is not None and prog.last_day_rate is not None:
+        if prog.last_day_rate > prog.first_day_rate:
+            insight_parts.append(
+                f"Latest day improved vs Day 1: "
+                f"{_sig2(prog.first_day_rate)}% &rarr; {_sig2(prog.last_day_rate)}%."
+            )
+        elif prog.last_day_rate < prog.first_day_rate:
+            insight_parts.append(
+                f"Latest day declined vs Day 1: "
+                f"{_sig2(prog.first_day_rate)}% &rarr; {_sig2(prog.last_day_rate)}%."
+            )
+        else:
+            insight_parts.append("Latest day is flat vs Day 1.")
+
+    insight_html = ""
+    if insight_parts:
+        insight_html = f'\n  <div class="insight">{" ".join(insight_parts)}</div>'
+
+    return f"""\
+<div class="data-card">
+  <h2><span class="num">4</span> Is the Training Working?</h2>
+  <div class="period-info">
+    Q&rarr;Demo conversion day-over-day &middot;
+    Experiment: {expt_info.range_str} ({expt_info.num_days} day{"s" if expt_info.num_days != 1 else ""})
+  </div>
+{headline_html}
+  <table>
+    <thead>
+      <tr>
+        <th>Day</th>
+        <th class="num-col">Questions</th>
+        <th class="num-col">Demos</th>
+        <th class="num-col">Q&rarr;Demo %</th>
+        <th class="num-col">&Delta; vs Prev</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+{chr(10).join(table_rows)}
+    </tbody>
+  </table>{insight_html}
+</div>"""
+
+
+def _build_ambassador_daily_card(prog: 'DayOnDayProgression', expt_info: 'PeriodInfo') -> str:
+    """Card 5 — Who Needs Coaching? Ambassador × Day heatmap."""
+    if not prog.all_dates or not prog.ambassador_last_rate:
+        return ""
+
+    # Column headers (dates)
+    date_headers = "".join(
+        f'<th style="text-align:center; min-width:70px;">{d.strftime("%b %d")}</th>'
+        for d in prog.all_dates
+    )
+
+    # Heatmap rows — sorted worst-latest-rate first
+    hm_rows = []
+    red_ambassadors = []
+    for name, last_rate in prog.ambassador_last_rate:
+        rates = prog.ambassador_daily.get(name, [])
+
+        # Detect declining: last rate < first non-None rate
+        non_none = [r for r in rates if r.rate is not None]
+        is_declining = (
+            len(non_none) >= 2
+            and non_none[-1].rate is not None
+            and non_none[0].rate is not None
+            and non_none[-1].rate < non_none[0].rate - 2
+        )
+        row_style = ' style="background:rgba(220,38,38,0.04);"' if is_declining else ""
+
+        cells = f'<td{row_style}><strong>{name}</strong></td>'
+        for dr in rates:
+            if dr.rate is not None:
+                bg = _hm_bg(dr.rate)
+                cells += (
+                    f'<td style="text-align:center;{" background:rgba(220,38,38,0.04);" if is_declining else ""}">'
+                    f'<div class="heatmap-cell">'
+                    f'<span class="hm-rate" style="background:{bg};">{_sig2(dr.rate)}%</span>'
+                    f'<span class="hm-frac">{dr.demos}/{dr.asked}</span>'
+                    f'</div></td>'
+                )
+            else:
+                cells += (
+                    f'<td style="text-align:center;{" background:rgba(220,38,38,0.04);" if is_declining else ""}">'
+                    f'<div class="heatmap-cell">'
+                    f'<span class="hm-rate" style="background:#ccc;">&mdash;</span>'
+                    f'<span class="hm-frac">0/0</span>'
+                    f'</div></td>'
+                )
+
+        # Trend column (latest day badge)
+        if last_rate is not None:
+            badge_cls = "badge-success" if last_rate >= 50 else ("badge-warning" if last_rate >= 30 else "badge-danger")
+            trend_cell = f'<td style="text-align:center;"><span class="badge {badge_cls}">{_sig2(last_rate)}%</span></td>'
+        else:
+            trend_cell = '<td style="text-align:center;"><span class="badge" style="background:#eee; color:#999;">&mdash;</span></td>'
+
+        hm_rows.append(f'      <tr>{cells}{trend_cell}</tr>')
+
+        # Track red ambassadors for coaching callout
+        if last_rate is not None and last_rate < 30:
+            red_ambassadors.append(name)
+
+    # Legend
+    legend_html = """\
+  <div class="legend-row">
+    <span><span class="legend-swatch" style="background:#16a34a;"></span> &ge;50%</span>
+    <span><span class="legend-swatch" style="background:#B8992E;"></span> 30&ndash;49%</span>
+    <span><span class="legend-swatch" style="background:#dc2626;"></span> &lt;30%</span>
+    <span><span class="legend-swatch" style="background:#ccc;"></span> No data</span>
+  </div>"""
+
+    # Coaching callout
+    coaching_html = ""
+    if red_ambassadors:
+        names_str = ", ".join(f"<strong>{n}</strong>" for n in red_ambassadors)
+        coaching_html = (
+            f'\n  <div class="insight">'
+            f'Coaching targets: {names_str} &mdash; latest day Q&rarr;Demo below 30%. '
+            f'Drill: <em>&ldquo;Great question &mdash; let me just show you.&rdquo;</em>'
+            f'</div>'
+        )
+
+    return f"""\
+<div class="data-card">
+  <h2><span class="num">5</span> Who Needs Coaching?</h2>
+  <div class="period-info">
+    Ambassador &times; Day heatmap &middot;
+    Experiment: {expt_info.range_str} ({expt_info.num_days} day{"s" if expt_info.num_days != 1 else ""})
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Ambassador</th>
+        {date_headers}
+        <th style="text-align:center;">Trend</th>
+      </tr>
+    </thead>
+    <tbody>
+{chr(10).join(hm_rows)}
+    </tbody>
+  </table>
+{legend_html}{coaching_html}
+</div>"""
+
+
 def generate_flowchart(nodes: FlowchartNodes, info: PeriodInfo,
                        base_m: FunnelMetrics, expt_m: FunnelMetrics,
                        base_info: PeriodInfo, expt_info: PeriodInfo,
                        amb_data: List[Tuple[str, FunnelMetrics]],
                        total_m: FunnelMetrics,
-                       dropoff: 'QuestionDropoffData' = None) -> str:
+                       dropoff: 'QuestionDropoffData' = None,
+                       progression: 'DayOnDayProgression' = None) -> str:
     v = nodes
     opener_passed = v.asked_questions + v.direct_to_demo
     days_word = f"{info.num_days} day{'s' if info.num_days != 1 else ''}"
@@ -626,6 +918,13 @@ def generate_flowchart(nodes: FlowchartNodes, info: PeriodInfo,
     comparison_html = _build_comparison_card(base_m, expt_m, base_info, expt_info)
     ambassador_html = _build_ambassador_card(amb_data, total_m, expt_info)
     dropoff_html = _build_dropoff_card(dropoff, expt_info) if dropoff else ""
+    progression_html = ""
+    if progression and progression.daily_rates:
+        progression_html = (
+            _build_daily_trend_card(progression, expt_info)
+            + "\n\n"
+            + _build_ambassador_daily_card(progression, expt_info)
+        )
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -659,6 +958,8 @@ def generate_flowchart(nodes: FlowchartNodes, info: PeriodInfo,
 
 {dropoff_html}
 
+{progression_html}
+
 <div style="margin-top:20px; font-size:0.75rem; color:var(--text-secondary);">
   Generated from new visit form data &middot; {info.range_str} &middot; Experiment period: {days_word}
 </div>
@@ -673,9 +974,10 @@ def write_flowchart(nodes: FlowchartNodes, info: PeriodInfo,
                     base_info: PeriodInfo, expt_info: PeriodInfo,
                     amb_data: List[Tuple[str, FunnelMetrics]],
                     total_m: FunnelMetrics,
-                    dropoff: 'QuestionDropoffData' = None) -> None:
+                    dropoff: 'QuestionDropoffData' = None,
+                    progression: 'DayOnDayProgression' = None) -> None:
     html_path = os.path.join(os.path.dirname(__file__), "dont_show_tell_exp.html")
-    html = generate_flowchart(nodes, info, base_m, expt_m, base_info, expt_info, amb_data, total_m, dropoff)
+    html = generate_flowchart(nodes, info, base_m, expt_m, base_info, expt_info, amb_data, total_m, dropoff, progression)
     with open(html_path, "w") as f:
         f.write(html)
     import sys

@@ -1,7 +1,8 @@
 """Pure computation — no I/O, no printing."""
 
 from collections import Counter, defaultdict
-from typing import List, Optional, Tuple
+from datetime import date
+from typing import Dict, List, Optional, Tuple
 
 from data import (
     Row, row_date, is_onboarding, opener_passed, has_question,
@@ -132,3 +133,87 @@ class QuestionDropoffData:
         # Sort ascending by conv rate (worst first), None last
         amb_stats.sort(key=lambda x: x[4] if x[4] is not None else 999)
         self.ambassador_stats = amb_stats
+
+
+class DailyQDemoRate:
+    """Q→Demo conversion for a single day."""
+
+    __slots__ = ("day", "asked", "demos", "rate")
+
+    def __init__(self, day: date, asked: int, demos: int):
+        self.day = day
+        self.asked = asked
+        self.demos = demos
+        self.rate: Optional[float] = demos / asked * 100 if asked else None
+
+
+class DayOnDayProgression:
+    """Day-on-day Q→Demo progression for experiment rows."""
+
+    def __init__(self, rows: List[Row]):
+        onb = [r for r in rows if is_onboarding(r)]
+        passed = [r for r in onb if opener_passed(r)]
+        asked_rows = [r for r in passed if has_question(r)]
+
+        # --- High-level daily rates ---
+        by_day: Dict[date, List[Row]] = defaultdict(list)
+        for r in asked_rows:
+            d = row_date(r)
+            if d:
+                by_day[d].append(r)
+
+        self.all_dates: List[date] = sorted(by_day.keys())
+
+        self.daily_rates: List[DailyQDemoRate] = []
+        for d in self.all_dates:
+            day_rows = by_day[d]
+            n_asked = len(day_rows)
+            n_demos = sum(1 for r in day_rows if did_demo(r))
+            self.daily_rates.append(DailyQDemoRate(d, n_asked, n_demos))
+
+        total_asked = len(asked_rows)
+        total_demos = sum(1 for r in asked_rows if did_demo(r))
+        self.overall_rate: Optional[float] = (
+            total_demos / total_asked * 100 if total_asked else None
+        )
+
+        self.first_day_rate: Optional[float] = (
+            self.daily_rates[0].rate if self.daily_rates else None
+        )
+        self.last_day_rate: Optional[float] = (
+            self.daily_rates[-1].rate if self.daily_rates else None
+        )
+
+        self.best_day: Optional[DailyQDemoRate] = None
+        self.worst_day: Optional[DailyQDemoRate] = None
+        rated = [dr for dr in self.daily_rates if dr.rate is not None]
+        if rated:
+            self.best_day = max(rated, key=lambda x: x.rate)
+            self.worst_day = min(rated, key=lambda x: x.rate)
+
+        # --- Per-ambassador daily (heatmap) ---
+        amb_day: Dict[str, Dict[date, List[Row]]] = defaultdict(lambda: defaultdict(list))
+        for r in asked_rows:
+            d = row_date(r)
+            if d:
+                amb_day[ambassador_name(r)][d].append(r)
+
+        self.ambassador_daily: Dict[str, List[DailyQDemoRate]] = {}
+        for name, day_dict in amb_day.items():
+            rates = []
+            for d in self.all_dates:
+                if d in day_dict:
+                    dr = day_dict[d]
+                    rates.append(DailyQDemoRate(d, len(dr), sum(1 for r in dr if did_demo(r))))
+                else:
+                    rates.append(DailyQDemoRate(d, 0, 0))
+            self.ambassador_daily[name] = rates
+
+        # Sort by latest day rate ascending (worst first → coaching targets at top)
+        self.ambassador_last_rate: List[Tuple[str, Optional[float]]] = []
+        for name, rates in self.ambassador_daily.items():
+            last_rate = rates[-1].rate if rates else None
+            self.ambassador_last_rate.append((name, last_rate))
+        self.ambassador_last_rate.sort(
+            key=lambda x: x[1] if x[1] is not None else -1
+        )

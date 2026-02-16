@@ -291,6 +291,43 @@ th .sort-arrow { font-size: 0.65rem; margin-left: 2px; }
   background: var(--red-bg);
   color: var(--red);
 }
+/* Tier badges */
+.badge-t1 {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: var(--green-bg);
+  color: var(--green);
+}
+.badge-t2 {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: var(--blue-bg);
+  color: var(--blue);
+}
+.badge-t3 {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: var(--background);
+  color: var(--text-secondary);
+}
+.badge-noise {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: var(--red-bg);
+  color: var(--red);
+}
 /* Recommendation box */
 .recommendation-box {
   margin-top: 1rem;

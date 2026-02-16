@@ -1,0 +1,284 @@
+/* EXP-009 Directed Day Dashboard — Zar Theme */
+
+:root {
+    --zar-gold: #B8992E;
+    --zar-gold-light: #CBAF4A;
+    --zar-gold-dark: #9A7E24;
+    --zar-sky-blue: #7BC4E8;
+    --zar-hot-pink: #FF4D9D;
+    --background: #F5F0E8;
+    --card: #FFFFFF;
+    --border: #E8E3DB;
+    --text: #1A1A1A;
+    --text-secondary: #6B6B6B;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --warning: #d97706;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--background);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2rem;
+}
+
+.container { max-width: 1400px; margin: 0 auto; }
+
+h1 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+h2 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+h2 .num {
+    background: linear-gradient(135deg, var(--zar-gold), var(--zar-gold-light));
+    color: white;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+}
+
+/* ── Cards ── */
+
+.card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    margin-bottom: 1.5rem;
+}
+
+.card-full { grid-column: 1 / -1; }
+
+/* ── Stat boxes ── */
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-grid-5 {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+.stat-box {
+    background: var(--background);
+    padding: 1rem;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--zar-gold-dark);
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+
+/* ── Tables ── */
+
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+
+th {
+    padding: 0.75rem;
+    text-align: left;
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+}
+
+td {
+    padding: 0.75rem;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+}
+
+tr:hover td { background: rgba(184, 153, 46, 0.04); }
+
+/* ── Badges ── */
+
+.badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-onboarding { background: rgba(123, 196, 232, 0.2); color: #2980b9; }
+.badge-reactivation { background: rgba(184, 153, 46, 0.15); color: var(--zar-gold-dark); }
+.badge-success { background: rgba(22, 163, 74, 0.15); color: var(--success); }
+.badge-danger { background: rgba(220, 38, 38, 0.15); color: var(--danger); }
+.badge-warning { background: rgba(217, 119, 6, 0.15); color: var(--warning); }
+.badge-pending { background: rgba(107, 107, 107, 0.12); color: var(--text-secondary); }
+.badge-affinity { background: rgba(22, 163, 74, 0.12); color: var(--success); font-size: 0.65rem; margin-left: 4px; }
+.badge-tier1 { background: rgba(22, 163, 74, 0.12); color: var(--success); font-size: 0.65rem; margin-left: 4px; }
+.badge-tier2 { background: rgba(217, 119, 6, 0.12); color: var(--warning); font-size: 0.65rem; margin-left: 4px; }
+
+/* ── Leaflet Map ── */
+
+.map-container {
+    width: 100%;
+    height: 550px;
+    border-radius: 12px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Override Leaflet defaults inside our container */
+.map-container .leaflet-container {
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Custom zone tooltip */
+.zone-tip {
+    background: white !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    padding: 8px 12px !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important;
+    font-size: 0.82rem !important;
+    line-height: 1.5 !important;
+}
+
+.zone-tip::before { border: none !important; }
+
+/* Remove default icon styling from custom markers */
+.dm-icon, .zone-label-icon, .merchant-icon {
+    background: none !important;
+    border: none !important;
+}
+
+/* ── Legend (compact) ── */
+
+.zone-legend {
+    margin-bottom: 0.75rem;
+}
+
+.legend-row {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+
+.legend-item svg { flex-shrink: 0; }
+
+.legend-sep {
+    width: 1px;
+    height: 16px;
+    background: var(--border);
+}
+
+.legend-summary {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* ── Route card ── */
+
+.route-card {
+    background: var(--background);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.route-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.route-ambassador {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.route-meta {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* ── Insight box ── */
+
+.insight {
+    background: linear-gradient(135deg, rgba(184, 153, 46, 0.08), rgba(184, 153, 46, 0.02));
+    border-left: 3px solid var(--zar-gold);
+    padding: 1rem;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    border-radius: 0 12px 12px 0;
+}
+
+.insight strong { color: var(--zar-gold-dark); }
+
+/* ── Zone table color chip ── */
+
+.zone-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 768px) {
+    body { padding: 1rem; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .stat-grid-5 { grid-template-columns: repeat(3, 1fr); }
+    h1 { font-size: 1.5rem; }
+    .map-container { height: 350px; }
+}

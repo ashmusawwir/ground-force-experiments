@@ -33,6 +33,9 @@ def main():
         "app_opens": cache.get("app_opens", []),
         "recipient_timing": cache.get("recipient_timing", []),
         "app_opens_detailed": cache.get("app_opens_detailed", []),
+        "merchant_transactions": cache.get("merchant_transactions", []),
+        "time_to_first_tx": cache.get("time_to_first_tx", []),
+        "all_activity_timestamps": cache.get("all_activity_timestamps", []),
     }
 
     counts = (
