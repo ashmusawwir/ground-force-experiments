@@ -76,6 +76,19 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 | EXP-007 | ↳ folded into above | B | N/A (retrospective) | 7-day post-demo merchant transactions |
 | EXP-008 | `gold-market-research/` | C | Round-based discovery (R1: Rawalpindi, R2: Islamabad) | Merchant demand for digital gold + jeweler markup argument |
 | EXP-009 | `directed-day/` | B | Time-based (autonomous vs directed) | Structured daily task lists with geo-clustered visits |
+| EXP-010 | Notion-only | C | N/A (observation) | Shadow top/mid/bottom ambassadors to explain Q-to-Demo variance |
+| EXP-011 | Notion-only | C | Time-based (before/after WhatsApp SOP) | WhatsApp follow-up within 2h of demo |
+| EXP-012 | Notion-only | C | N/A (analysis) | Visit pacing correlation with conversion |
+| EXP-013 | Notion-only | C | Time-based (before/after info shot) | Preemptive 15s "how it works" explanation |
+| EXP-014 | Notion-only | C | Person-based (3 pools × 3 candidates) | BD hiring tournament: bKash/Nagad vs students vs ex-sales |
+| EXP-015 | Notion-only | C | N/A (discovery) | BD market structure mapping: 30 agent interviews |
+| EXP-016 | Notion-only | C | N/A (infrastructure) | BD tracking infrastructure: forms, GPS, timezone |
+| EXP-017 | Notion-only | C | Person-based (within-ambassador A/B) | BD pitch A/B: savings vs remittance framing |
+| EXP-018 | Notion-only | C | N/A (observation) | BD multi-homing friction: 14-day agent retention |
+| EXP-019 | Notion-only | C | N/A (analysis) | Cross-market PK vs BD funnel benchmark |
+| EXP-020 | Notion-only | C | Person-based (3 pools × 3 candidates) | PK hiring tournament: EP/JC agents vs students vs merchants |
+| EXP-021 | Notion-only | C | N/A (analysis) | Top performer DNA profiling (r > 0.5 threshold) |
+| EXP-022 | Notion-only | C | Person-based (referral vs pipeline) | Referral hiring: top-performer referrals vs EXP-020 pipeline |
 
 ## Experiments
 
@@ -194,6 +207,32 @@ Tests whether structured daily task lists improve onboarding conversion and merc
 - **Karachi pool**: 130 merchants (76 onboarding + 54 reactivation). At 24 directed visits/day (3 ambassadors × 8), covers full pool in ~5.4 days.
 
 **Companion app** (separate repo): Asharib will vibe-code a PWA for task list delivery with geofenced check-in, similar to agent-app.
+
+### Pending Experiments (EXP-010 — EXP-022)
+
+Thirteen experiments pending internal approval on Notion. All Pattern C (Notion-only experiment cards).
+
+#### Pakistan Pitch & Training
+
+- **EXP-010: Demo Shadow** — Qasim shadows top/mid/bottom ambassadors to explain 10-100% Q-to-Demo variance. Informs training vs hiring filter investment.
+- **EXP-011: WhatsApp Follow-Up** — WhatsApp template within 2h of demo to improve demo-to-onboard from ~24% baseline. Parent: EXP-007.
+- **EXP-012: Pacing Patterns** — Analyze whether visit pacing correlates with conversion (r > 0.3 threshold). Informs EXP-009 visit targets.
+- **EXP-013: Surgical Info Shot** — Preemptive 15s "how it works" explanation to increase demo rate from 25% baseline. Parent: EXP-006.
+
+#### Bangladesh Market Entry
+
+- **EXP-015: Market Structure Mapping** — 30 structured interviews across 3 Dhaka zones testing remittance vs savings resonance. Adapted from EXP-008 methodology.
+- **EXP-016: Tracking Infrastructure** — Visit form, GPS, timezone (UTC+6), ambassador IDs for Bangladesh data collection.
+- **EXP-017: Pitch A/B** — Savings-framed vs remittance-framed opener. Within-ambassador design, 120 visits, alternating neighborhoods.
+- **EXP-018: Multi-Homing Friction** — 14-day retention tracking for 30 bKash/Nagad agents who onboard to ZAR. Target: >60% active.
+- **EXP-019: Cross-Market Benchmark** — PK vs BD funnel comparison for Go/No-Go decision. Key metric: cost-per-active-merchant.
+
+#### Hiring & Recruitment
+
+- **EXP-014: Hiring Tournament BD** — 3 pools × 3 candidates in Bangladesh (bKash/Nagad agents, university students, ex-sales). 5-day trial.
+- **EXP-020: Hiring Tournament PK** — 3 pools × 3 candidates in Pakistan (EP/JC agents, students, existing merchants). Mirrors EXP-014 design.
+- **EXP-021: Top Performer DNA** — Profile all 8 current ambassadors to identify pre-hire traits predicting performance (r > 0.5 threshold).
+- **EXP-022: Referral Hiring** — Top performers (Irfan, Junaid, Arslan) each refer 2 candidates. Benchmark against EXP-020 pool winners.
 
 ## Data Infrastructure
 
