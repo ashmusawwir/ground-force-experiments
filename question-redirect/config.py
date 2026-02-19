@@ -16,6 +16,7 @@ COL_QUESTIONS_ASKED = "Questions Asked"
 COL_GOLDEN_FLOW = "Golden Flow Amount"
 COL_QR_SETUP = "QR Setup Done"
 COL_AMBASSADOR = "Ambassador Name"
+COL_PHONE = "Merchant Phone"
 
 SKIP_QUESTIONS = {"no", "none", "n/a", "-", ""}
 QR_YES_VALUES = {"yes", "true", "done", "1"}

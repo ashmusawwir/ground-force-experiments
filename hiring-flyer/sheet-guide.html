@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How to Use — Feb 18 Onwards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --zar-gold: #B8992E;
+  --zar-gold-light: #CBAF4A;
+  --zar-gold-dark: #9A7E24;
+  --background: #F5F0E8;
+  --card: #FFFFFF;
+  --border: #E8E3DB;
+  --text: #1A1A1A;
+  --text-secondary: #6B6B6B;
+  --green: #16a34a;
+  --green-bg: rgba(22,163,74,0.12);
+  --red: #dc2626;
+  --red-bg: rgba(220,38,38,0.12);
+  --yellow: #ca8a04;
+  --yellow-bg: rgba(202,138,4,0.12);
+  --blue: #2563eb;
+  --blue-bg: rgba(37,99,235,0.12);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--background);
+  color: var(--text);
+  padding: 1.5rem;
+  line-height: 1.6;
+}
+.container { max-width: 640px; margin: 0 auto; }
+
+/* Header */
+header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 2px solid var(--zar-gold);
+}
+h1 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+h1 span { color: var(--zar-gold); }
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+/* Pipeline */
+.pipeline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+.pipeline-step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+.pipeline-step .who {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--zar-gold-dark);
+}
+.pipeline-arrow {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  padding: 0 0.25rem;
+}
+
+/* Cards */
+.card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--border);
+  margin-bottom: 1.25rem;
+}
+.card h2 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.card h2 .badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+.badge-afsar { background: var(--blue); }
+.badge-qasim { background: linear-gradient(135deg, var(--zar-gold), var(--zar-gold-light)); }
+
+/* Column table */
+.col-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.col-table th {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  background: var(--background);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+}
+.col-table td {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+.col-table td:first-child {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.col-table .dropdown-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.opt {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  background: var(--background);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+/* Color rules */
+.color-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.color-rule {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+.color-rule.green { background: var(--green-bg); border-left: 3px solid var(--green); }
+.color-rule.red { background: var(--red-bg); border-left: 3px solid var(--red); }
+.color-rule.yellow { background: var(--yellow-bg); border-left: 3px solid var(--yellow); }
+.color-rule strong {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  min-width: 60px;
+}
+.color-rule.green strong { color: var(--green); }
+.color-rule.red strong { color: var(--red); }
+.color-rule.yellow strong { color: var(--yellow); }
+
+/* Workflow steps */
+.workflow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  counter-reset: step;
+}
+.workflow-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.88rem;
+}
+.workflow-step::before {
+  counter-increment: step;
+  content: counter(step);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--zar-gold), var(--zar-gold-light));
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-top: 0.1rem;
+}
+.workflow-step strong { color: var(--zar-gold-dark); }
+
+/* Note */
+.note {
+  background: var(--blue-bg);
+  border-left: 3px solid var(--blue);
+  padding: 0.75rem 1rem;
+  border-radius: 0 10px 10px 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+.note strong { color: var(--blue); }
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 1.25rem 0 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+footer span { color: var(--zar-gold); font-weight: 600; }
+
+@media (max-width: 480px) {
+  body { padding: 0.75rem; }
+  .card { padding: 1rem; border-radius: 12px; }
+  .pipeline { gap: 0.25rem; }
+  .pipeline-step { padding: 0.4rem 0.6rem; font-size: 0.75rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <h1><span>ZAR</span> — Feb 18 Onwards Sheet</h1>
+    <div class="subtitle">How to use the hiring evaluation tab</div>
+  </header>
+
+  <!-- Pipeline -->
+  <div class="pipeline">
+    <div class="pipeline-step"><div class="who">Afsar</div> Lead comes in</div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step"><div class="who">Qasim</div> Interview</div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step"><div class="who">Qasim</div> Training</div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step"><div class="who">Auto</div> Field check</div>
+  </div>
+
+  <!-- Step 1: Afsar fills -->
+  <div class="card">
+    <h2><span class="badge badge-afsar">A</span> Afsar fills — when a lead comes in</h2>
+    <table class="col-table">
+      <thead><tr><th>Column</th><th>What to fill</th></tr></thead>
+      <tbody>
+        <tr><td>City</td><td>Candidate's city</td></tr>
+        <tr><td>Name</td><td>Candidate's full name</td></tr>
+        <tr><td>Phone</td><td>WhatsApp number</td></tr>
+        <tr><td>Source</td><td>Ask them: "Where did you hear about us?" — write exactly what they say</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Step 2: Qasim interview -->
+  <div class="card">
+    <h2><span class="badge badge-qasim">Q</span> Qasim fills — during interview</h2>
+    <div class="note" style="margin-bottom: 0.75rem;">
+      <strong>Observational only</strong> — no one gets rejected at this stage. Everyone proceeds to training regardless of scores. We're collecting data to learn what predicts field success.
+    </div>
+    <table class="col-table">
+      <thead><tr><th>Column</th><th>Options</th></tr></thead>
+      <tbody>
+        <tr><td>Interview Date</td><td>Date of in-person interview</td></tr>
+        <tr>
+          <td>Engagement</td>
+          <td><div class="dropdown-opts"><span class="opt">High</span><span class="opt">Medium</span><span class="opt">Low</span></div></td>
+        </tr>
+        <tr>
+          <td>App Comprehension</td>
+          <td><div class="dropdown-opts"><span class="opt">Got it</span><span class="opt">Needed help</span><span class="opt">Struggled</span></div></td>
+        </tr>
+        <tr>
+          <td>Comfort w/ Strangers</td>
+          <td><div class="dropdown-opts"><span class="opt">Natural</span><span class="opt">Needs coaching</span><span class="opt">Uncomfortable</span></div></td>
+        </tr>
+        <tr>
+          <td>Communication</td>
+          <td><div class="dropdown-opts"><span class="opt">Clear</span><span class="opt">Adequate</span><span class="opt">Poor</span></div></td>
+        </tr>
+        <tr><td>Qasim Notes</td><td>Anything notable — free text</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Step 3: Qasim training -->
+  <div class="card">
+    <h2><span class="badge badge-qasim">Q</span> Qasim fills — during training</h2>
+    <table class="col-table">
+      <thead><tr><th>Column</th><th>Options</th></tr></thead>
+      <tbody>
+        <tr><td>Training Date</td><td>Date of training session</td></tr>
+        <tr>
+          <td>Showed Up</td>
+          <td><div class="dropdown-opts"><span class="opt">Y</span><span class="opt">Late</span><span class="opt">No-show</span></div></td>
+        </tr>
+        <tr>
+          <td>Pass / Fail</td>
+          <td><div class="dropdown-opts"><span class="opt">Pass</span><span class="opt">Fail</span></div></td>
+        </tr>
+        <tr>
+          <td>Fail Reason</td>
+          <td><div class="dropdown-opts"><span class="opt">Behavior</span><span class="opt">Couldn't learn app</span><span class="opt">Left early</span><span class="opt">No-show</span><span class="opt">Other</span></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Row colors -->
+  <div class="card">
+    <h2>Row colors — what they mean</h2>
+    <div class="color-rules">
+      <div class="color-rule green"><strong>Green</strong> Pass / Fail = Pass</div>
+      <div class="color-rule red"><strong>Red</strong> Showed Up = No-show OR Pass / Fail = Fail</div>
+      <div class="color-rule yellow"><strong>Yellow</strong> Has interview date but no Pass / Fail yet (in progress)</div>
+    </div>
+  </div>
+
+  <!-- Broadcast Log tab -->
+  <div class="card">
+    <h2>📢 Broadcast Log tab — when a flyer is posted</h2>
+    <div class="note" style="margin-bottom: 0.75rem;">
+      <strong>Separate tab</strong> — one row per flyer post. Tracks where we posted and how many EOIs each group produced.
+    </div>
+    <table class="col-table">
+      <thead><tr><th>Column</th><th>What to fill</th></tr></thead>
+      <tbody>
+        <tr><td>Date Posted</td><td>Date flyer was posted</td></tr>
+        <tr><td>Group Name</td><td>Exact name of the WA/FB group</td></tr>
+        <tr><td>Group Type</td><td>WA or FB</td></tr>
+        <tr><td>Est. Members</td><td>Approximate group size</td></tr>
+        <tr><td>Flyer Variant</td><td>A (earnings-led) or B (flexibility-led)</td></tr>
+        <tr><td>EOIs Received</td><td>Number of responses from this group</td></tr>
+        <tr><td>Notes</td><td>Anything notable — "very active group", "post got deleted", etc.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Daily workflow -->
+  <div class="card">
+    <h2>Daily workflow</h2>
+    <div class="workflow">
+      <div class="workflow-step"><div><strong>Afsar</strong> receives EOI on WhatsApp → fills City, Name, Phone, Source on <strong>Feb 18 Onwards</strong> tab</div></div>
+      <div class="workflow-step"><div><strong>Afsar</strong> logs each flyer post on the <strong>Broadcast Log</strong> tab — group name, type, est. members, EOIs received</div></div>
+      <div class="workflow-step"><div><strong>Qasim</strong> interviews candidate in person → fills Interview Date + 4 evaluation dropdowns + notes. Row turns <strong>yellow</strong>.</div></div>
+      <div class="workflow-step"><div><strong>Qasim</strong> runs training session → fills Training Date, Showed Up, Pass/Fail. Row turns <strong>green</strong> or <strong>red</strong>.</div></div>
+      <div class="workflow-step"><div>Day 7 retention is tracked automatically from the visits sheet — no action needed here.</div></div>
+    </div>
+  </div>
+
+  <footer>
+    <span>ZAR</span> · EXP-018 / EXP-019 · Feb 2026
+  </footer>
+
+</div>
+
+</body>
+</html>

@@ -10,70 +10,9 @@ Three query groups:
   3. Pool sizing — overall experiment health metrics
 """
 
-# ── Shared constants ──────────────────────────────────────────────────
-
-EXCLUDED_IDS = [
-    '57d456f2-84f7-4db5-b5b8-4f494f29c9dc', '83845f51-170d-44b4-907b-68ba7e3a87d0',
-    'bf1de49f-179a-400f-b023-2e73b57a59d9', 'aa46304d-8e5c-4e97-8ff0-c0906813ecf4',
-    'c1cc564b-dbc4-44f8-bfda-d9f85bd278ec', 'f8780ccb-3d67-46e5-baa8-0811c64c730d',
-    '84c74165-5eb6-4e4f-8b23-06892c09bdbc', '110228ec-0e17-482e-a692-3a34bdb3ab65',
-    '9520d1e5-a92e-49d8-9a9e-6747523e0ed7', 'f32dd3b4-cad1-487b-8c87-e4924117c050',
-    '5fd86e56-6c6d-426f-818e-f85898ec8dbf', '274bff97-2c1b-4410-a79d-dd81f33f5c15',
-    '1b397809-6185-4273-b098-7d86cc821bc4', '44e72414-f6bc-4975-83fa-3046e28e9a94',
-    'a464fe4a-ed62-41ca-87f4-4ab48d3c4058', '0eb006a5-53a8-41c2-9cca-6c06dc1c2549',
-    '0aac7e5e-ac3a-49a3-b588-6fed46ca6ade', '0bc7e11b-5741-44b0-9c70-16fb5a58c2ee',
-    '958a4910-a20f-4a06-81d6-d458dcc3bf57',
-]
-EXCLUDED_IDS_SQL = ", ".join(f"'{uid}'" for uid in EXCLUDED_IDS)
-
-
-def _merchants_cte(city: str = "Karachi") -> str:
-    """Onboarded merchants in a given city, excluding test accounts.
-
-    UNIONs legacy MOS with new product_enrollments (PE) merchants.
-    Since SHIP-2069 (Dec 13), new merchants use PE instead of MOS.
-    """
-    return f"""mos_merchants as (
-        select distinct on (u.id)
-               u.id as merchant_id,
-               mos.business_name,
-               mos.city,
-               mos.latitude,
-               mos.longitude,
-               mos.status,
-               u.phone_number,
-               (mos.created_at + interval '5' hour)::date as onboarding_date
-        from merchant_onboarding_submissions mos
-        inner join users u on u.phone_number = mos.phone_number
-        where mos.status in ('active', 'pending')
-          and lower(mos.business_name) not like '%test%'
-          and u.id not in ({EXCLUDED_IDS_SQL})
-          and lower(coalesce(mos.city, '')) = '{city.lower()}'
-        order by u.id, mos.created_at desc
-    ), pe_merchants as (
-        -- TODO: PE merchants need city/geo source — currently returns 0 rows
-        -- because PE has no city/lat/lng fields. Will populate once PE geo data available.
-        select pe.user_id as merchant_id,
-               null::text as business_name,
-               null::text as city,
-               null::float8 as latitude,
-               null::float8 as longitude,
-               'pe_enrolled' as status,
-               u.phone_number,
-               (pe.created_at + interval '5' hour)::date as onboarding_date
-        from product_enrollments pe
-        inner join product_definitions pd on pd.id = pe.product_definition_id
-        inner join users u on u.id = pe.user_id
-        where pd.code = 'zar_cash_exchange_merchant'
-          and pe.state = 2
-          and pe.user_id not in ({EXCLUDED_IDS_SQL})
-          and pe.user_id not in (select merchant_id from mos_merchants)
-          and lower(coalesce(null::text, '')) = '{city.lower()}'
-    ), merchants as (
-        select * from mos_merchants
-        union all
-        select * from pe_merchants
-    )"""
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from lib.sql import EXCLUDED_IDS_SQL, merchants_cte
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -88,7 +27,7 @@ def reactivation_targets_query(city: str = "Karachi", inactive_days: int = 14) -
             last_activity_date, days_since_last_activity, lifetime_tx_count
     """
     return f"""
-    with {_merchants_cte(city)},
+    with {merchants_cte(city=city)},
 
     -- Last ZCE activity per merchant (as fulfiller)
     last_zce as (
@@ -310,7 +249,7 @@ def pool_health_query(city: str = "Karachi", inactive_days: int = 14) -> str:
     Output: total_merchants, active_14d, inactive_14d, inactive_with_geo
     """
     return f"""
-    with {_merchants_cte(city)},
+    with {merchants_cte(city=city)},
 
     recent_zce as (
         select distinct zce.fulfiller_id as merchant_id

@@ -8,56 +8,9 @@ These are the canonical queries for this experiment. run.py reads from
 cache but these are here for direct fetching via Rube MCP.
 """
 
-# ── Shared constants ──────────────────────────────────────────────────
-
-EXCLUDED_IDS = [
-    '57d456f2-84f7-4db5-b5b8-4f494f29c9dc', '83845f51-170d-44b4-907b-68ba7e3a87d0',
-    'bf1de49f-179a-400f-b023-2e73b57a59d9', 'aa46304d-8e5c-4e97-8ff0-c0906813ecf4',
-    'c1cc564b-dbc4-44f8-bfda-d9f85bd278ec', 'f8780ccb-3d67-46e5-baa8-0811c64c730d',
-    '84c74165-5eb6-4e4f-8b23-06892c09bdbc', '110228ec-0e17-482e-a692-3a34bdb3ab65',
-    '9520d1e5-a92e-49d8-9a9e-6747523e0ed7', 'f32dd3b4-cad1-487b-8c87-e4924117c050',
-    '5fd86e56-6c6d-426f-818e-f85898ec8dbf', '274bff97-2c1b-4410-a79d-dd81f33f5c15',
-    '1b397809-6185-4273-b098-7d86cc821bc4', '44e72414-f6bc-4975-83fa-3046e28e9a94',
-    'a464fe4a-ed62-41ca-87f4-4ab48d3c4058', '0eb006a5-53a8-41c2-9cca-6c06dc1c2549',
-    '0aac7e5e-ac3a-49a3-b588-6fed46ca6ade', '0bc7e11b-5741-44b0-9c70-16fb5a58c2ee',
-    '958a4910-a20f-4a06-81d6-d458dcc3bf57',  # Rick's guitar shop
-]
-EXCLUDED_IDS_SQL = ", ".join(f"'{uid}'" for uid in EXCLUDED_IDS)
-
-
-def _ambassadors_cte() -> str:
-    """Shared ambassadors CTE: users with the ambassador role."""
-    return f"""ambassadors as (
-        select distinct uur.user_id as ambassador_id
-        from user_to_user_roles uur
-        inner join user_roles ur on ur.id = uur.user_role_id
-        where ur.name = 'ambassador'
-          and uur.user_id not in ({EXCLUDED_IDS_SQL})
-    )"""
-
-
-def _demo_dollars_cte() -> str:
-    """Shared demo_dollars CTE: cash notes from ambassadors to same-day-created recipients (Feb 1+).
-
-    Does NOT filter on amount — captures all demo notes regardless of denomination
-    so the note distribution card can show the $5-single vs split breakdown.
-    """
-    return """demo_dollars as (
-        select dcn.id as note_id,
-               dcn.depositor_id as ambassador_id,
-               dcn.claimant_id as recipient_id,
-               dcn.amount / 1e6 as amount_usd,
-               (dcn.claimed_at + interval '5' hour)::date as claimed_date,
-               dcn.claimed_at
-        from digital_cash_notes dcn
-        inner join ambassadors a on a.ambassador_id = dcn.depositor_id
-        inner join users u on u.id = dcn.claimant_id
-        where dcn.status = 'claimed'
-          and dcn.claimed_at is not null
-          and (dcn.claimed_at + interval '5' hour)::date >= '2026-02-01'
-          and (u.created_at + interval '5' hour)::date = (dcn.claimed_at + interval '5' hour)::date
-          and dcn.claimant_id not in (select ambassador_id from ambassadors)
-    )"""
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from lib.sql import EXCLUDED_IDS_SQL, ambassadors_cte, demo_dollars_cte, is_onboarded_check
 
 
 # ── Query 1: Recipient Overview ──────────────────────────────────────
@@ -65,8 +18,8 @@ def _demo_dollars_cte() -> str:
 def recipient_overview_query() -> str:
     """Per-recipient row: recipient_id, is_onboarded, account_created_date, ambassador info."""
     return f"""
-    with {_ambassadors_cte()},
-    {_demo_dollars_cte()},
+    with {ambassadors_cte()},
+    {demo_dollars_cte()},
 
     recipient_base as (
         select dd.recipient_id,
@@ -84,7 +37,7 @@ def recipient_overview_query() -> str:
            rb.first_demo_date::text as account_created_date,
            rb.total_received,
            rb.notes_received,
-           case when mos.id is not null or pe_check.user_id is not null then true else false end as is_onboarded,
+           {is_onboarded_check('rb.recipient_id', 'u.phone_number')} as is_onboarded,
            mos.business_name,
            u.phone_number as recipient_phone,
            coalesce(nullif(trim(concat(coalesce(u.first_name,''),' ',coalesce(u.last_name,''))), ''), u.username) as recipient_name,
@@ -97,12 +50,6 @@ def recipient_overview_query() -> str:
     left join merchant_onboarding_submissions mos
         on mos.phone_number = u.phone_number
         and mos.status in ('active', 'pending')
-    left join (
-        select pe.user_id
-        from product_enrollments pe
-        inner join product_definitions pd on pd.id = pe.product_definition_id
-        where pd.code = 'zar_cash_exchange_merchant' and pe.state = 2
-    ) pe_check on pe_check.user_id = u.id
     order by rb.first_demo_date, rb.recipient_id
     """
 
@@ -112,8 +59,8 @@ def recipient_overview_query() -> str:
 def note_distribution_query() -> str:
     """Per-recipient aggregation: note_count, total_amount, first_note_date, pattern."""
     return f"""
-    with {_ambassadors_cte()},
-    {_demo_dollars_cte()},
+    with {ambassadors_cte()},
+    {demo_dollars_cte()},
 
     per_recipient as (
         select dd.recipient_id,
@@ -145,13 +92,13 @@ def note_distribution_query() -> str:
 def recipient_activity_query() -> str:
     """Per-recipient post-demo activity with ambassador cycling split."""
     return f"""
-    with {_ambassadors_cte()},
-    {_demo_dollars_cte()},
+    with {ambassadors_cte()},
+    {demo_dollars_cte()},
 
     first_demo as (
         select dd.recipient_id,
                min(dd.claimed_at) as first_claimed_at,
-               min(dd.ambassador_id) as first_ambassador_id
+               min(dd.ambassador_id::text)::uuid as first_ambassador_id
         from demo_dollars dd
         group by 1
     ),
@@ -177,7 +124,7 @@ def recipient_activity_query() -> str:
         inner join digital_cash_notes dcn on dcn.depositor_id = fd.recipient_id
             and dcn.status = 'claimed'
             and dcn.created_at > fd.first_claimed_at
-            and (dcn.claimant_id != fd.first_ambassador_id or dcn.claimant_id is null)
+            and dcn.claimant_id not in (select ambassador_id from ambassadors)
         group by 1
     ),
 
@@ -245,8 +192,8 @@ def recipient_activity_query() -> str:
 def ambassador_summary_query() -> str:
     """Per-ambassador: notes sent, unique recipients, onboarded count, conversion rate."""
     return f"""
-    with {_ambassadors_cte()},
-    {_demo_dollars_cte()},
+    with {ambassadors_cte()},
+    {demo_dollars_cte()},
 
     amb_stats as (
         select dd.ambassador_id,
@@ -262,14 +209,7 @@ def ambassador_summary_query() -> str:
                count(distinct dd.recipient_id) as onboarded_count
         from demo_dollars dd
         inner join users u on u.id = dd.recipient_id
-        where exists (
-            select 1 from merchant_onboarding_submissions mos
-            where mos.phone_number = u.phone_number and mos.status in ('active', 'pending')
-        ) or exists (
-            select 1 from product_enrollments pe
-            inner join product_definitions pd on pd.id = pe.product_definition_id
-            where pe.user_id = u.id and pd.code = 'zar_cash_exchange_merchant' and pe.state = 2
-        )
+        where {is_onboarded_check('u.id', 'u.phone_number')}
         group by 1
     )
 
@@ -303,8 +243,8 @@ def recipient_timing_query() -> str:
                days_to_first_activity, hours_to_first_activity
     """
     return f"""
-    with {_ambassadors_cte()},
-    {_demo_dollars_cte()},
+    with {ambassadors_cte()},
+    {demo_dollars_cte()},
 
     first_demo as (
         select dd.recipient_id,
@@ -323,7 +263,7 @@ def recipient_timing_query() -> str:
         inner join digital_cash_notes dcn on dcn.depositor_id = fd.recipient_id
             and dcn.status = 'claimed'
             and dcn.created_at > fd.first_claimed_at
-            and (dcn.claimant_id != fd.first_ambassador_id or dcn.claimant_id is null)
+            and dcn.claimant_id not in (select ambassador_id from ambassadors)
         group by 1
     ),
 
@@ -410,8 +350,8 @@ def demo_merchant_transactions_query() -> str:
       Output:  recipient_id, tx_type, tx_count, tx_volume, first_tx_at
     """
     return f"""
-    with {_ambassadors_cte()},
-    {_demo_dollars_cte()},
+    with {ambassadors_cte()},
+    {demo_dollars_cte()},
 
     first_demo as (
         select dd.recipient_id,
@@ -516,8 +456,8 @@ def time_to_first_tx_query() -> str:
       Output:  recipient_id, demo_date, first_tx_date, tx_type, hours_to_first_tx
     """
     return f"""
-    with {_ambassadors_cte()},
-    {_demo_dollars_cte()},
+    with {ambassadors_cte()},
+    {demo_dollars_cte()},
 
     first_demo as (
         select dd.recipient_id,
@@ -625,8 +565,8 @@ def all_activity_timestamps_query() -> str:
       Output:  recipient_id, activity_type, activity_ts (PKT), hours_after_demo
     """
     return f"""
-    with {_ambassadors_cte()},
-    {_demo_dollars_cte()},
+    with {ambassadors_cte()},
+    {demo_dollars_cte()},
 
     first_demo as (
         select dd.recipient_id,
@@ -646,7 +586,7 @@ def all_activity_timestamps_query() -> str:
         inner join digital_cash_notes dcn on dcn.depositor_id = fd.recipient_id
             and dcn.status = 'claimed'
             and dcn.created_at > fd.first_claimed_at
-            and (dcn.claimant_id != fd.first_ambassador_id or dcn.claimant_id is null)
+            and dcn.claimant_id not in (select ambassador_id from ambassadors)
     ),
 
     -- All card spends

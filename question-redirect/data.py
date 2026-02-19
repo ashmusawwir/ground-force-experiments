@@ -6,14 +6,36 @@ import urllib.parse
 from datetime import datetime, timedelta, date
 from typing import List, Dict, Optional, Tuple
 
+import re
+
 from config import (
     SHEET_ID, SHEET_TAB, EXPERIMENT_START, TRAINING_START,
     COL_TIMESTAMP, COL_VISIT_TYPE, COL_OPENER_OUTCOME,
     COL_QUESTIONS_ASKED, COL_GOLDEN_FLOW, COL_QR_SETUP, COL_AMBASSADOR,
+    COL_PHONE,
     SKIP_QUESTIONS, QR_YES_VALUES, AMBASSADOR_NAMES,
 )
 
 Row = Dict[str, str]
+
+# --- DB overlay for demo/onboarding verification ---
+_db_status: Dict[str, Dict] = {}
+
+
+def _normalize_phone(raw: str) -> str:
+    """Strip non-digit chars → '923XXXXXXXXX' (12 digits)."""
+    return re.sub(r'\D', '', raw)
+
+
+def phone_number(row: Row) -> str:
+    """Extract and normalize phone from the sheet row."""
+    return _normalize_phone(row.get(COL_PHONE, ""))
+
+
+def set_db_status(mapping: Dict[str, Dict]) -> None:
+    """Populate DB overlay keyed by normalized phone number."""
+    global _db_status
+    _db_status = mapping
 
 
 def fetch_rows() -> List[Row]:
@@ -97,6 +119,10 @@ def split_questions(row: Row) -> List[str]:
 
 
 def did_demo(row: Row) -> bool:
+    phone = phone_number(row)
+    if _db_status and phone in _db_status:
+        return _db_status[phone].get("got_demo", False)
+    # Sheet fallback
     val = row.get(COL_GOLDEN_FLOW, "").strip()
     if not val or val.lower() in ("0", "", "no", "false"):
         return False
@@ -107,6 +133,10 @@ def did_demo(row: Row) -> bool:
 
 
 def did_onboard(row: Row) -> bool:
+    phone = phone_number(row)
+    if _db_status and phone in _db_status:
+        return _db_status[phone].get("is_onboarded", False)
+    # Sheet fallback
     return row.get(COL_QR_SETUP, "").strip().lower() in QR_YES_VALUES
 
 

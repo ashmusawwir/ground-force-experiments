@@ -226,6 +226,8 @@ def _build_comparison_card(pre_m: QDemoMetrics, post_m: QDemoMetrics,
         ("Questions Asked", pre_m.questions_asked, post_m.questions_asked, None, None),
         ("Converted to Demo", pre_m.converted_to_demo, post_m.converted_to_demo, None, None),
         ("Q\u2192Demo Rate", None, None, pre_m.q_demo_rate, post_m.q_demo_rate),
+        ("Onboarded", pre_m.onboarded, post_m.onboarded, None, None),
+        ("E2E Rate", None, None, pre_m.e2e_rate, post_m.e2e_rate),
     ]
 
     rows_html = []

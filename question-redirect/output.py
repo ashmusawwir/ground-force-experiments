@@ -6,8 +6,14 @@ from data import Row
 from typing import List, Optional
 
 
+def _sig2(x: float) -> str:
+    """Format a number to 2 significant digits (e.g. 18, 5.9, 0.73)."""
+    s = f"{x:.2g}"
+    return f"{x:.0f}" if "e" in s else s
+
+
 def _fmt(rate: Optional[float]) -> str:
-    return f"{rate:.1f}%" if rate is not None else "\u2014"
+    return f"{_sig2(rate)}%" if rate is not None else "\u2014"
 
 
 def _fmt_delta(base_rate: Optional[float], expt_rate: Optional[float]) -> str:
@@ -15,7 +21,7 @@ def _fmt_delta(base_rate: Optional[float], expt_rate: Optional[float]) -> str:
         return "\u2014"
     d = expt_rate - base_rate
     sign = "+" if d >= 0 else ""
-    return f"{sign}{d:.1f}pp"
+    return f"{sign}{_sig2(d)}pp"
 
 
 def print_q_demo_comparison(pre_m: QDemoMetrics, post_m: QDemoMetrics,
@@ -35,6 +41,9 @@ def print_q_demo_comparison(pre_m: QDemoMetrics, post_m: QDemoMetrics,
         ("Converted to Demo", str(pre_m.converted_to_demo), str(post_m.converted_to_demo), ""),
         ("Q\u2192Demo Rate", _fmt(pre_m.q_demo_rate), _fmt(post_m.q_demo_rate),
          _fmt_delta(pre_m.q_demo_rate, post_m.q_demo_rate)),
+        ("Onboarded", str(pre_m.onboarded), str(post_m.onboarded), ""),
+        ("E2E Rate", _fmt(pre_m.e2e_rate), _fmt(post_m.e2e_rate),
+         _fmt_delta(pre_m.e2e_rate, post_m.e2e_rate)),
     ]
 
     for label, pre_val, post_val, delta in rows:
@@ -46,11 +55,11 @@ def print_q_demo_comparison(pre_m: QDemoMetrics, post_m: QDemoMetrics,
         delta = post_m.q_demo_rate - pre_m.q_demo_rate
         direction = "up" if delta >= 0 else "down"
         sign = "+" if delta >= 0 else ""
-        print(f"    \u2022 Q\u2192Demo: {pre_m.q_demo_rate:.1f}% \u2192 {post_m.q_demo_rate:.1f}% ({sign}{delta:.1f}pp) \u2014 {direction}")
+        print(f"    \u2022 Q\u2192Demo: {_sig2(pre_m.q_demo_rate)}% \u2192 {_sig2(post_m.q_demo_rate)}% ({sign}{_sig2(delta)}pp) \u2014 {direction}")
     if post_m.q_demo_rate is not None:
         vs_baseline = post_m.q_demo_rate - BASELINE_Q_DEMO_RATE
         sign = "+" if vs_baseline >= 0 else ""
-        print(f"    \u2022 vs EXP-001 baseline ({BASELINE_Q_DEMO_RATE:.0f}%): {sign}{vs_baseline:.1f}pp")
+        print(f"    \u2022 vs EXP-001 baseline ({BASELINE_Q_DEMO_RATE:.0f}%): {sign}{_sig2(vs_baseline)}pp")
     print()
 
 

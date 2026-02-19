@@ -40,7 +40,10 @@ Two failure modes to catch:
 **Not responsible for:**
 - Product development or feature design
 - Ambassador hiring or HR decisions
-- Praxis agent orchestration (Nash, Terra, Atlas live in Praxis)
+- Canon agent orchestration — Nash, Terra, Atlas live in the Canon repository (`/Users/asharib/Documents/GitHub/canon/`):
+  - **Nash** — Game theory expert. Designs incentive systems using mechanism design and Nash equilibria.
+  - **Terra** — Field sales expert. Stress-tests ambassador training materials and pitch flows.
+  - **Atlas** — Data navigator. Writes SQL queries using a Five Questions Framework.
 - Infrastructure or deployment
 
 ## Users

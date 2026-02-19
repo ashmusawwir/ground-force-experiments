@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Tuple
 
 from data import (
     Row, row_date, is_onboarding, opener_passed, has_question,
-    did_demo, ambassador_name, split_questions,
+    did_demo, did_onboard, ambassador_name, split_questions,
 )
 from config import MAX_DROPOFF_QUESTIONS
 
@@ -23,6 +23,10 @@ class QDemoMetrics:
         self.opener_passed = len(passed)
         self.questions_asked = len(asked)
         self.converted_to_demo = sum(1 for r in asked if did_demo(r))
+        self.onboarded = sum(1 for r in onb if did_onboard(r))
+        self.e2e_rate: Optional[float] = (
+            self.onboarded / self.visits * 100 if self.visits else None
+        )
         self.dropped_off = self.questions_asked - self.converted_to_demo
         self.q_demo_rate: Optional[float] = (
             self.converted_to_demo / self.questions_asked * 100

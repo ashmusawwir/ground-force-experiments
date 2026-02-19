@@ -10,8 +10,14 @@ def _conv_rate(count: int, total: int) -> Optional[float]:
     return count / total * 100 if total else None
 
 
+def _sig2(x: float) -> str:
+    """Format a number to 2 significant digits (e.g. 18, 5.9, 0.73)."""
+    s = f"{x:.2g}"
+    return f"{x:.0f}" if "e" in s else s
+
+
 def _fmt_conv(rate: Optional[float]) -> str:
-    return f"{rate:.1f}%" if rate is not None else "\u2014"
+    return f"{_sig2(rate)}%" if rate is not None else "\u2014"
 
 
 def _fmt_delta(base_rate: Optional[float], expt_rate: Optional[float]) -> str:
@@ -19,7 +25,7 @@ def _fmt_delta(base_rate: Optional[float], expt_rate: Optional[float]) -> str:
         return "\u2014"
     d = expt_rate - base_rate
     sign = "+" if d >= 0 else ""
-    return f"{sign}{d:.1f}"
+    return f"{sign}{_sig2(d)}"
 
 
 def print_funnel_comparison(base_m: FunnelMetrics, expt_m: FunnelMetrics,
@@ -53,12 +59,12 @@ def print_funnel_comparison(base_m: FunnelMetrics, expt_m: FunnelMetrics,
             delta = ec - bc
             direction = "up" if delta >= 0 else "down"
             sign = "+" if delta >= 0 else ""
-            print(f"    \u2022 {step}: {bc:.1f}% \u2192 {ec:.1f}% ({sign}{delta:.1f}pp) \u2014 {direction}")
+            print(f"    \u2022 {step}: {_sig2(bc)}% \u2192 {_sig2(ec)}% ({sign}{_sig2(delta)}pp) \u2014 {direction}")
 
     base_e2e = base_m.e2e_rate()
     expt_e2e = expt_m.e2e_rate()
     if base_e2e is not None and expt_e2e is not None:
-        print(f"    \u2022 End-to-end (visits \u2192 onboarded): {base_e2e:.1f}% baseline vs {expt_e2e:.1f}% experiment")
+        print(f"    \u2022 End-to-end (visits \u2192 onboarded): {_sig2(base_e2e)}% baseline vs {_sig2(expt_e2e)}% experiment")
 
     if base_info.num_days > 0 and expt_info.num_days > 0:
         base_daily = base_m.onboardings / base_info.num_days

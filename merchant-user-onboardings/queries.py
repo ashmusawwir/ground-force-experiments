@@ -8,79 +8,9 @@ These are the canonical queries for this experiment. run.py reads from
 cache but these are here for direct fetching via Rube MCP.
 """
 
-# ── Shared constants ──────────────────────────────────────────────────
-
-EXCLUDED_IDS = [
-    '57d456f2-84f7-4db5-b5b8-4f494f29c9dc', '83845f51-170d-44b4-907b-68ba7e3a87d0',
-    'bf1de49f-179a-400f-b023-2e73b57a59d9', 'aa46304d-8e5c-4e97-8ff0-c0906813ecf4',
-    'c1cc564b-dbc4-44f8-bfda-d9f85bd278ec', 'f8780ccb-3d67-46e5-baa8-0811c64c730d',
-    '84c74165-5eb6-4e4f-8b23-06892c09bdbc', '110228ec-0e17-482e-a692-3a34bdb3ab65',
-    '9520d1e5-a92e-49d8-9a9e-6747523e0ed7', 'f32dd3b4-cad1-487b-8c87-e4924117c050',
-    '5fd86e56-6c6d-426f-818e-f85898ec8dbf', '274bff97-2c1b-4410-a79d-dd81f33f5c15',
-    '1b397809-6185-4273-b098-7d86cc821bc4', '44e72414-f6bc-4975-83fa-3046e28e9a94',
-    'a464fe4a-ed62-41ca-87f4-4ab48d3c4058', '0eb006a5-53a8-41c2-9cca-6c06dc1c2549',
-    '0aac7e5e-ac3a-49a3-b588-6fed46ca6ade', '0bc7e11b-5741-44b0-9c70-16fb5a58c2ee',
-    '958a4910-a20f-4a06-81d6-d458dcc3bf57',  # Rick's guitar shop
-]
-EXCLUDED_IDS_SQL = ", ".join(f"'{uid}'" for uid in EXCLUDED_IDS)
-
-# Transaction-specific exclusion list for cohort analysis (12 IDs).
-# Differs from EXCLUDED_IDS: includes a9519a82 (Muhammad Zahid), omits
-# 9520d1e5, f32dd3b4, 1b397809, a464fe4a, 0eb006a5, 0aac7e5e, 0bc7e11b, 958a4910.
-COHORT_TXN_EXCLUDED_IDS = [
-    '57d456f2-84f7-4db5-b5b8-4f494f29c9dc', '83845f51-170d-44b4-907b-68ba7e3a87d0',
-    'bf1de49f-179a-400f-b023-2e73b57a59d9', 'aa46304d-8e5c-4e97-8ff0-c0906813ecf4',
-    'c1cc564b-dbc4-44f8-bfda-d9f85bd278ec', 'f8780ccb-3d67-46e5-baa8-0811c64c730d',
-    '84c74165-5eb6-4e4f-8b23-06892c09bdbc', '110228ec-0e17-482e-a692-3a34bdb3ab65',
-    'a9519a82-c510-4b5b-a24b-ecec3f68de23', '44e72414-f6bc-4975-83fa-3046e28e9a94',
-    '274bff97-2c1b-4410-a79d-dd81f33f5c15', '5fd86e56-6c6d-426f-818e-f85898ec8dbf',
-]
-COHORT_TXN_EXCLUDED_IDS_SQL = ", ".join(f"'{uid}'" for uid in COHORT_TXN_EXCLUDED_IDS)
-
-
-def _merchants_cte() -> str:
-    """Shared merchants CTE used by all query functions.
-
-    UNIONs legacy merchant_onboarding_submissions (MOS) with new
-    product_enrollments (PE) merchants. Since SHIP-2069 (Dec 13),
-    new merchants use PE instead of MOS. 25 merchants exist in both;
-    MOS takes priority (richer metadata), PE adds only net-new.
-    """
-    return f"""mos_merchants as (
-        select distinct on (u.id)
-               u.id as merchant_id, mos.business_name,
-               mos.city, mos.latitude, mos.longitude, mos.status,
-               (mos.created_at + interval '5' hour)::date as onboarding_date,
-               u_onb.username as onboarder_username,
-               coalesce(nullif(trim(concat(coalesce(u_onb.first_name,''),' ',coalesce(u_onb.last_name,''))), ''), 'Unknown') as onboarder_name
-        from merchant_onboarding_submissions mos
-        inner join users u on u.phone_number = mos.phone_number
-        left join users u_onb on u_onb.id = mos.onboarder_id
-        where mos.status in ('active', 'pending')
-          and lower(mos.business_name) not like '%test%'
-          and u.id not in ({EXCLUDED_IDS_SQL})
-        order by u.id, mos.created_at desc
-    ), pe_merchants as (
-        select pe.user_id as merchant_id,
-               null::text as business_name,
-               null::text as city,
-               null::float8 as latitude,
-               null::float8 as longitude,
-               'pe_enrolled' as status,
-               (pe.created_at + interval '5' hour)::date as onboarding_date,
-               null::text as onboarder_username,
-               'Unknown' as onboarder_name
-        from product_enrollments pe
-        inner join product_definitions pd on pd.id = pe.product_definition_id
-        where pd.code = 'zar_cash_exchange_merchant'
-          and pe.state = 2
-          and pe.user_id not in ({EXCLUDED_IDS_SQL})
-          and pe.user_id not in (select merchant_id from mos_merchants)
-    ), merchants as (
-        select * from mos_merchants
-        union all
-        select * from pe_merchants
-    )"""
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from lib.sql import EXCLUDED_IDS_SQL, COHORT_TXN_EXCLUDED_IDS_SQL, merchants_cte
 
 
 # ── Legacy date-scoped queries (kept for reference) ──────────────────
@@ -89,7 +19,7 @@ def merchant_summary_query(start_date: str, end_date: str) -> str:
     """Per-merchant summary: onboarding info + CN sent + ZCE + bank transfers + card txns + activation + onboarding detail + tier earnings."""
     return f"""
     -- 1. Base merchants (phone_number join to capture merchants where merchant_id is null)
-    with {_merchants_cte()},
+    with {merchants_cte()},
 
     -- 2. Merchant activity (date-scoped)
     cash_notes_sent as (
@@ -384,7 +314,7 @@ def merchant_summary_query(start_date: str, end_date: str) -> str:
 def merchant_static_query() -> str:
     """One row per merchant with static fields (no date filtering)."""
     return f"""
-    with {_merchants_cte()}
+    with {merchants_cte()}
     select m.merchant_id::text, m.business_name, m.city,
            m.latitude, m.longitude, m.status,
            m.onboarding_date::text, m.onboarder_username, m.onboarder_name
@@ -396,7 +326,7 @@ def merchant_static_query() -> str:
 def user_onboardings_query() -> str:
     """One row per user onboarding event with transacting + secure flags."""
     return f"""
-    with {_merchants_cte()},
+    with {merchants_cte()},
     onboarded_users_list as (
         select dcn.depositor_id as merchant_id,
                dcn.claimant_id as user_id,
@@ -472,7 +402,7 @@ def user_onboardings_query() -> str:
 def user_activations_query() -> str:
     """One row per user activation (first return to same merchant)."""
     return f"""
-    with {_merchants_cte()},
+    with {merchants_cte()},
     onboarded_users_list as (
         select dcn.depositor_id as merchant_id,
                dcn.claimant_id as user_id,
@@ -528,7 +458,7 @@ def user_activations_query() -> str:
 def merchant_daily_activity_query() -> str:
     """Daily activity per merchant: CN/ZCE/BT/card counts + volumes."""
     return f"""
-    with {_merchants_cte()},
+    with {merchants_cte()},
     cn_daily as (
         select dcn.depositor_id as merchant_id,
                (dcn.claimed_at + interval '5' hour)::date as date,
@@ -594,7 +524,7 @@ def merchant_daily_activity_query() -> str:
 def user_txn_breakdown_query() -> str:
     """One row per transacting onboarded user per merchant with per-type counts and volumes."""
     return f"""
-    with {_merchants_cte()},
+    with {merchants_cte()},
     onboarded_users_list as (
         select dcn.depositor_id as merchant_id,
                dcn.claimant_id as user_id,
@@ -664,7 +594,7 @@ def user_txn_breakdown_query() -> str:
 def user_invitations_query() -> str:
     """One row per onboarded user who invited others (traditional referrals + CN onboardings)."""
     return f"""
-    with {_merchants_cte()},
+    with {merchants_cte()},
     onboarded_users_list as (
         select dcn.depositor_id as merchant_id,
                dcn.claimant_id as user_id,
@@ -714,7 +644,7 @@ def user_invitations_query() -> str:
 def user_first_transactions_query() -> str:
     """One row per onboarded user with first debit and first credit after onboarding."""
     return f"""
-    with {_merchants_cte()},
+    with {merchants_cte()},
     onboarded_users_list as (
         select dcn.depositor_id as merchant_id,
                dcn.claimant_id as user_id,
@@ -878,7 +808,7 @@ def user_first_transactions_query() -> str:
 def user_cycling_query() -> str:
     """One row per onboarded user: did they send a CN back to their onboarding merchant?"""
     return f"""
-    with {_merchants_cte()},
+    with {merchants_cte()},
     onboarded_users_list as (
         select dcn.depositor_id as merchant_id,
                dcn.claimant_id as user_id,
@@ -918,7 +848,7 @@ def user_cycling_query() -> str:
 def rapid_onboarding_query() -> str:
     """Sybil detection: burst onboarding of fake users per merchant."""
     return f"""
-    with {_merchants_cte()},
+    with {merchants_cte()},
     onboarded_users_list as (
         select dcn.depositor_id as merchant_id,
                dcn.claimant_id as user_id,
@@ -988,7 +918,7 @@ def rapid_onboarding_query() -> str:
 def cycling_timing_query() -> str:
     """Grinding detection: timing and amount of cycling back to merchant."""
     return f"""
-    with {_merchants_cte()},
+    with {merchants_cte()},
     onboarded_users_list as (
         select dcn.depositor_id as merchant_id,
                dcn.claimant_id as user_id,
@@ -1041,7 +971,7 @@ def cycling_timing_query() -> str:
 def merchant_self_send_ring_query() -> str:
     """Collusion/OCA detection: merchant recycles funds through onboarded users."""
     return f"""
-    with {_merchants_cte()},
+    with {merchants_cte()},
     onboarded_users_list as (
         select dcn.depositor_id as merchant_id,
                dcn.claimant_id as user_id,
@@ -1093,7 +1023,7 @@ def merchant_self_send_ring_query() -> str:
 def merchant_fraud_summary_query() -> str:
     """Composite fraud risk summary per merchant — aggregates all signals."""
     return f"""
-    with {_merchants_cte()},
+    with {merchants_cte()},
     onboarded_users_list as (
         select dcn.depositor_id as merchant_id,
                dcn.claimant_id as user_id,
