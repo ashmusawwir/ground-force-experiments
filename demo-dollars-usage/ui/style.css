@@ -180,6 +180,7 @@ h1 {
 .pill-card { background: var(--purple-bg); color: var(--purple); }
 .pill-bt { background: var(--green-bg); color: var(--green); }
 .pill-zce { background: var(--orange-bg); color: var(--orange); }
+.pill-ce { background: rgba(234,88,12,0.08); color: #c2410c; }
 .pill-cycling { background: var(--red-bg); color: var(--red); }
 .pill .pill-count {
   font-weight: 700;
@@ -224,6 +225,7 @@ h1 {
 .signal-bar-fill.fill-card { background: var(--purple); }
 .signal-bar-fill.fill-bt { background: var(--green); }
 .signal-bar-fill.fill-zce { background: var(--orange); }
+.signal-bar-fill.fill-ce { background: #c2410c; }
 /* Table */
 .table-wrap { overflow-x: auto; }
 .table-wrap.table-clip {
@@ -327,6 +329,15 @@ th .sort-arrow { font-size: 0.65rem; margin-left: 2px; }
   font-weight: 600;
   background: var(--red-bg);
   color: var(--red);
+}
+.badge-recall {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: var(--purple-bg);
+  color: var(--purple);
 }
 /* Recommendation box */
 .recommendation-box {

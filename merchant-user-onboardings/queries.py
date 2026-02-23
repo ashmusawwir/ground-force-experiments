@@ -35,15 +35,33 @@ def merchant_summary_query(start_date: str, end_date: str) -> str:
         group by 1
     ),
     zce_fulfilled as (
-        select zce.fulfiller_id as merchant_id,
-               count(*) as zce_count,
-               count(distinct zce.initiator_id) as zce_users,
-               sum(zce.amount) / 1e6 as zce_volume
-        from zar_cash_exchange_orders zce
-        where zce.status = 'completed'
-          and zce.fulfiller_id is not null
-          and (zce.completed_at + interval '5' hour)::date >= '{start_date}'
-          and (zce.completed_at + interval '5' hour)::date <= '{end_date}'
+        select merchant_id,
+               sum(cnt) as zce_count,
+               count(distinct customer_id) as zce_users,
+               sum(vol) as zce_volume
+        from (
+            select zce.fulfiller_id as merchant_id,
+                   zce.initiator_id as customer_id,
+                   1 as cnt,
+                   zce.amount / 1e6 as vol
+            from zar_cash_exchange_orders zce
+            where zce.status = 'completed'
+              and zce.fulfiller_id is not null
+              and (zce.completed_at + interval '5' hour)::date >= '{start_date}'
+              and (zce.completed_at + interval '5' hour)::date <= '{end_date}'
+            union all
+            select t.user_id as merchant_id,
+                   (t.metadata->>'counterparty_id')::uuid as customer_id,
+                   1 as cnt,
+                   t.amount / 1e6 as vol
+            from transactions t
+            where t.type = 'Transaction::CashExchange'
+              and t.status = 3
+              and t.metadata->>'role' = 'merchant'
+              and coalesce(t.metadata->>'cancelled', 'false') != 'true'
+              and (t.posted_at + interval '5' hour)::date >= '{start_date}'
+              and (t.posted_at + interval '5' hour)::date <= '{end_date}'
+        ) combined
         group by 1
     ),
     bank_transfers as (
@@ -131,6 +149,17 @@ def merchant_summary_query(start_date: str, end_date: str) -> str:
             and zceo.status = 'completed'
             and zceo.type = 'ZarCashExchange::MerchantOrder'
             and zceo.created_at > oul.onboarding_claimed_at
+        union all
+        -- CashExchange at same merchant (customer-side: user=customer, merchant=counterparty)
+        select oul.user_id, oul.merchant_id, t.posted_at, t.id
+        from onboarded_users_list oul
+        join transactions t on t.user_id = oul.user_id
+            and t.type = 'Transaction::CashExchange'
+            and t.status = 3
+            and t.metadata->>'role' = 'customer'
+            and coalesce(t.metadata->>'cancelled', 'false') != 'true'
+            and (t.metadata->>'counterparty_id')::uuid = oul.merchant_id
+            and t.posted_at > oul.onboarding_claimed_at
     ),
     user_first_return as (
         select user_id, merchant_id,
@@ -143,7 +172,7 @@ def merchant_summary_query(start_date: str, end_date: str) -> str:
         group by 1
     ),
 
-    -- 4b. Onboarded-user activity — any platform activity (CN send + card + bank transfer + ZCE)
+    -- 4b. Onboarded-user activity — any platform activity (CN send + card + bank transfer + ZCE + CashExchange)
     onboarded_transacting as (
         select merchant_id,
                count(distinct user_id) as transacting_users
@@ -173,6 +202,15 @@ def merchant_summary_query(start_date: str, end_date: str) -> str:
             join zar_cash_exchange_orders zceo on zceo.initiator_id = oul.user_id
                 and zceo.status = 'completed'
                 and zceo.created_at > oul.onboarding_claimed_at
+            union
+            select oul.merchant_id, oul.user_id
+            from onboarded_users_list oul
+            join transactions t on t.user_id = oul.user_id
+                and t.type = 'Transaction::CashExchange'
+                and t.status = 3
+                and t.metadata->>'role' = 'customer'
+                and coalesce(t.metadata->>'cancelled', 'false') != 'true'
+                and t.posted_at > oul.onboarding_claimed_at
         ) active_users
         group by 1
     ),
@@ -379,6 +417,18 @@ def user_onboardings_query() -> str:
               and zceo.status = 'completed'
               and zceo.created_at > oul.onboarding_claimed_at
         )
+        union
+        select distinct oul.user_id
+        from onboarded_users_list oul
+        where exists (
+            select 1 from transactions t
+            where t.user_id = oul.user_id
+              and t.type = 'Transaction::CashExchange'
+              and t.status = 3
+              and t.metadata->>'role' = 'customer'
+              and coalesce(t.metadata->>'cancelled', 'false') != 'true'
+              and t.posted_at > oul.onboarding_claimed_at
+        )
     ),
     secure_users as (
         select distinct oul.user_id
@@ -437,6 +487,18 @@ def user_activations_query() -> str:
             and zceo.status = 'completed'
             and zceo.type = 'ZarCashExchange::MerchantOrder'
             and zceo.created_at > oul.onboarding_claimed_at
+        union all
+        select oul.user_id, oul.merchant_id, t.posted_at, t.id,
+               t.amount / 1e6 as amount, 'cash_exchange' as txn_type,
+               oul.onboarding_claimed_at as onboard_time
+        from onboarded_users_list oul
+        join transactions t on t.user_id = oul.user_id
+            and t.type = 'Transaction::CashExchange'
+            and t.status = 3
+            and t.metadata->>'role' = 'customer'
+            and coalesce(t.metadata->>'cancelled', 'false') != 'true'
+            and (t.metadata->>'counterparty_id')::uuid = oul.merchant_id
+            and t.posted_at > oul.onboarding_claimed_at
     ),
     user_first_return as (
         select user_id, merchant_id, txn_time, amount, txn_type, onboard_time,
@@ -470,13 +532,29 @@ def merchant_daily_activity_query() -> str:
         group by 1, 2
     ),
     zce_daily as (
-        select zce.fulfiller_id as merchant_id,
-               (zce.completed_at + interval '5' hour)::date as date,
-               count(*) as zce_count,
-               round((sum(zce.amount) / 1e6)::numeric, 2) as zce_volume
-        from zar_cash_exchange_orders zce
-        where zce.status = 'completed'
-          and zce.fulfiller_id in (select merchant_id from merchants)
+        select merchant_id, date,
+               sum(cnt) as zce_count,
+               round(sum(vol)::numeric, 2) as zce_volume
+        from (
+            select zce.fulfiller_id as merchant_id,
+                   (zce.completed_at + interval '5' hour)::date as date,
+                   1 as cnt,
+                   zce.amount / 1e6 as vol
+            from zar_cash_exchange_orders zce
+            where zce.status = 'completed'
+              and zce.fulfiller_id in (select merchant_id from merchants)
+            union all
+            select t.user_id as merchant_id,
+                   (t.posted_at + interval '5' hour)::date as date,
+                   1 as cnt,
+                   t.amount / 1e6 as vol
+            from transactions t
+            where t.type = 'Transaction::CashExchange'
+              and t.status = 3
+              and t.metadata->>'role' = 'merchant'
+              and coalesce(t.metadata->>'cancelled', 'false') != 'true'
+              and t.user_id in (select merchant_id from merchants)
+        ) combined
         group by 1, 2
     ),
     bt_daily as (
@@ -571,10 +649,24 @@ def user_txn_breakdown_query() -> str:
             and t.posted_at > oul.onboarding_claimed_at
         group by 1, 2
     ),
+    ce_txns as (
+        select oul.merchant_id, oul.user_id,
+               count(*) as ce_count,
+               round((sum(t.amount) / 1e6)::numeric, 2) as ce_volume
+        from onboarded_users_list oul
+        join transactions t on t.user_id = oul.user_id
+            and t.type = 'Transaction::CashExchange'
+            and t.status = 3
+            and t.metadata->>'role' = 'customer'
+            and coalesce(t.metadata->>'cancelled', 'false') != 'true'
+            and t.posted_at > oul.onboarding_claimed_at
+        group by 1, 2
+    ),
     all_users as (
         select merchant_id, user_id from cn_txns
         union select merchant_id, user_id from card_txns
         union select merchant_id, user_id from bt_txns
+        union select merchant_id, user_id from ce_txns
     )
     select au.merchant_id::text, au.user_id::text,
            coalesce(cn.cn_count, 0) as cn_count,
@@ -582,11 +674,14 @@ def user_txn_breakdown_query() -> str:
            coalesce(ct.card_count, 0) as card_count,
            coalesce(ct.card_volume, 0) as card_volume,
            coalesce(bt.bt_count, 0) as bt_count,
-           coalesce(bt.bt_volume, 0) as bt_volume
+           coalesce(bt.bt_volume, 0) as bt_volume,
+           coalesce(ce.ce_count, 0) as ce_count,
+           coalesce(ce.ce_volume, 0) as ce_volume
     from all_users au
     left join cn_txns cn on cn.merchant_id = au.merchant_id and cn.user_id = au.user_id
     left join card_txns ct on ct.merchant_id = au.merchant_id and ct.user_id = au.user_id
     left join bt_txns bt on bt.merchant_id = au.merchant_id and bt.user_id = au.user_id
+    left join ce_txns ce on ce.merchant_id = au.merchant_id and ce.user_id = au.user_id
     order by au.merchant_id, au.user_id
     """
 
@@ -703,6 +798,19 @@ def user_first_transactions_query() -> str:
             and zceo.created_at > oul.onboarding_claimed_at
         group by 1, 2
     ),
+    debit_ce as (
+        select oul.merchant_id, oul.user_id,
+               min(t.posted_at) as first_ts,
+               'cash_exchange' as debit_type
+        from onboarded_users_list oul
+        join transactions t on t.user_id = oul.user_id
+            and t.type = 'Transaction::CashExchange'
+            and t.status = 3
+            and t.metadata->>'role' = 'customer'
+            and coalesce(t.metadata->>'cancelled', 'false') != 'true'
+            and t.posted_at > oul.onboarding_claimed_at
+        group by 1, 2
+    ),
     all_debits as (
         select merchant_id, user_id, first_ts, debit_type from debit_cn_send
         union all
@@ -711,6 +819,8 @@ def user_first_transactions_query() -> str:
         select merchant_id, user_id, first_ts, debit_type from debit_bt
         union all
         select merchant_id, user_id, first_ts, debit_type from debit_zce
+        union all
+        select merchant_id, user_id, first_ts, debit_type from debit_ce
     ),
     first_debit as (
         select merchant_id, user_id, first_ts, debit_type,
@@ -754,6 +864,15 @@ def user_first_transactions_query() -> str:
                        where zceo.initiator_id = fd.user_id
                          and zceo.status = 'completed'
                          and zceo.created_at = fd.first_ts
+                       limit 1
+                   )
+                   when fd.debit_type = 'cash_exchange' then (
+                       select round((t.amount / 1e6)::numeric, 2)
+                       from transactions t
+                       where t.user_id = fd.user_id
+                         and t.type = 'Transaction::CashExchange'
+                         and t.status = 3
+                         and t.posted_at = fd.first_ts
                        limit 1
                    )
                end as first_debit_amount
@@ -1141,12 +1260,24 @@ def merchant_retention_query() -> str:
         where dcn.status = 'claimed'
           and dcn.claimed_at is not null
           and dcn.depositor_id in (select merchant_id from all_merchants)
+    ),
+    ce_activity as (
+        select t.user_id as merchant_id,
+               date_trunc('week', (t.posted_at + interval '5' hour)::date)::date as week_start
+        from transactions t
+        where t.type = 'Transaction::CashExchange'
+          and t.status = 3
+          and t.metadata->>'role' = 'merchant'
+          and coalesce(t.metadata->>'cancelled', 'false') != 'true'
+          and t.user_id in (select merchant_id from all_merchants)
     )
     select merchant_id::text, week_start::text
     from (
         select merchant_id, week_start from zce_activity
         union
         select merchant_id, week_start from cn_activity
+        union
+        select merchant_id, week_start from ce_activity
     ) combined
     group by 1, 2
     order by 2, 1
@@ -1218,18 +1349,38 @@ def cohort_analysis_query() -> str:
     ),
 
     transactions as (
-        select date_trunc('month', zceo.created_at) as month,
-            m.merchant_id,
-            count(distinct zceo.initiator_id) as distinct_customers,
-            count(zceo.id) as total_orders,
-            sum(zceo.amount / 1e6) as dollars_sold
-        from zar_cash_exchange_orders zceo
-        inner join merchants m on m.merchant_id = zceo.fulfiller_id
-            and m.status = 'active'
-        where zceo.status = 'completed'
-          and zceo.type = 'ZarCashExchange::MerchantOrder'
-          and zceo.fulfiller_id not in ({COHORT_TXN_EXCLUDED_IDS_SQL})
-          and zceo.initiator_id not in ({COHORT_TXN_EXCLUDED_IDS_SQL})
+        select month, merchant_id,
+            count(distinct customer_id) as distinct_customers,
+            sum(cnt) as total_orders,
+            sum(vol) as dollars_sold
+        from (
+            select date_trunc('month', zceo.created_at) as month,
+                m.merchant_id,
+                zceo.initiator_id as customer_id,
+                1 as cnt,
+                zceo.amount / 1e6 as vol
+            from zar_cash_exchange_orders zceo
+            inner join merchants m on m.merchant_id = zceo.fulfiller_id
+                and m.status = 'active'
+            where zceo.status = 'completed'
+              and zceo.type = 'ZarCashExchange::MerchantOrder'
+              and zceo.fulfiller_id not in ({COHORT_TXN_EXCLUDED_IDS_SQL})
+              and zceo.initiator_id not in ({COHORT_TXN_EXCLUDED_IDS_SQL})
+            union all
+            select date_trunc('month', t.created_at) as month,
+                m.merchant_id,
+                (t.metadata->>'counterparty_id')::uuid as customer_id,
+                1 as cnt,
+                t.amount / 1e6 as vol
+            from transactions t
+            inner join merchants m on m.merchant_id = t.user_id
+                and m.status = 'active'
+            where t.type = 'Transaction::CashExchange'
+              and t.status = 3
+              and t.metadata->>'role' = 'merchant'
+              and coalesce(t.metadata->>'cancelled', 'false') != 'true'
+              and t.user_id not in ({COHORT_TXN_EXCLUDED_IDS_SQL})
+        ) combined
         group by 1, 2
     ),
 
@@ -1347,18 +1498,48 @@ def monthly_metrics_query() -> str:
     ),
 
     merchant_user_transactions as (
-        select date_trunc('month', zceo.created_at) as month,
-            count(zceo.id) as merchant_user_transactions,
-            count(distinct initiator_id) as distinct_users,
-            count(distinct fulfiller_id) as distinct_merchants,
-            sum(zceo.amount / 1e6) as dollars_purchased_from_merchants,
-            percentile_cont(0.5) within group (order by zceo.amount / 1e6) as median_transaction_value_merchant
-        from zar_cash_exchange_orders zceo
-        inner join users u on u.id = zceo.initiator_id
-        where zceo.type = 'ZarCashExchange::MerchantOrder'
-          and zceo.status = 'completed'
-          and zceo.created_at > date '2025-10-01'
-          and zceo.initiator_id not in ({EXCLUDED_IDS_SQL})
+        select month,
+            count(*) as merchant_user_transactions,
+            count(distinct customer_id) as distinct_users,
+            count(distinct merchant_id) as distinct_merchants,
+            sum(amount_usd) as dollars_purchased_from_merchants,
+            percentile_cont(0.5) within group (order by amount_usd) as median_transaction_value_merchant
+        from (
+            select date_trunc('month', zceo.created_at) as month,
+                zceo.initiator_id as customer_id,
+                zceo.fulfiller_id as merchant_id,
+                zceo.amount / 1e6 as amount_usd
+            from zar_cash_exchange_orders zceo
+            inner join users u on u.id = zceo.initiator_id
+            where zceo.type = 'ZarCashExchange::MerchantOrder'
+              and zceo.status = 'completed'
+              and zceo.created_at > date '2025-10-01'
+              and zceo.initiator_id not in ({EXCLUDED_IDS_SQL})
+            union all
+            select date_trunc('month', t.created_at) as month,
+                (t.metadata->>'counterparty_id')::uuid as customer_id,
+                t.user_id as merchant_id,
+                t.amount / 1e6 as amount_usd
+            from transactions t
+            where t.type = 'Transaction::CashExchange'
+              and t.status = 3
+              and t.metadata->>'role' = 'merchant'
+              and coalesce(t.metadata->>'cancelled', 'false') != 'true'
+              and t.created_at > date '2025-10-01'
+              and t.user_id not in ({EXCLUDED_IDS_SQL})
+        ) combined
+        group by 1
+    ),
+
+    -- First CashExchange date per merchant (for merchant_onboarding first_customer)
+    first_ce_customer as (
+        select t.user_id as merchant_id,
+            min(t.posted_at) as first_ce_at
+        from transactions t
+        where t.type = 'Transaction::CashExchange'
+          and t.status = 3
+          and t.metadata->>'role' = 'merchant'
+          and coalesce(t.metadata->>'cancelled', 'false') != 'true'
         group by 1
     ),
 
@@ -1366,7 +1547,7 @@ def monthly_metrics_query() -> str:
         select m.onboarding_month,
             m.merchant_id,
             date(min(zceo_t.completed_at)) as first_trader_transaction_month,
-            date(min(zceo_m.completed_at)) as first_customer_transaction_month
+            date(least(min(zceo_m.completed_at), fce.first_ce_at)) as first_customer_transaction_month
         from merchants m
         left join zar_cash_exchange_orders zceo_m on zceo_m.fulfiller_id = m.merchant_id
             and zceo_m.type = 'ZarCashExchange::MerchantOrder'
@@ -1375,7 +1556,8 @@ def monthly_metrics_query() -> str:
         left join zar_cash_exchange_orders zceo_t on zceo_t.initiator_id = m.merchant_id
             and zceo_t.type = 'ZarCashExchange::TraderOrder'
             and zceo_t.status = 'completed'
-        group by 1, 2
+        left join first_ce_customer fce on fce.merchant_id = m.merchant_id
+        group by 1, 2, fce.first_ce_at
     ),
 
     onboarded_merchant_stats as (
@@ -1609,17 +1791,35 @@ def daily_merchant_activity_query() -> str:
     ),
 
     merchant_user as (
-        select date(zceo.created_at + interval '5' hour) as date,
-            zceo.fulfiller_id as merchant_id,
-            count(distinct uu.phone_number) as transaction_users,
-            count(zceo.id) as user_orders,
-            sum(zceo.amount / 1e6) as dollars_sold
-        from zar_cash_exchange_orders zceo
-        inner join merchants m on m.merchant_id = zceo.fulfiller_id
-        inner join users uu on uu.id = zceo.initiator_id
-        where zceo.status = 'completed'
-          and zceo.type = 'ZarCashExchange::MerchantOrder'
-          and zceo.initiator_id not in ({EXCLUDED_IDS_SQL})
+        select date, merchant_id,
+            count(distinct customer_phone) as transaction_users,
+            count(*) as user_orders,
+            sum(amount_usd) as dollars_sold
+        from (
+            select date(zceo.created_at + interval '5' hour) as date,
+                zceo.fulfiller_id as merchant_id,
+                uu.phone_number as customer_phone,
+                zceo.amount / 1e6 as amount_usd
+            from zar_cash_exchange_orders zceo
+            inner join merchants m on m.merchant_id = zceo.fulfiller_id
+            inner join users uu on uu.id = zceo.initiator_id
+            where zceo.status = 'completed'
+              and zceo.type = 'ZarCashExchange::MerchantOrder'
+              and zceo.initiator_id not in ({EXCLUDED_IDS_SQL})
+            union all
+            select date(t.posted_at + interval '5' hour) as date,
+                t.user_id as merchant_id,
+                uu.phone_number as customer_phone,
+                t.amount / 1e6 as amount_usd
+            from transactions t
+            inner join merchants m on m.merchant_id = t.user_id
+            inner join users uu on uu.id = (t.metadata->>'counterparty_id')::uuid
+            where t.type = 'Transaction::CashExchange'
+              and t.status = 3
+              and t.metadata->>'role' = 'merchant'
+              and coalesce(t.metadata->>'cancelled', 'false') != 'true'
+              and (t.metadata->>'counterparty_id')::uuid not in ({EXCLUDED_IDS_SQL})
+        ) combined
         group by 1, 2
     ),
 
@@ -1685,6 +1885,20 @@ def daily_merchant_activity_query() -> str:
         inner join merchants m on m.merchant_id = zceo.fulfiller_id
         where zceo.status = 'completed'
           and zceo.type = 'ZarCashExchange::MerchantOrder'
+
+        union all
+
+        select (t.metadata->>'counterparty_id')::uuid as user_id,
+            t.user_id as merchant_id,
+            t.posted_at as txn_time,
+            t.id as txn_id,
+            'cash_exchange' as txn_type
+        from transactions t
+        inner join merchants m on m.merchant_id = t.user_id
+        where t.type = 'Transaction::CashExchange'
+          and t.status = 3
+          and t.metadata->>'role' = 'merchant'
+          and coalesce(t.metadata->>'cancelled', 'false') != 'true'
     ),
 
     user_second_txn as (
@@ -1860,18 +2074,47 @@ def daily_overview_query() -> str:
     ),
 
     merchant_user_transactions as (
-        select date(zceo.created_at) as date,
-            count(zceo.id) as merchant_user_transactions,
-            count(distinct initiator_id) as distinct_users,
-            count(distinct fulfiller_id) as distinct_merchants,
-            sum(zceo.amount / 1e6) as dollars_purchased_from_merchants,
-            percentile_cont(0.5) within group (order by zceo.amount / 1e6) as median_transaction_value_user
-        from zar_cash_exchange_orders zceo
-        inner join users u on u.id = zceo.initiator_id
-        where zceo.type = 'ZarCashExchange::MerchantOrder'
-          and zceo.status = 'completed'
-          and zceo.created_at > date '2025-10-01'
-          and zceo.initiator_id not in ({EXCLUDED_IDS_SQL})
+        select date, count(*) as merchant_user_transactions,
+            count(distinct customer_id) as distinct_users,
+            count(distinct merchant_id) as distinct_merchants,
+            sum(amount_usd) as dollars_purchased_from_merchants,
+            percentile_cont(0.5) within group (order by amount_usd) as median_transaction_value_user
+        from (
+            select date(zceo.created_at) as date,
+                zceo.initiator_id as customer_id,
+                zceo.fulfiller_id as merchant_id,
+                zceo.amount / 1e6 as amount_usd
+            from zar_cash_exchange_orders zceo
+            inner join users u on u.id = zceo.initiator_id
+            where zceo.type = 'ZarCashExchange::MerchantOrder'
+              and zceo.status = 'completed'
+              and zceo.created_at > date '2025-10-01'
+              and zceo.initiator_id not in ({EXCLUDED_IDS_SQL})
+            union all
+            select date(t.created_at) as date,
+                (t.metadata->>'counterparty_id')::uuid as customer_id,
+                t.user_id as merchant_id,
+                t.amount / 1e6 as amount_usd
+            from transactions t
+            where t.type = 'Transaction::CashExchange'
+              and t.status = 3
+              and t.metadata->>'role' = 'merchant'
+              and coalesce(t.metadata->>'cancelled', 'false') != 'true'
+              and t.created_at > date '2025-10-01'
+              and t.user_id not in ({EXCLUDED_IDS_SQL})
+        ) combined
+        group by 1
+    ),
+
+    -- First CashExchange date per merchant (for daily merchant_onboarding first_customer)
+    first_ce_customer_daily as (
+        select t.user_id as merchant_id,
+            min(t.posted_at) as first_ce_at
+        from transactions t
+        where t.type = 'Transaction::CashExchange'
+          and t.status = 3
+          and t.metadata->>'role' = 'merchant'
+          and coalesce(t.metadata->>'cancelled', 'false') != 'true'
         group by 1
     ),
 
@@ -1879,7 +2122,7 @@ def daily_overview_query() -> str:
         select m.onboarding_date,
             m.merchant_id,
             date(min(zceo_t.completed_at)) as first_trader_transaction_date,
-            date(min(zceo_m.completed_at)) as first_customer_transaction_date
+            date(least(min(zceo_m.completed_at), fce.first_ce_at)) as first_customer_transaction_date
         from merchants m
         left join zar_cash_exchange_orders zceo_m on zceo_m.fulfiller_id = m.merchant_id
             and zceo_m.type = 'ZarCashExchange::MerchantOrder'
@@ -1888,7 +2131,8 @@ def daily_overview_query() -> str:
         left join zar_cash_exchange_orders zceo_t on zceo_t.initiator_id = m.merchant_id
             and zceo_t.type = 'ZarCashExchange::TraderOrder'
             and zceo_t.status = 'completed'
-        group by 1, 2
+        left join first_ce_customer_daily fce on fce.merchant_id = m.merchant_id
+        group by 1, 2, fce.first_ce_at
     ),
 
     onboarded_merchant_stats as (

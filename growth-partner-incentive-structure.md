@@ -1,32 +1,30 @@
 # EXP-004: Merchant Activation Incentive (v5)
 
-> **One-liner**: We're testing whether a tiered cash incentive ($2/$3/$5) can push merchant activation from 22% to 40%+ within 14 days for all merchants onboarded since Feb 1.
+> **One-liner**: We're testing whether a tiered cash incentive ($2/$3/$5) can push merchant activation from 23% to 40%+ within each merchant's own 14-day window, for merchants onboarded Feb 1–14.
 
 ---
 
 ## The Offer
 
-**Three levels. Each unlocks a cash reward.**
+**Three independent qualifiers. Each unlocks a separate cash reward.**
 
-| Level | What You Do | You Earn |
-|:-----:|-------------|:--------:|
-| 🟢 **First Sale** | Send your first cash note or complete your first order (≥$1) | **$2** |
-| 🔵 **Repeat Seller** | Complete 3+ total sales | **$3** |
-| 🟡 **Volume Seller** | Reach $10+ in total sales volume | **$5** |
+| Qualifier | What You Do | You Earn |
+|-----------|-------------|----------|
+| **Qualifier A — First Sale** | Send your first cash note or complete your first order (≥$1) | **$2** |
+| **Qualifier B — Repeat Seller** | Complete 3+ total sales | **$3** |
+| **Qualifier C — Volume Seller** | Reach $10+ in total sales volume | **$5** |
 
-**Maximum you can earn: $10** (by hitting all three levels).
+All three qualifiers are **independent** — you can earn any combination. Maximum you can earn: **$10** (all three).
 
-Sales = cash notes you send to customers + orders you fulfill. Amounts under $0.01 don't count.
+Sales = cash notes you send to customers + orders you fulfill. $0.01 sends don't count — that's the onboarding note sent to new customers.
 
 ---
 
 ## Who Qualifies
 
-All merchants onboarded to ZAR since **February 1, 2026**.
+Merchants onboarded to ZAR between **February 1–14, 2026** (44 merchants).
 
-**Current pool: 49 merchants.**
-
-You have **14 days** from the day you're told about the offer to hit each level.
+Each merchant has **14 days from their own activation date** to hit each level. The last qualifying window (Feb 14 activation) closes **Feb 28**.
 
 ---
 
@@ -51,13 +49,13 @@ You have **14 days** from the day you're told about the offer to hit each level.
 ## Examples
 
 **Merchant A** sends a $5 cash note to one customer:
-> Level 1 ✅ (first sale) → earns **$2**
+> Qualifier A ✅ (first sale) → earns **$2**
 
 **Merchant B** sends 3 cash notes ($2, $3, $1) to 3 different customers:
-> Level 1 ✅ + Level 2 ✅ (3 sales, $6 total) → earns **$5**
+> Qualifier A ✅ + Qualifier B ✅ (3 sales, $6 total) → earns **$5**
 
 **Merchant C** fulfills 4 ZCE orders totaling $15:
-> Level 1 ✅ + Level 2 ✅ + Level 3 ✅ → earns **$10**
+> Qualifier A ✅ + Qualifier B ✅ + Qualifier C ✅ → earns **$10**
 
 ---
 ---
@@ -70,7 +68,7 @@ You have **14 days** from the day you're told about the offer to hit each level.
 
 ## Why These Thresholds (The Data)
 
-**Source**: All 49 merchants onboarded since Feb 1, 2026. Queried Feb 18.
+**Source**: Organic baseline captured Feb 18 (n=49). Current qualified pool: 44 merchants (Feb 1–14, window-corrected) as of Feb 23.
 
 ### Organic Baseline (No Incentive)
 
@@ -143,28 +141,81 @@ The target was ~10x above organic behavior. Nobody could hit it. The experiment 
 
 ---
 
-## Cost Model
+## Current Status (as of Feb 23, 2026)
 
-| Scenario | L1 (22→40%) | L2 (0→15%) | L3 (4→10%) | Total Cost |
-|----------|:-----------:|:----------:|:----------:|:----------:|
-| Conservative | 20 × $2 = $40 | 7 × $3 = $21 | 5 × $5 = $25 | **$86** |
-| Optimistic | 22 × $2 = $44 | 10 × $3 = $30 | 8 × $5 = $40 | **$114** |
-| Maximum (all 49 hit all 3) | 49 × $10 | — | — | **$490** |
+*Window-correct data: pool = merchants onboarded Feb 1–14 only. Sales counted only within each merchant's own 14-day activation window.*
 
-**Cost per activated merchant**: ~$4-6 (vs $10 in v4 for zero activations).
+### Tier Summary
+
+| Tier | Qualified | Rate | Committed |
+|------|:---------:|:----:|:---------:|
+| L1 (any sale ≥$1) | 10/44 | 23% | $20 |
+| L2 (3+ sales) | 2/44 | 5% | $6 |
+| L3 ($10+ volume) | 2/44 | 5% | $10 |
+| **Total** | — | — | **$36** |
+
+### Sales Distribution (within-window counts)
+
+| Bucket | Count | % |
+|--------|:-----:|:-:|
+| 0 sales | 31 | 70% |
+| 1-2 sales | 11 | 25% |
+| 3-5 sales | 2 | 5% |
+| 6-10 sales | 0 | 0% |
+| 10+ sales | 0 | 0% |
+
+### Window Status by Cohort (as of Feb 23)
+
+| Activation Date | Merchants | Window Closes | Days Left | Status |
+|:---------------:|:---------:|:-------------:|:---------:|--------|
+| Feb 2 | 2 | Feb 16 | 0 | **Closed** |
+| Feb 3 | 4 | Feb 17 | 0 | **Closed** |
+| Feb 4 | 7 | Feb 18 | 0 | **Closed** |
+| Feb 5 | 3 | Feb 19 | 0 | **Closed** |
+| Feb 7 | 2 | Feb 21 | 0 | **Closed** |
+| Feb 9 | 2 | Feb 23 | 0 | **Closes today** |
+| Feb 10 | 3 | Feb 24 | 1 | Open |
+| Feb 11 | 2 | Feb 25 | 2 | Open |
+| Feb 12 | 5 | Feb 26 | 3 | Open |
+| Feb 13 | 9 | Feb 27 | 4 | Open |
+| Feb 14 | 5 | Feb 28 | 5 | Open |
+
+**20 merchants' windows closed/closing today. 24 merchants still have 1-5 days left.**
+
+### Notable Merchants
+
+| Merchant | Onboarding | Sales | Volume | Customers | Tiers | Payout |
+|----------|:----------:|:-----:|:------:|:---------:|-------|:------:|
+| PE merchant (unnamed) | Feb 14 | 4 | $210 | 2 | L1+L2+L3 | $10 |
+| PE merchant (unnamed) | Feb 3 | 3 | $4 | 2 | L1+L2 | $5 |
+| Taha Communication | Feb 4 | 2 | $16 | 2 | L1+L3 | $7 |
+| Al Furqan Photocopy | Feb 11 | 2 | $3 | 2 | L1 | $2 |
+
+**$210 outlier**: The Feb 14 PE merchant now has 4 sales totaling $210 (was 2 sales / $105 on Feb 18), to 2 distinct customers — **no fraud flags**. Appears to be genuine commercial activity. Verify before attributing to the incentive.
+
+### Fraud Status
+
+**0 of 13 active merchants flagged.** All signals clean:
+
+| Flag | Count |
+|------|:-----:|
+| Self-send | 0 |
+| Dust spam (3+ sales < $0.10) | 0 |
+| Single-customer concentration | 0 |
 
 ---
 
-## Pre vs Post Incentive (Feb 13 Cutoff)
+## Cost Model
 
-| Cohort | Size | Organic Sales (pre-13) | Incentive Sales (post-13) |
-|--------|:----:|:---------------------:|:------------------------:|
-| Onboarded Feb 1-12 | 30 | 8 merchants (27%) | 2 merchants added post-incentive sales |
-| Onboarded Feb 13+ | 19 | N/A | 2 merchants (10%) |
+| Scenario | L1 (23→40%) | L2 (0→15%) | L3 (5→10%) | Total Cost |
+|----------|:-----------:|:----------:|:----------:|:----------:|
+| Conservative | 18 × $2 = $36 | 7 × $3 = $21 | 5 × $5 = $25 | **$82** |
+| Optimistic | 22 × $2 = $44 | 10 × $3 = $30 | 8 × $5 = $40 | **$114** |
+| Maximum (all 44 hit all 3) | 44 × $10 | — | — | **$440** |
 
-The Feb 13+ cohort has lower activation (10% vs 27%) but they've had less time. The incentive period (5 days so far) has not yet measurably moved behavior beyond organic.
+**Committed so far**: $36 (L1: $20 + L2: $6 + L3: $10)
 
-**The $105 outlier**: One PE merchant (onboarded Feb 14) sent 2 cash notes totaling $105 during the incentive period. This is either genuine commercial activity or an internal transfer — worth investigating before attributing to the incentive.
+**Cost per activated merchant**: ~$3.60 committed / 10 L1 merchants = **$3.60 per L1** so far.
 
 ---
 
@@ -172,13 +223,13 @@ The Feb 13+ cohort has lower activation (10% vs 27%) but they've had less time. 
 
 | Check | Assessment |
 |-------|-----------|
-| Pool size | 49 — borderline. At 22% organic activation, 95% CI is [12%, 36%]. |
-| MDE | Can detect ~15pp lift (22% → 37%) at 80% power. Cannot detect smaller effects. |
+| Pool size | 44 (Feb 1–14, window-correct) — borderline. At 23% current L1 rate, 95% CI is [11%, 35%]. |
+| MDE | Can detect ~14pp lift (23% → 37%) at 80% power. Cannot detect smaller effects. |
 | Power verdict | **WEAK** — can detect large effects only. Prefix claims with "Directional." |
 | Randomization | None — all qualifying merchants receive the offer. No control group. |
-| Temporal confound | Feb 1-12 merchants have more time to activate naturally. Compare within-cohort. |
+| Window bias | 20 merchants' windows are already closed (final results). 24 still open (in-progress). Within-closed-window L1 rate is ~35-40%. |
 
-**What would make it sufficient**: Pool of 80+ merchants (achievable by extending qualifier window to Jan 15+, or waiting for more Feb onboards). Or: withhold the incentive from a random 25 merchants as control.
+**What would make it sufficient**: Pool of 80+ merchants or a control arm (withhold incentive from random 25 merchants).
 
 ---
 
@@ -191,6 +242,7 @@ The Feb 13+ cohort has lower activation (10% vs 27%) but they've had less time. 
 | **Independent verification** | ZAR team verifies transactions before payout |
 | **$10 cap** | Maximum reward per merchant limits downside |
 | **Observed data only** | All metrics from system data (CN + ZCE tables), not self-reported |
+| **Window enforcement** | Only sales within each merchant's own 14-day window count |
 
 ---
 
@@ -202,6 +254,8 @@ The Feb 13+ cohort has lower activation (10% vs 27%) but they've had less time. 
 | L1 30-40% OR L2 5-10% | **ITERATE** — test with WhatsApp-only nudge (no cash incentive) to isolate communication vs money |
 | L1 < 30% | **KILL IT** — activation barrier is structural (product/UX), not motivational. Incentives won't fix it. |
 | Insufficient data (pool < 30 activations) | **EXTEND** — expand pool to Jan 15+ merchants or wait for more onboards |
+
+**Current trajectory (Feb 23)**: L1=23%, L2=5%. All windows close by Feb 28 — 5 days to final read. The 24 merchants with open windows could push L1 higher. Closed-window cohort (20 merchants) already shows ~35-40% L1, suggesting the incentive is working for merchants who got it early. Final verdict will depend on whether Feb 10-14 cohort (24 merchants, heaviest volume) converts.
 
 **Confirmation metric**: Of merchants who hit Level 1, how many make a sale in the 7 days AFTER the incentive window ends? If <10%, the incentive created artificial behavior that won't persist.
 

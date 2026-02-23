@@ -54,7 +54,14 @@ function buildIndexes() {
     IDX.timing.set(t.recipient_id, t);
   }
   for (const d of (RAW.app_opens_detailed || [])) {
-    IDX.appOpensDetailed.set(d.recipient_id, d);
+    if (!IDX.appOpensDetailed.has(d.recipient_id)) {
+      IDX.appOpensDetailed.set(d.recipient_id, { recipient_id: d.recipient_id, opens: [] });
+    }
+    if (d.opens && Array.isArray(d.opens)) {
+      IDX.appOpensDetailed.get(d.recipient_id).opens.push(...d.opens);
+    } else if (d.hours_after_demo != null) {
+      IDX.appOpensDetailed.get(d.recipient_id).opens.push(d);
+    }
   }
   // All activity timestamps (for repeat session analysis)
   for (const ts of (RAW.all_activity_timestamps || [])) {
@@ -98,13 +105,21 @@ function getNonOnboarded() {
 // Noise: Cycled full demo amount back to ambassador
 // ---------------------------------------------------------------------------
 
-const TIER_ORDER = { "T1": 0, "T2": 1, "Noise": 2, "T3": 3 };
-const TIER_LABELS = { "T1": "Strong Signal", "T2": "Moderate", "Noise": "Cycling", "T3": "No Signal" };
-const TIER_BADGES = { "T1": "badge-t1", "T2": "badge-t2", "Noise": "badge-noise", "T3": "badge-t3" };
+const TIER_ORDER = { "T1": 0, "T2": 1, "Recall": 2, "Noise": 3, "T3": 4 };
+const TIER_LABELS = { "T1": "Strong Signal", "T2": "Moderate", "Recall": "Delayed Recall", "Noise": "Cycling", "T3": "No Signal" };
+const TIER_BADGES = { "T1": "badge-t1", "T2": "badge-t2", "Recall": "badge-recall", "Noise": "badge-noise", "T3": "badge-t3" };
 
 function scoreRecipient(recipientId) {
   const act = IDX.activity.get(recipientId);
-  if (!act) return { tier: "T3", tierLabel: "No Signal", understood: false, actions: [], t1Actions: [], t2Actions: [], cycling: false };
+  if (!act) {
+    // No activity data — check for delayed recall before defaulting to T3
+    const detail = IDX.appOpensDetailed.get(recipientId);
+    const hasDelayedRecall = detail && detail.opens && detail.opens.some(o => o.hours_after_demo >= 6);
+    if (hasDelayedRecall) {
+      return { tier: "Recall", tierLabel: "Delayed Recall", understood: false, actions: [], t1Actions: [], t2Actions: [], cycling: false, recall: true };
+    }
+    return { tier: "T3", tierLabel: "No Signal", understood: false, actions: [], t1Actions: [], t2Actions: [], cycling: false, recall: false };
+  }
 
   // Cycling = sent back 100% of received value (full round-trip).
   // Partial send-back is just the ambassador demoing how to send.
@@ -119,12 +134,18 @@ function scoreRecipient(recipientId) {
   if ((act.cn_send_to_others_count || 0) > 0) t1Actions.push("cn_send");
   if ((act.card_count || 0) > 0) t1Actions.push("card_spend");
   if ((act.zce_count || 0) > 0) t1Actions.push("zce_order");   // ZCE = T1 (cash exchange, core product)
+  if ((act.ce_count || 0) > 0) t1Actions.push("cash_exchange"); // CE = T1 (CashExchange, new merchant tx)
   if ((act.bt_count || 0) > 0) t2Actions.push("bank_transfer"); // BT = T2 (could be cashing out)
+
+  // Delayed recall: opened app 6+ hours after demo (Amplitude data)
+  const detail = IDX.appOpensDetailed.get(recipientId);
+  const hasDelayedRecall = detail && detail.opens && detail.opens.some(o => o.hours_after_demo >= 6);
 
   const allActions = [...t1Actions, ...t2Actions];
   let tier, tierLabel;
   if (t1Actions.length > 0) { tier = "T1"; tierLabel = "Strong Signal"; }
   else if (t2Actions.length > 0) { tier = "T2"; tierLabel = "Moderate"; }
+  else if (hasDelayedRecall && !hasCycling) { tier = "Recall"; tierLabel = "Delayed Recall"; }
   else if (hasCycling) { tier = "Noise"; tierLabel = "Cycling"; }
   else { tier = "T3"; tierLabel = "No Signal"; }
 
@@ -134,6 +155,7 @@ function scoreRecipient(recipientId) {
     actions: allActions,
     t1Actions, t2Actions,
     cycling: hasCycling,
+    recall: hasDelayedRecall && tier === "Recall",
   };
 }
 
@@ -152,6 +174,7 @@ function getNotOnboardReason(recipientId) {
   // Priority 2: Computed from behavior
   if (score.tier === "T1") return "Active user, didn\u2019t submit KYB";
   if (score.tier === "T2") return "Active user, didn\u2019t submit KYB";
+  if (score.tier === "Recall") return "Returned to app but no transactions";
   if (score.tier === "Noise") return "Cycled back to ambassador";
   return "No post-demo engagement";
 }
@@ -261,16 +284,16 @@ function renderCard3() {
 
   // Brand recall definition
   let html = `<div class="inline-definition">
-    <strong>What counts as brand recall?</strong> Opening the app 2+ hours after receiving demo dollars. By then, the ambassador has left &mdash; the recipient is returning on their own because they remembered Zar.
+    <strong>What counts as brand recall?</strong> Opening the app 6+ hours after receiving demo dollars. By then, the ambassador has long left &mdash; the recipient is returning on their own because they remembered Zar.
   </div>`;
 
   if (hasDetailed) {
     // Detailed brand recall analysis with time windows
-    let brandRecallCount = 0;    // 2h+ opens
-    let sameDayReturn = 0;       // 2-24h
+    let brandRecallCount = 0;    // 6h+ opens
+    let sameDayReturn = 0;       // 6-24h
     let nextDayReturn = 0;       // 24h+
     let neverReturned = 0;
-    let duringVisit = 0;         // 0-2h
+    let duringVisit = 0;         // 0-6h
     let multiDayRecall = 0;      // 72h+
 
     const windowCounts = { visit: 0, sameDay: 0, nextDay: 0, multiDay: 0 };
@@ -291,7 +314,7 @@ function renderCard3() {
 
       for (const o of opens) {
         const h = o.hours_after_demo;
-        if (h < 2) hasVisit = true;
+        if (h < 6) hasVisit = true;
         else if (h < 24) { hasSameDay = true; hasBrandRecall = true; }
         else if (h < 72) { hasNextDay = true; hasBrandRecall = true; }
         else { hasMultiDay = true; hasBrandRecall = true; }
@@ -311,12 +334,12 @@ function renderCard3() {
 
     html += `<div class="stat-grid">
       <div class="stat-box">
-        <div class="stat-label">Brand Recall (2h+ opens)</div>
+        <div class="stat-label">Brand Recall (6h+ opens)</div>
         <div class="stat-value">${brandRecallCount}</div>
         <div class="stat-sub">${pct(brandRecallCount, total)}% of ${total} non-onboarded</div>
       </div>
       <div class="stat-box">
-        <div class="stat-label">Same-Day Returns (2\u201324h)</div>
+        <div class="stat-label">Same-Day Returns (6\u201324h)</div>
         <div class="stat-value">${sameDayReturn}</div>
         <div class="stat-sub">Came back on their own</div>
       </div>
@@ -394,7 +417,7 @@ function renderCard4() {
 
   if (defEl) {
     defEl.innerHTML = `<div class="inline-definition">
-      <strong>What counts as &ldquo;using&rdquo; the $5?</strong> Any active feature: sending money to someone, card purchase, bank transfer, or cash exchange (ZCE order). Just holding the balance doesn&rsquo;t count. Sending it back to the ambassador (cycling) is tracked separately.
+      <strong>What counts as &ldquo;using&rdquo; the $5?</strong> Any active feature: sending money to someone, card purchase, bank transfer, ZCE order, or cash exchange. Just holding the balance doesn&rsquo;t count. Sending it back to the ambassador (cycling) is tracked separately.
     </div>`;
   }
 
@@ -403,12 +426,14 @@ function renderCard4() {
 
   let t1Count = 0;
   let t2Count = 0;
+  let recallCount = 0;
   let noiseCount = 0;
   let t3Count = 0;
   let cnSendToOthers = 0;
   let cardUsers = 0;
   let btUsers = 0;
   let zceUsers = 0;
+  let ceUsers = 0;
   let totalCycling = 0;
   let securedCount = 0;
 
@@ -417,6 +442,7 @@ function renderCard4() {
     const act = IDX.activity.get(rid);
     if (score.tier === "T1") t1Count++;
     else if (score.tier === "T2") t2Count++;
+    else if (score.tier === "Recall") recallCount++;
     else if (score.tier === "Noise") noiseCount++;
     else t3Count++;
     if (recip.is_secured) securedCount++;
@@ -425,13 +451,15 @@ function renderCard4() {
       if ((act.card_count || 0) > 0) cardUsers++;
       if ((act.bt_count || 0) > 0) btUsers++;
       if ((act.zce_count || 0) > 0) zceUsers++;
+      if ((act.ce_count || 0) > 0) ceUsers++;
       if ((act.cn_send_to_amb_count || 0) > 0) totalCycling++;
     }
   }
 
   statsEl.innerHTML = [
-    { label: "T1 Strong Signal", value: t1Count, sub: "P2P, Card, ZCE (cash exchange)" },
+    { label: "T1 Strong Signal", value: t1Count, sub: "P2P, Card, ZCE, CE" },
     { label: "T2 Moderate Signal", value: t2Count, sub: "Bank Transfer only" },
+    { label: "Recall (6h+ app open)", value: recallCount, sub: "Returned on their own" },
     { label: "Noise (Cycling)", value: noiseCount, sub: "Sent full amount back" },
     { label: "T3 No Signal", value: t3Count, sub: "No qualifying activity" },
   ].map(c => `<div class="stat-box">
@@ -447,6 +475,7 @@ function renderCard4() {
         <span class="pill pill-card"><span class="pill-count">${cardUsers}</span> Card Spend</span>
         <span class="pill pill-bt"><span class="pill-count">${btUsers}</span> Bank Transfer</span>
         <span class="pill pill-zce"><span class="pill-count">${zceUsers}</span> ZCE Order</span>
+        <span class="pill pill-ce"><span class="pill-count">${ceUsers}</span> Cash Exchange</span>
         <span class="pill pill-cycling"><span class="pill-count">${totalCycling}</span> Cycling (excluded)</span>
       </div>`;
   }
@@ -456,7 +485,7 @@ function renderCard4() {
 // Detail Table: Per-recipient raw data (NON-ONBOARDED only)
 // ---------------------------------------------------------------------------
 
-const DETAIL_SORT = { col: 14, asc: true };  // default sort: tier (T1 first)
+const DETAIL_SORT = { col: 15, asc: true };  // default sort: tier (T1 first)
 const DETAIL_COLUMNS = [
   { key: "recipient_name", label: "Recipient", numeric: false },
   { key: "ambassador_name", label: "Ambassador", numeric: false },
@@ -467,6 +496,7 @@ const DETAIL_COLUMNS = [
   { key: "card", label: "Card Spend", numeric: true },
   { key: "bt", label: "Bank Transfer", numeric: true },
   { key: "zce", label: "ZCE Order", numeric: true },
+  { key: "ce", label: "Cash Exchange", numeric: true },
   { key: "cycling", label: "Cycling", numeric: true },
   { key: "cycled_back_full", label: "Full Cycle", numeric: false },
   { key: "is_secured", label: "Secured", numeric: false },
@@ -507,6 +537,8 @@ function renderDetailTable() {
       bt_vol: act.bt_volume || 0,
       zce: act.zce_count || 0,
       zce_vol: act.zce_volume || 0,
+      ce: act.ce_count || 0,
+      ce_vol: act.ce_volume || 0,
       cycling: cyclingCount,
       cycling_vol: cyclingVol,
       cycled_back_full: cycledFull,
@@ -576,6 +608,7 @@ function renderDetailTable() {
       <td>${fmtCnt(r.card, r.card_vol)}</td>
       <td>${fmtCnt(r.bt, r.bt_vol)}</td>
       <td>${fmtCnt(r.zce, r.zce_vol)}</td>
+      <td>${fmtCnt(r.ce, r.ce_vol)}</td>
       <td>${fmtCnt(r.cycling, r.cycling_vol)}</td>
       <td>${cycledCell}</td>
       <td style="text-align:center;">${securedBadge}</td>
@@ -601,7 +634,7 @@ function renderDetailTable() {
 // ---------------------------------------------------------------------------
 
 function downloadRevisitCSV(targets) {
-  const actionLabels = { cn_send: "P2P", card_spend: "Card", bank_transfer: "BT", zce_order: "ZCE" };
+  const actionLabels = { cn_send: "P2P", card_spend: "Card", bank_transfer: "BT", zce_order: "ZCE", cash_exchange: "CE" };
   const headers = ["Recipient", "Phone", "Ambassador", "Business Name", "Location", "Demo Date", "Actions", "Tier", "Total Txns", "Secured", "Reason", "Notes"];
   const rows = targets.map(r => [
     r.recipient_name,
@@ -612,7 +645,7 @@ function downloadRevisitCSV(targets) {
     r.date,
     r.actions.map(a => actionLabels[a] || a).join("; "),
     r.tier || "",
-    r.cn_send_to_others_count + r.card_count + r.bt_count + r.zce_count,
+    r.cn_send_to_others_count + r.card_count + r.bt_count + r.zce_count + (r.ce_count || 0),
     r.is_secured ? "Yes" : "No",
     r.reason || "",
     r.field_notes || "",
@@ -642,19 +675,20 @@ function renderVerdict() {
 
   const nonOnboarded = getNonOnboarded();
   const total = nonOnboarded.length;
-  let t1Count = 0, t2Count = 0, noiseCount = 0, t3Count = 0;
-  const actionCounts = { cn_send: 0, card_spend: 0, bank_transfer: 0, zce_order: 0 };
+  let t1Count = 0, t2Count = 0, recallCount = 0, noiseCount = 0, t3Count = 0;
+  const actionCounts = { cn_send: 0, card_spend: 0, bank_transfer: 0, zce_order: 0, cash_exchange: 0 };
   const revisitTargets = [];
 
   for (const [rid, recip] of nonOnboarded) {
     const score = scoreRecipient(rid);
     if (score.tier === "T1") t1Count++;
     else if (score.tier === "T2") t2Count++;
+    else if (score.tier === "Recall") recallCount++;
     else if (score.tier === "Noise") noiseCount++;
     else t3Count++;
 
     // T1 and T2 are both revisit targets
-    if (score.understood) {
+    if (score.understood && recip.recipient_phone) {
       for (const a of score.actions) actionCounts[a]++;
       const act = IDX.activity.get(rid) || {};
       revisitTargets.push({
@@ -670,6 +704,7 @@ function renderVerdict() {
         card_count: act.card_count || 0,
         bt_count: act.bt_count || 0,
         zce_count: act.zce_count || 0,
+        ce_count: act.ce_count || 0,
         business_name: recip.business_name || null,
         location_lat: recip.location_lat || null,
         location_lng: recip.location_lng || null,
@@ -681,8 +716,9 @@ function renderVerdict() {
   }
 
   statsEl.innerHTML = [
-    { label: "T1 Strong Signal", value: t1Count, sub: "P2P, Card, ZCE (cash exchange)" },
+    { label: "T1 Strong Signal", value: t1Count, sub: "P2P, Card, ZCE, CE" },
     { label: "T2 Moderate Signal", value: t2Count, sub: "Bank Transfer only" },
+    { label: "Recall (6h+ app open)", value: recallCount, sub: "Returned on their own" },
     { label: "Revisit Targets (T1+T2)", value: revisitTargets.length, sub: pct(revisitTargets.length, total) + "% of " + total + " non-onboarded" },
   ].map(c => `<div class="stat-box">
     <div class="stat-label">${c.label}</div>
@@ -696,7 +732,8 @@ function renderVerdict() {
     const actionLabels = {
       cn_send: { label: "Sent Cash Note (P2P)", cls: "fill-cn", tier: "T1" },
       card_spend: { label: "Card Purchase", cls: "fill-card", tier: "T1" },
-      zce_order: { label: "ZCE Order (cash exchange)", cls: "fill-zce", tier: "T1" },
+      zce_order: { label: "ZCE Order", cls: "fill-zce", tier: "T1" },
+      cash_exchange: { label: "Cash Exchange", cls: "fill-ce", tier: "T1" },
       bank_transfer: { label: "Bank Transfer", cls: "fill-bt", tier: "T2" },
     };
     const maxCount = Math.max(...Object.values(actionCounts), 1);
@@ -745,11 +782,11 @@ function renderVerdict() {
 
     bodyEl.innerHTML = revisitTargets.map(r => {
       const actionBadges = r.actions.map(a => {
-        const labels = { cn_send: "P2P", card_spend: "Card", bank_transfer: "BT", zce_order: "ZCE" };
-        const classes = { cn_send: "pill-cn", card_spend: "pill-card", bank_transfer: "pill-bt", zce_order: "pill-zce" };
-        return `<span class="pill ${classes[a]}" style="padding:0.15rem 0.4rem;font-size:0.7rem;">${labels[a]}</span>`;
+        const labels = { cn_send: "P2P", card_spend: "Card", bank_transfer: "BT", zce_order: "ZCE", cash_exchange: "CE" };
+        const classes = { cn_send: "pill-cn", card_spend: "pill-card", bank_transfer: "pill-bt", zce_order: "pill-zce", cash_exchange: "pill-ce" };
+        return `<span class="pill ${classes[a] || ''}" style="padding:0.15rem 0.4rem;font-size:0.7rem;">${labels[a] || a}</span>`;
       }).join(" ");
-      const totalTxns = r.cn_send_to_others_count + r.card_count + r.bt_count + r.zce_count;
+      const totalTxns = r.cn_send_to_others_count + r.card_count + r.bt_count + r.zce_count + (r.ce_count || 0);
       const bizName = r.business_name || "\u2014";
       const locationCell = r.location_lat != null && r.location_lng != null
         ? `<a href="https://maps.google.com/?q=${r.location_lat},${r.location_lng}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:0.75rem;">${r.location_lat.toFixed(4)}, ${r.location_lng.toFixed(4)}</a>`
@@ -1107,11 +1144,12 @@ function renderExecutiveSummary() {
   const nonOnboardedTotal = nonOnboarded.length;
 
   // Count by tier
-  let t1Count = 0, t2Count = 0, understood = 0;
+  let t1Count = 0, t2Count = 0, recallCount = 0, understood = 0;
   for (const [rid] of nonOnboarded) {
     const score = scoreRecipient(rid);
     if (score.tier === "T1") t1Count++;
     if (score.tier === "T2") t2Count++;
+    if (score.tier === "Recall") recallCount++;
     if (score.understood) understood++;
   }
 
@@ -1122,7 +1160,7 @@ function renderExecutiveSummary() {
     const nonOnboardedIds = new Set(nonOnboarded.map(([rid]) => rid));
     for (const [rid, detail] of IDX.appOpensDetailed) {
       if (!nonOnboardedIds.has(rid)) continue;
-      if (detail.opens && detail.opens.some(o => o.hours_after_demo >= 2)) brandRecallCount++;
+      if (detail.opens && detail.opens.some(o => o.hours_after_demo >= 6)) brandRecallCount++;
     }
   }
 
@@ -1161,7 +1199,7 @@ function renderExecutiveSummary() {
 
   const bullets = [];
 
-  bullets.push(`<strong>${understood} of ${nonOnboardedTotal}</strong> non-onboarded demo recipients (${pct(understood, nonOnboardedTotal)}%) showed product engagement: <strong>${t1Count} T1</strong> (P2P, card, ZCE) + <strong>${t2Count} T2</strong> (bank transfer).`);
+  bullets.push(`<strong>${understood} of ${nonOnboardedTotal}</strong> non-onboarded demo recipients (${pct(understood, nonOnboardedTotal)}%) showed product engagement: <strong>${t1Count} T1</strong> (P2P, card, ZCE/CE) + <strong>${t2Count} T2</strong> (bank transfer).${recallCount > 0 ? ` Another <strong>${recallCount}</strong> showed delayed recall (opened app 6h+ later).` : ""}`)
 
   if (hasDetailed) {
     bullets.push(`<strong>${pct(brandRecallCount, nonOnboardedTotal)}%</strong> showed brand recall &mdash; they opened the app on their own after the ambassador left (2+ hours later).`);
@@ -1234,6 +1272,7 @@ function renderExp007() {
       card_spend: { label: "Card Spend", cls: "fill-card" },
       bank_transfer: { label: "Bank Transfer", cls: "fill-bt" },
       zce_order: { label: "ZCE Order", cls: "fill-zce" },
+      cash_exchange: { label: "Cash Exchange", cls: "fill-ce" },
     };
     const maxCount = Math.max(...Object.values(byType).map(t => t.count), 1);
 

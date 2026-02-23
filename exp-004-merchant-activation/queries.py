@@ -15,8 +15,12 @@ from lib.sql import EXCLUDED_IDS_SQL, merchants_cte
 # ── Sales CTEs ────────────────────────────────────────────────────────
 
 def _sales_ctes() -> str:
-    """CN (depositor, >$0.01) + ZCE (fulfiller) sales for qualifying merchants."""
-    return """cn_sales as (
+    """CN (depositor, >$0.01) + ZCE (fulfiller) + CashExchange (merchant-side) sales for qualifying merchants.
+
+    Only counts sales within each merchant's own 14-day activation window.
+    Pool upper bound: merchants onboarded Feb 1–14 only (last window closes Feb 28).
+    """
+    return f"""cn_sales as (
         select dcn.depositor_id as merchant_id,
                dcn.claimant_id as customer_id,
                dcn.amount / 1e6 as amount_usd,
@@ -24,8 +28,12 @@ def _sales_ctes() -> str:
                (dcn.created_at + interval '5' hour)::date as sale_date
         from digital_cash_notes dcn
         inner join qualifying q on q.merchant_id = dcn.depositor_id
+            and q.onboarding_date <= '2026-02-14'
+            and dcn.created_at >= q.onboarding_date
+            and dcn.created_at < q.onboarding_date + interval '14 days'
         where dcn.status = 'claimed'
           and dcn.amount > 10000
+          and dcn.claimant_id not in ({EXCLUDED_IDS_SQL})
     ), zce_sales as (
         select zce.fulfiller_id as merchant_id,
                zce.initiator_id as customer_id,
@@ -34,7 +42,27 @@ def _sales_ctes() -> str:
                (zce.created_at + interval '5' hour)::date as sale_date
         from zar_cash_exchange_orders zce
         inner join qualifying q on q.merchant_id = zce.fulfiller_id
+            and q.onboarding_date <= '2026-02-14'
+            and zce.created_at >= q.onboarding_date
+            and zce.created_at < q.onboarding_date + interval '14 days'
         where zce.status = 'completed'
+          and zce.initiator_id not in ({EXCLUDED_IDS_SQL})
+    ), ce_sales as (
+        select t.user_id as merchant_id,
+               (t.metadata->>'counterparty_id')::uuid as customer_id,
+               t.amount / 1e6 as amount_usd,
+               t.amount as amount_raw,
+               (t.created_at + interval '5' hour)::date as sale_date
+        from transactions t
+        inner join qualifying q on q.merchant_id = t.user_id
+            and q.onboarding_date <= '2026-02-14'
+            and t.created_at >= q.onboarding_date
+            and t.created_at < q.onboarding_date + interval '14 days'
+        where t.type = 'Transaction::CashExchange'
+          and t.status = 3
+          and t.metadata->>'role' = 'merchant'
+          and coalesce(t.metadata->>'cancelled', 'false') != 'true'
+          and (t.metadata->>'counterparty_id') not in ({EXCLUDED_IDS_SQL})
     ), all_sales as (
         select merchant_id, customer_id, amount_usd, amount_raw, sale_date,
                'cn' as sale_type
@@ -43,6 +71,10 @@ def _sales_ctes() -> str:
         select merchant_id, customer_id, amount_usd, amount_raw, sale_date,
                'zce' as sale_type
         from zce_sales
+        union all
+        select merchant_id, customer_id, amount_usd, amount_raw, sale_date,
+               'ce' as sale_type
+        from ce_sales
     )"""
 
 
@@ -74,9 +106,11 @@ def merchant_qualification_query() -> str:
             -- extra context
             count(distinct s.customer_id) as unique_customers,
             count(*) filter (where s.sale_type = 'cn') as cn_count,
-            count(*) filter (where s.sale_type = 'zce') as zce_count
+            count(*) filter (where s.sale_type = 'zce') as zce_count,
+            count(*) filter (where s.sale_type = 'ce') as ce_count
         from qualifying q
         left join all_sales s on s.merchant_id = q.merchant_id
+        where q.onboarding_date <= '2026-02-14'
         group by 1, 2, 3
     )
 
@@ -90,6 +124,7 @@ def merchant_qualification_query() -> str:
         unique_customers,
         cn_count,
         zce_count,
+        ce_count,
         -- tier qualification
         case when sales_gte_1usd >= 1 then true else false end as l1_qualified,
         case when total_sales >= 3 then true else false end as l2_qualified,
@@ -120,6 +155,7 @@ def distribution_summary_query() -> str:
             count(distinct s.customer_id) as unique_customers
         from qualifying q
         left join all_sales s on s.merchant_id = q.merchant_id
+        where q.onboarding_date <= '2026-02-14'
         group by 1
     )
 
@@ -153,6 +189,72 @@ def distribution_summary_query() -> str:
         count(*) filter (where total_sales > 10) as bucket_10plus
     from merchant_metrics
     """
+
+
+# ── Query 4: Historical 14-day activation baseline ───────────────────
+
+def historical_baseline_query() -> str:
+    """14-day activation rate for all merchants onboarded before Feb 1, 2026.
+
+    Answers: what % of pre-incentive merchants made a ≥$1 sale within
+    14 days of their onboarding date? This is the baseline the EXP-004
+    incentive is trying to beat.
+
+    Uses merchant_sales_cte (ZCE + CashExchange union).
+    """
+    return f"""
+    with {merchants_cte()},
+    {_merchant_sales_cte_inline()},
+
+    cohort as (
+        select merchant_id, onboarding_date
+        from merchants
+        where onboarding_date < '2026-02-01'
+    ),
+
+    activation as (
+        select c.merchant_id,
+               max(case when ms.created_at >= c.onboarding_date::timestamp
+                         and ms.created_at < (c.onboarding_date + interval '14 days')::timestamp
+                         and ms.amount_usd >= 1.0
+                    then 1 else 0 end) as activated
+        from cohort c
+        left join merchant_sales ms on ms.merchant_id = c.merchant_id
+        group by 1
+    )
+
+    select
+        count(*) as total,
+        count(*) filter (where activated = 0) as no_14day_sale,
+        count(*) filter (where activated = 1) as had_14day_sale,
+        round(100.0 * count(*) filter (where activated = 1) / count(*), 1) as pct_activated_14d
+    from activation
+    """
+
+
+def _merchant_sales_cte_inline() -> str:
+    """Inline ZCE + CashExchange union (no merchant filter) for baseline query."""
+    return f"""merchant_sales as (
+        select zce.fulfiller_id as merchant_id,
+               zce.amount / 1e6 as amount_usd,
+               zce.created_at
+        from zar_cash_exchange_orders zce
+        where zce.status = 'completed'
+          and zce.type = 'ZarCashExchange::MerchantOrder'
+          and zce.initiator_id not in ({EXCLUDED_IDS_SQL})
+
+        union all
+
+        select t.user_id as merchant_id,
+               t.amount / 1e6 as amount_usd,
+               t.created_at
+        from transactions t
+        where t.type = 'Transaction::CashExchange'
+          and t.status = 3
+          and t.metadata->>'role' = 'merchant'
+          and coalesce(t.metadata->>'cancelled', 'false') != 'true'
+          and (t.metadata->>'counterparty_id') not in ({EXCLUDED_IDS_SQL})
+    )"""
 
 
 # ── Query 3: Fraud signal detection ──────────────────────────────────
@@ -213,6 +315,7 @@ def fraud_signals_query() -> str:
     left join self_sends ss on ss.merchant_id = q.merchant_id
     left join dust_counts dc on dc.merchant_id = q.merchant_id
     left join customer_concentration cc on cc.merchant_id = q.merchant_id
-    where coalesce(dc.dust_count, 0) > 0
+    where q.onboarding_date <= '2026-02-14'
+      and coalesce(dc.dust_count, 0) > 0
     order by dust_txns desc, self_sends desc
     """

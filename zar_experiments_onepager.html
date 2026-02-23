@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZAR Field Experiments - One Pager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+:root {
+    /* ZAR Color Palette */
+    --zar-gold: #B8992E;
+    --zar-gold-light: #CBAF4A;
+    --zar-gold-dark: #9A7E24;
+    --zar-sky-blue: #7BC4E8;
+    --zar-hot-pink: #FF4D9D;
+    --background: #F5F0E8;
+    --card: #FFFFFF;
+    --border: #E8E3DB;
+    --text: #1A1A1A;
+    --text-secondary: #6B6B6B;
+}
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--background);
+    color: var(--text);
+    padding: 2rem;
+    line-height: 1.6;
+}
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+}
+h1 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+}
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    margin-top: 0.5rem;
+}
+.meta-info {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+}
+.meta-item {
+    background: var(--card);
+    padding: 0.75rem 1.5rem;
+    border-radius: 100px;
+    font-size: 0.9rem;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.meta-item strong {
+    color: var(--zar-gold-dark);
+}
+.card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 2rem;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    margin-bottom: 2rem;
+}
+.card h2 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+}
+.question {
+    background: linear-gradient(135deg, rgba(184,153,46,0.08), rgba(184,153,46,0.02));
+    border-left: 3px solid var(--zar-gold);
+    padding: 1rem 1.5rem;
+    margin: 1rem 0;
+    border-radius: 0 12px 12px 0;
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: var(--zar-gold-dark);
+}
+.section-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 1.5rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+}
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+.stat-box {
+    background: var(--background);
+    padding: 1.25rem;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--zar-gold-dark);
+}
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+.stat-sublabel {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+.insight {
+    background: linear-gradient(135deg, rgba(255,77,157,0.08), rgba(255,77,157,0.02));
+    border-left: 3px solid var(--zar-hot-pink);
+    padding: 1rem 1.5rem;
+    margin: 1rem 0;
+    font-size: 0.95rem;
+    border-radius: 0 12px 12px 0;
+}
+.insight strong {
+    color: #dc2626;
+}
+.insight-gold {
+    background: linear-gradient(135deg, rgba(184,153,46,0.08), rgba(184,153,46,0.02));
+    border-left: 3px solid var(--zar-gold);
+}
+.insight-gold strong {
+    color: var(--zar-gold-dark);
+}
+.insight-blue {
+    background: linear-gradient(135deg, rgba(123,196,232,0.08), rgba(123,196,232,0.02));
+    border-left: 3px solid var(--zar-sky-blue);
+}
+.insight-blue strong {
+    color: #0369a1;
+}
+.bullet-list {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+}
+.bullet-list li {
+    margin: 0.5rem 0;
+    color: var(--text);
+}
+.bullet-list li strong {
+    color: var(--zar-gold-dark);
+}
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin: 1.5rem 0;
+}
+.highlight-box {
+    background: var(--background);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+.highlight-box h4 {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 1rem;
+}
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.badge-success {
+    background: rgba(22,163,74,0.15);
+    color: #16a34a;
+}
+.badge-warning {
+    background: rgba(184,153,46,0.15);
+    color: var(--zar-gold-dark);
+}
+.badge-danger {
+    background: rgba(220,38,38,0.15);
+    color: #dc2626;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    margin: 1rem 0;
+}
+th, td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+th {
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: var(--background);
+}
+td {
+    color: var(--text);
+}
+.exp-number {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--zar-gold), var(--zar-gold-light));
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    text-align: center;
+    line-height: 32px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-right: 0.5rem;
+}
+@media print {
+    body {
+        padding: 0;
+        background: white;
+    }
+    .container {
+        max-width: 100%;
+    }
+    .card {
+        page-break-inside: avoid;
+        box-shadow: none;
+    }
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ZAR Field Experiments</h1>
+            <p class="subtitle">Week of Jan 30 - Feb 5, 2026</p>
+            <div class="meta-info">
+                <div class="meta-item"><strong>379</strong> total visits</div>
+                <div class="meta-item"><strong>20</strong> onboardings</div>
+                <div class="meta-item"><strong>5.3%</strong> conversion rate</div>
+            </div>
+        </header>
+
+        <!-- Experiment 1: Demos Break Trust Barriers -->
+        <div class="card">
+            <h2><span class="exp-number">1</span>Do Demos Break Trust Barriers?</h2>
+
+            <div class="question">
+                <strong>What we tried to learn:</strong> Do product demos lead to higher onboarding rates?
+            </div>
+
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div class="stat-value">100%</div>
+                    <div class="stat-label">Bank Transfer Demos</div>
+                    <div class="stat-sublabel">11 demos → 11 onboardings</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">75%</div>
+                    <div class="stat-label">POS Demos</div>
+                    <div class="stat-sublabel">4 demos → 3 onboardings</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">86%</div>
+                    <div class="stat-label">$5 Golden Flow</div>
+                    <div class="stat-sublabel">22 demos → 19 onboardings</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">80%</div>
+                    <div class="stat-label">Overall Demo→Onboard</div>
+                    <div class="stat-sublabel">25 demos → 20 onboardings</div>
+                </div>
+            </div>
+
+            <div class="section-title">What We Learned</div>
+
+            <div class="insight">
+                <strong>Critical Finding:</strong> Demos work exceptionally well (80% conversion), BUT we have an opener problem blocking us from reaching the demo stage.
+            </div>
+
+            <div class="two-col">
+                <div class="highlight-box">
+                    <h4>✅ Demos Are Highly Effective</h4>
+                    <ul class="bullet-list">
+                        <li>Bank transfer demos: <strong>Perfect conversion</strong></li>
+                        <li>POS demos: <strong>75% success rate</strong></li>
+                        <li>$5 golden flow: <strong>86% conversion</strong></li>
+                    </ul>
+                </div>
+
+                <div class="highlight-box">
+                    <h4>❌ Opener Stage Is The Blocker</h4>
+                    <ul class="bullet-list">
+                        <li>Only <strong>10%</strong> pass opener (38/379 visits)</li>
+                        <li>Only <strong>66%</strong> reach demo after passing opener</li>
+                        <li>Ambassadors derailing into product talk instead of moving to demo</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="insight insight-gold">
+                <strong>Key Issue:</strong> Ambassadors using "I explained ZAR" trick opener (planted to catch non-compliance). They either derail into product talk or answer questions instead of moving to demo. Previous opener selection data is now unreliable.
+            </div>
+        </div>
+
+        <!-- Experiment 2: Testing Different Store Types -->
+        <div class="card">
+            <h2><span class="exp-number">2</span>Testing Different Store Types</h2>
+
+            <div class="question">
+                <strong>What we tried to learn:</strong> Do certain store types convert better than general mobile shops?
+            </div>
+
+            <div class="section-title">Part A: Premium Retail Stores</div>
+
+            <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="stat-box">
+                    <div class="stat-value">25</div>
+                    <div class="stat-label">Visits (Sharoon)</div>
+                    <div class="stat-sublabel">Walk-in, larger, heavily branded stores</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Onboardings</div>
+                    <div class="stat-sublabel">0% conversion rate</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" style="font-size: 1.5rem;">Can't hit<br>15/day</div>
+                    <div class="stat-label">Visit Rate</div>
+                    <div class="stat-sublabel">Fewer premium stores available</div>
+                </div>
+            </div>
+
+            <div class="insight">
+                <strong>Finding:</strong> Premium retail stores want ZAR to pay them like Pepsi does — rental fees for freezers, stocking fees, branding, extra commission, and equipment. Not a fit for our model.
+            </div>
+
+            <div class="section-title">Part B: Smartphone/Electronics Stores with POS</div>
+
+            <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="stat-box">
+                    <div class="stat-value">20</div>
+                    <div class="stat-label">Visits (Arsalan)</div>
+                    <div class="stat-sublabel">Only smartphone shops with POS</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">30%</div>
+                    <div class="stat-label">Onboarding Rate</div>
+                    <div class="stat-sublabel">6 out of 20 onboarded</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">High</div>
+                    <div class="stat-label">Demo Rate</div>
+                    <div class="stat-sublabel">POS terminal + Bank transfer</div>
+                </div>
+            </div>
+
+            <div class="section-title">What We Learned</div>
+
+            <div class="insight insight-blue">
+                <strong>Success Driver:</strong> 30% onboarding rate driven by high demo rate. Arsalan demonstrated using either POS terminal with ZAR card OR the Bank Transfer feature.
+            </div>
+
+            <div class="highlight-box">
+                <h4>⚠️ Technical Challenges Encountered</h4>
+                <ul class="bullet-list">
+                    <li><strong>Bank transfer demos sometimes fail:</strong> Amount too small, incorrect IBAN, no validation checks, reversed after hours</li>
+                    <li><strong>Card topup not working:</strong> For 2 merchants, resorted to bank transfers as workaround</li>
+                    <li><strong>Ambassador workaround:</strong> In 1 case, loaded own card to merchant's Google Wallet to complete POS demo</li>
+                </ul>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Approach</th>
+                        <th>Target</th>
+                        <th>Visits</th>
+                        <th>Onboardings</th>
+                        <th>Conversion</th>
+                        <th>Outcome</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Premium Retail</strong></td>
+                        <td>Walk-in, larger stores</td>
+                        <td>25</td>
+                        <td>0</td>
+                        <td>0%</td>
+                        <td><span class="badge badge-danger">Poor Fit</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Smartphone + POS</strong></td>
+                        <td>Electronics with POS</td>
+                        <td>20</td>
+                        <td>6</td>
+                        <td>30%</td>
+                        <td><span class="badge badge-success">Strong Performance</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Experiment 3: Ex-Easypaisa/JazzCash Ambassadors -->
+        <div class="card">
+            <h2><span class="exp-number">3</span>Ex-Easypaisa/JazzCash Ambassadors</h2>
+
+            <div class="question">
+                <strong>What we tried to learn:</strong> Do ambassadors from digital wallet companies perform better?
+            </div>
+
+            <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr);">
+                <div class="stat-box">
+                    <div class="stat-value">Owais</div>
+                    <div class="stat-label">Ex-JazzCash</div>
+                    <div class="stat-sublabel">10 years experience</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">100%</div>
+                    <div class="stat-label">Conversion Rate</div>
+                    <div class="stat-sublabel">5 visits → 5 onboardings</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">5/5</div>
+                    <div class="stat-label">Stores Onboarded</div>
+                    <div class="stat-sublabel">Perfect track record</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">1.7</div>
+                    <div class="stat-label">Visits/Day</div>
+                    <div class="stat-sublabel">Lower volume approach</div>
+                </div>
+            </div>
+
+            <div class="section-title">What We Learned</div>
+
+            <div class="insight">
+                <strong>Caveat:</strong> Success appears driven by personal relationships with stores, not necessarily by understanding or effectively communicating the ZAR value proposition.
+            </div>
+
+            <div class="two-col">
+                <div class="highlight-box">
+                    <h4>🎯 Performance</h4>
+                    <ul class="bullet-list">
+                        <li>100% onboarding rate (5/5)</li>
+                        <li>All stores had existing relationships</li>
+                        <li>Confidence in getting customers</li>
+                    </ul>
+                </div>
+
+                <div class="highlight-box">
+                    <h4>💰 Store Expectations</h4>
+                    <ul class="bullet-list">
+                        <li><strong>All 5 stores</strong> asked for target + reward structure</li>
+                        <li>Wanted incentives beyond $10 for first $30 sold</li>
+                        <li>Owais confident if reward is high enough</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="insight insight-gold">
+                <strong>Next Steps:</strong>
+                <ul style="margin-top: 0.5rem; padding-left: 1.5rem;">
+                    <li>Track Owais's store performance over next few days</li>
+                    <li>Conduct shadow buyer visits to validate actual customer experience</li>
+                    <li>Shadow Owais on visits to validate store understanding and pitch quality</li>
+                    <li>Assess whether success is replicable beyond personal relationships</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Summary Insights -->
+        <div class="card" style="background: linear-gradient(135deg, rgba(184,153,46,0.05), rgba(184,153,46,0.02));">
+            <h2 style="text-align: center; margin-bottom: 2rem;">Key Takeaways</h2>
+
+            <div class="two-col">
+                <div class="highlight-box">
+                    <h4>✅ What's Working</h4>
+                    <ul class="bullet-list">
+                        <li>Demos convert at <strong>80%</strong> rate</li>
+                        <li>Bank transfer demos: <strong>100%</strong> success</li>
+                        <li>Smartphone + POS stores: <strong>30%</strong> conversion</li>
+                        <li>Relationship-based selling works</li>
+                    </ul>
+                </div>
+
+                <div class="highlight-box">
+                    <h4>❌ What Needs Fixing</h4>
+                    <ul class="bullet-list">
+                        <li><strong>Opener stage</strong> is the critical blocker (10% pass rate)</li>
+                        <li>Ambassadors derailing into product talk</li>
+                        <li>Technical issues with bank transfers and card topups</li>
+                        <li>Premium stores want rental/stocking fees</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem; text-align: center; color: var(--text-secondary); font-style: italic;">
+                Source: Agent App Form Data, 379 visits from Jan 30 - Feb 5, 2026
+            </div>
+        </div>
+    </div>
+</body>
+</html>

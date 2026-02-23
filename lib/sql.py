@@ -157,6 +157,49 @@ def is_onboarded_check(user_id_col: str, phone_col: str) -> str:
         ))"""
 
 
+def merchant_sales_cte() -> str:
+    """Unified merchant sales from ZCE orders + Transaction::CashExchange.
+
+    Since ~Feb 2026, nearly all merchant volume flows through CashExchange
+    (via digital_cash_notes). ZCE orders have flatlined. This CTE unions
+    both sources so queries capture all merchant activity.
+
+    Only includes merchant-side CashExchange rows (role='merchant') to
+    avoid double-counting (each sale creates merchant + customer rows).
+
+    Returns CTE named ``merchant_sales`` with columns:
+        merchant_id, customer_id, amount_usd, exchange_rate,
+        created_at, settled_at, source
+    """
+    return """merchant_sales as (
+        select zce.fulfiller_id as merchant_id,
+               zce.initiator_id as customer_id,
+               zce.amount / 1e6 as amount_usd,
+               zce.exchange_rate,
+               zce.created_at,
+               zce.completed_at as settled_at,
+               'zce_order' as source
+        from zar_cash_exchange_orders zce
+        where zce.status = 'completed'
+          and zce.type = 'ZarCashExchange::MerchantOrder'
+
+        union all
+
+        select t.user_id as merchant_id,
+               (t.metadata->>'counterparty_id')::uuid as customer_id,
+               t.amount / 1e6 as amount_usd,
+               (t.metadata->'ad_snapshot'->>'rate')::numeric as exchange_rate,
+               t.created_at,
+               t.posted_at as settled_at,
+               'cash_exchange' as source
+        from transactions t
+        where t.type = 'Transaction::CashExchange'
+          and t.status = 3
+          and t.metadata->>'role' = 'merchant'
+          and coalesce(t.metadata->>'cancelled', 'false') != 'true'
+    )"""
+
+
 def demo_dollars_cte() -> str:
     """Cash notes from ambassadors to same-day-created recipients (Feb 1+).
 

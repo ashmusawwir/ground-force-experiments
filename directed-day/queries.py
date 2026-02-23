@@ -49,13 +49,27 @@ def reactivation_targets_query(city: str = "Karachi", inactive_days: int = 14) -
         group by 1
     ),
 
+    -- Last CashExchange activity per merchant
+    last_ce as (
+        select t.user_id as merchant_id,
+               max(t.posted_at) as last_ce_at
+        from transactions t
+        where t.type = 'Transaction::CashExchange'
+          and t.status = 3
+          and t.metadata->>'role' = 'merchant'
+          and coalesce(t.metadata->>'cancelled', 'false') != 'true'
+          and t.user_id in (select merchant_id from merchants)
+        group by 1
+    ),
+
     -- Combined last activity
     last_activity as (
         select m.merchant_id,
-               greatest(lz.last_zce_at, lc.last_cn_at) as last_activity_at
+               greatest(lz.last_zce_at, lc.last_cn_at, lce.last_ce_at) as last_activity_at
         from merchants m
         left join last_zce lz on lz.merchant_id = m.merchant_id
         left join last_cn lc on lc.merchant_id = m.merchant_id
+        left join last_ce lce on lce.merchant_id = m.merchant_id
     ),
 
     -- Lifetime transaction counts
@@ -74,6 +88,17 @@ def reactivation_targets_query(city: str = "Karachi", inactive_days: int = 14) -
         where dcn.status = 'claimed'
           and dcn.depositor_id in (select merchant_id from merchants)
         group by 1
+    ),
+    lifetime_ce as (
+        select t.user_id as merchant_id,
+               count(*) as ce_count
+        from transactions t
+        where t.type = 'Transaction::CashExchange'
+          and t.status = 3
+          and t.metadata->>'role' = 'merchant'
+          and coalesce(t.metadata->>'cancelled', 'false') != 'true'
+          and t.user_id in (select merchant_id from merchants)
+        group by 1
     )
 
     select m.merchant_id::text,
@@ -88,11 +113,12 @@ def reactivation_targets_query(city: str = "Karachi", inactive_days: int = 14) -
            case when la.last_activity_at is not null
                 then extract(day from now() - la.last_activity_at)::int
                 else null end as days_since_last_activity,
-           coalesce(ltz.zce_count, 0) + coalesce(ltc.cn_count, 0) as lifetime_tx_count
+           coalesce(ltz.zce_count, 0) + coalesce(ltc.cn_count, 0) + coalesce(ltce.ce_count, 0) as lifetime_tx_count
     from merchants m
     inner join last_activity la on la.merchant_id = m.merchant_id
     left join lifetime_zce ltz on ltz.merchant_id = m.merchant_id
     left join lifetime_cn ltc on ltc.merchant_id = m.merchant_id
+    left join lifetime_ce ltce on ltce.merchant_id = m.merchant_id
     where la.last_activity_at is null
        or la.last_activity_at < now() - interval '{inactive_days}' day
     order by la.last_activity_at asc nulls first
@@ -210,10 +236,27 @@ def reactivation_outcome_query(merchant_ids: list[str], visit_date: str) -> str:
         group by 1
     ),
 
+    post_visit_ce as (
+        select t.user_id as merchant_id,
+               min(t.posted_at) as first_at,
+               'cash_exchange' as activity_type
+        from transactions t
+        where t.type = 'Transaction::CashExchange'
+          and t.status = 3
+          and t.metadata->>'role' = 'merchant'
+          and coalesce(t.metadata->>'cancelled', 'false') != 'true'
+          and t.user_id in (select merchant_id from target_merchants)
+          and t.posted_at >= '{visit_date}'::timestamp - interval '5' hour
+          and t.posted_at < '{visit_date}'::timestamp - interval '5' hour + interval '7' day
+        group by 1
+    ),
+
     all_activity as (
         select * from post_visit_zce
         union all
         select * from post_visit_cn
+        union all
+        select * from post_visit_ce
     ),
 
     earliest as (
@@ -263,10 +306,21 @@ def pool_health_query(city: str = "Karachi", inactive_days: int = 14) -> str:
         where dcn.status = 'claimed'
           and dcn.claimed_at >= now() - interval '{inactive_days}' day
     ),
+    recent_ce as (
+        select distinct t.user_id as merchant_id
+        from transactions t
+        where t.type = 'Transaction::CashExchange'
+          and t.status = 3
+          and t.metadata->>'role' = 'merchant'
+          and coalesce(t.metadata->>'cancelled', 'false') != 'true'
+          and t.posted_at >= now() - interval '{inactive_days}' day
+    ),
     active_merchants as (
         select merchant_id from recent_zce
         union
         select merchant_id from recent_cn
+        union
+        select merchant_id from recent_ce
     )
 
     select count(*) as total_merchants,

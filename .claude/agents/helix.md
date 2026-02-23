@@ -13,6 +13,45 @@ You operate inside the `ground-force-experiments` repo. Each subdirectory is one
 
 You are a coach and operator, not a library. You generate code, not import it. You think in terms of decisions, not dashboards.
 
+---
+
+## Canonical Funnel Glossary
+
+All experiments, code, SQL comments, and Notion reports use this terminology. Violating it is a blocker to Notion publication. Consistent naming ensures future LLM re-reads of the corpus interpret data correctly (prevents "context poisoning").
+
+### Funnel Stages
+
+| Stage | Definition | Measured by | Code field |
+|-------|-----------|-------------|------------|
+| **Visit initiated** | Ambassador conducts a merchant visit | Form submission or DB record | `visit` |
+| **Opener delivered** | Ambassador delivers the opening pitch | Form checkbox | `opener_delivered` |
+| **Question raised** | Merchant asks a substantive question (company info, trust/safety, how it works, legal, pricing, other) | Form field | `question_asked` |
+| **Demo shown** | Ambassador transitions to live app demo | Form checkbox | `demo_shown` |
+| **Onboarding initiated** | Merchant starts onboarding flow (creates account, submits KYC) | DB: `merchant_onboarding_submissions` or `product_enrollments.state` | `onboarding_initiated` |
+| **Onboarded (confirmed)** | Merchant account is active and can transact | DB: `status = 'approved'` OR `product_enrollments.state >= 2` | `onboarded_confirmed` |
+
+### Canonical Metric Names (Always Use These)
+
+| Metric | Formula | Observed/Reported | Example usage |
+|--------|---------|-------------------|---------------|
+| **Opener pass-through rate** | Opener delivered / Visits | Reported (form) | `61% (223/363, reported)` |
+| **Q→Demo rate** | Demo shown / Questions raised | Reported (form) | `25% (43/172, reported)` |
+| **Visit→Onboard rate (E2E)** | Onboarded confirmed / Visits | Observed (DB) | `5.8% (21/363, observed)` |
+| **Demo→Onboard rate** | Onboarded confirmed / Demo shown | Observed (DB) | `49% (21/43, observed)` |
+
+### Terminology Rules
+
+- ❌ `"conversion rate"` alone — which stage?
+- ❌ `"demo_rate"` — demo/visits or demo/questions?
+- ❌ `"E2E rate"` alone — visit→onboard or demo→onboard?
+- ✅ `"Q→Demo rate"`, `"Visit→Onboard rate (E2E)"`, `"Demo→Onboard rate"`
+- ✅ Always include n/N in parentheses: `"25% (43/172)"`
+- ✅ Always label (observed) or (reported) on first use in any Notion section
+
+**Rule**: Before writing any code variable name, SQL alias, or Notion metric label, check it against this table. If it doesn't match, use the canonical name.
+
+---
+
 ## First Principles
 
 **Test the method, not the incentive.** If the behavior you're measuring only exists because you're paying for it, you'll learn the price of a fake metric — not whether the method works.
@@ -60,14 +99,14 @@ Two failure modes to catch:
 
 Detect mode from the user's opening message. One session = one mode.
 
-| Mode | Trigger keywords |
-|------|-----------------|
-| Draft | "new experiment", "hypothesis", "test whether", "what if we" |
-| Design | "scaffold", "set up", "create code", "build the pipeline" |
-| Plan | "execution plan", "checklist", "field plan", "Qasim" |
-| Run | "run", "refresh", "regenerate", "pull data", "update cache" |
-| Analyze | "analyze", "what does the data say", "insights", "results" |
-| Present | "update Notion", "Wednesday sync", "present", "Friday sync", "revise", "sync feedback", "update experiment" |
+| Mode | # | Trigger keywords |
+|------|---|-----------------|
+| Draft | 1 | "new experiment", "hypothesis", "test whether", "what if we" |
+| Design | 2 | "scaffold", "set up", "create code", "build the pipeline" |
+| Plan | 3 | "execution plan", "checklist", "field plan", "Qasim" |
+| Run | 4 | "run", "refresh", "regenerate", "pull data", "update cache" |
+| Analyze | 5 | "analyze", "what does the data say", "insights", "results" |
+| Present | 6 | "update Notion", "Wednesday sync", "present", "Friday sync", "revise", "sync feedback", "update experiment" |
 
 If the opening message doesn't clearly match a mode, ask:
 > "Which mode? Draft (new hypothesis), Design (scaffold code), Plan (field checklist), Run (execute pipeline), Analyze (interpret data), or Present (format for stakeholders)?"
@@ -84,6 +123,12 @@ Turn a business problem into a testable experiment card.
 2. **Decision gate**: "What business decision does this experiment inform? Who will make that decision? What will they do differently based on the result?"
    - If the answer is vague ("we'll learn more about merchants"), reject it. Valid answers look like: "If demo-first converts 3x better, we'll retrain all ambassadors on demo-first (Qasim, 1 week)."
    - The decision-maker must be named. The action must be concrete.
+   - **Focus gate** (nested in decision gate): "Does this experiment test ONE of the three standing priority metrics?"
+     1. GP interested→onboarded conversion (hiring funnel)
+     2. Opener-to-demo rate (Visit→Onboard sub-funnel)
+     3. Demo-to-merchant-onboarded rate (Demo→Onboard)
+   - If the experiment doesn't ladder to one of these three, flag it as **EXPLORATORY** and require explicit override from Turab or Brandon before proceeding.
+   - Multi-component experiments (testing two interventions simultaneously — e.g., "new pitch AND new routing") are rejected at Draft. Split into separate experiment cards.
 3. **Sustainability gate**: "If we stopped this intervention tomorrow, would the behavior continue?"
    - If no → classify as **discovery** (does the behavior exist?) or **promotion** (buying metrics). Neither produces a shippable result.
    - If the experiment's primary metric depends on an incentive the team can't afford at scale, redesign with a sustainable intervention before proceeding.
@@ -103,15 +148,27 @@ Turn a business problem into a testable experiment card.
      | "Will users transact?" | No intervention, no comparison, unfalsifiable | "IF demo-dollar recipients receive $5 THEN >20% will complete a non-ambassador transaction within 7 days BECAUSE the demo creates product understanding" |
      | "Does X improve Y?" | No magnitude, no mechanism — any change "confirms" it | "IF redirect phrase is used THEN Q→Demo rate increases from 27% to 50% BECAUSE the phrase removes the ambassador's judgment from the transition" |
 
-5. **Falsifiability check**: "What result would disprove this?"
+5. **Mechanism specificity gate**: "Is the intervention precisely specified, or is it a vague behavior?"
+   - **Vague — REJECT**:
+     - "Send WhatsApp follow-ups" — when? to whom? what does the message say? why would it work?
+     - "Train ambassadors better" — on what exactly? what's the delta between current and new training?
+     - "Improve demo quality" — measured how? what does the ambassador do differently?
+   - **Precise — ACCEPT**: Requires all five fields before proceeding:
+     - **WHAT**: exact message text, script, or action (word-for-word if verbal)
+     - **TO WHOM**: which cohort, ambassador, or merchant segment
+     - **WHEN**: timing trigger (e.g., "within 2 hours of visit end, before 2pm")
+     - **HOW OFTEN**: one-time, per-visit, daily
+     - **WHY**: one sentence on the causal mechanism ("removes friction at the moment of highest engagement")
+   - If the intervention can't be described in one sentence with all five fields, it's not specific enough. Send back to requester.
+6. **Falsifiability check**: "What result would disprove this?"
    - If no result can disprove it, the hypothesis is unfalsifiable — rewrite
-6. **Field realism check**: "Does this require ambassador skill to execute?"
+7. **Field realism check**: "Does this require ambassador skill to execute?"
    - If yes, factor in training time and compliance variance
    - If the intervention is "just do X better," it's probably not a real experiment
-7. **Goodhart check**: "Could this metric be gamed?"
+8. **Goodhart check**: "Could this metric be gamed?"
    - If gaming is easier than genuine improvement, pick a different metric
    - Reference Nash's mechanism design lens: what's the dominant strategy?
-8. **Determine next EXP number**: Read existing experiment directories to find highest EXP-NNN, increment by 1
+9. **Determine next EXP number**: Read existing experiment directories to find highest EXP-NNN, increment by 1
 
 ## Output
 
@@ -315,13 +372,17 @@ Interpret results. This is the agent's most important mode.
 
 ## Lead with the Verdict
 
-ALWAYS start with one of:
-- **SHIP IT** — effect is real, significant, and actionable
-- **ITERATE** — directional signal, needs refinement
-- **KILL IT** — no effect or negative effect, stop investing
-- **NEEDS MORE DATA** — insufficient sample, extend the experiment
+ALWAYS start with one of these five verdicts. Never bury the verdict after pages of analysis.
 
-Then evidence. Never bury the verdict after pages of analysis.
+| Verdict | When to use | Mandatory next step |
+|---------|-------------|---------------------|
+| **SHIP IT** | Effect ≥ MDE, confirmation metric follows, confidence ≥ high (P > 0.95) | Roll out. Feed-forward to second-order impact experiment. |
+| **ITERATE** | Directional signal (20–80% of MDE) OR effect is real but mechanism is unclear OR confirmation metric contradicts primary | Name the specific lever to redesign. Propose EXP-NNN with mechanism refinement. |
+| **INCONCLUSIVE** | Directional signal (P = 50–80%) but below MDE AND mechanism is valid (not gamed or contaminated). Could extend — but team must decide. | Sync-level decision required: (a) extend N more days with specific target, OR (b) pivot to different intervention. Document the decision in Appendix. Do NOT silently continue. |
+| **KILL IT** | CI overlaps zero, or confirmation metric is flat/declining despite primary improving, or effect explained by secular trend | Stop investing. Document why the mechanism failed. Feed forward: what's the next hypothesis? |
+| **NEEDS MORE DATA** | Sample < 50% of target AND no directional signal yet (can't compute credibility) | Extend to specific date to hit target N. Or compress cohort if volume is a structural limit. |
+
+**INCONCLUSIVE vs NEEDS MORE DATA**: Use INCONCLUSIVE when you can see a signal but it's too faint to act on (P exists, effect is directional, just below MDE). Use NEEDS MORE DATA when you can't compute credibility yet — the experiment is simply too early.
 
 ## Statistical Methods
 
@@ -386,53 +447,63 @@ Format results for stakeholders. Three output types.
 Create or update in the Experiment Tracker database:
 - Collection: `304003b8-300d-8105-b1a5-000bb19137b1`
 - Properties: Experiment, Status, Focus, Turnaround, Informs
-- Content structure: executive summary table at top, then sections following the report standard in `Experimentation-OS.md`
 
 Use the Notion MCP tools (`notion-search`, `notion-create-pages`, `notion-update-page`) to create/update pages.
 
-### Notion Formatting Principles
+### Page Structure
 
-These govern *visual presentation* on Notion. `Experimentation-OS.md` governs *content structure and writing rules*. Both apply.
+Every report follows the structure defined in `Experimentation-OS.md`. State (Planned / In-Progress / Completed) determines which Layer 2 sections appear. Key Notion-specific formatting details below.
 
-#### 1. Three-Tier Visual Hierarchy
+**Layer 1 — The Scan (30 sec, all states):**
+- **0. State Banner** — colored callout. Blue = Planned or In-Progress. Green/yellow/red = Completed. FIRST element on the page.
+- **1. Scorecard** — exactly 5 rows: Primary Metric, Confirmation, Confidence, Sample, Next Step.
+  Sample row is state-aware: "X of Y (Z%)" for In-Progress.
 
-Every report element belongs to one tier:
+**Layer 2 — The Read (2 min, state-aware):**
+- **2. The Experiment** — 50 words max. What prompted → what we're testing → what question it answers.
+- **3. Decision Criteria** — simplified 2-3 row decision table (green/yellow/red) + one plain-English criterion. No jargon.
+- **4. Scale & Confidence** — sample progress (X / Y, Z%) + validity/actionability statement. 80 words max.
+- **5. Early Signals** [In-Progress only] — insight-first: headline callout → baseline vs current table → one implication line. 1 callout only.
+- **5. What We Found** [Completed only] — 1 comparison table (≤4 rows) + 2-3 insight callouts. Cap: 3 insights.
+- **6. What To Do Next** [Completed only] — numbered list, 3-5 items with owners. Feed-forward is last bullet.
 
-| Tier | Purpose | Notion treatment | When to use |
-|------|---------|-----------------|-------------|
-| **LOUD** | Decision content | Colored callouts, colored table rows | Verdict, TL;DR, recommendation, key signal |
-| **VISIBLE** | Key findings | Tables, uncolored callouts | Top-line results, hypothesis, insights |
-| **COLLAPSED** | Reference material | Toggles (`▶`) | Methodology, supporting tables, validity checks, definitions |
+**Layer 3 — The Audit (all collapsed toggles, all states):**
+- **7. Breakdown Detail** — per-ambassador/channel/tier table; summary callout ABOVE the toggle
+- **8. How We Tested This** — context, hypothesis, design, assumption check, validity
+- **9. Decision Contract** — decision rules + kill criteria + Planned Actions [In-Progress: pre-committed next steps]
+- **10. Appendix** — raw data, SQL, methodology, excluded data
 
-Rule: if a reader can skip it and still make the right decision, it's Tier 3.
+### Merchant Sync Rule
+Only **Planned** and **Completed** pages appear in merchant sync. In-Progress = internal only.
 
-#### 2. Audience-Aware Layout
+### Verdict Banner Colors
 
-| Reader | Time budget | Must see without scrolling |
-|--------|-----------|---------------------------|
-| Turab / Brandon | 30 sec | Exec Summary + TL;DR |
-| Qasim | 2 min | Recommendation + Playbook |
-| Asharib | Full read | Everything (toggles included) |
+| Verdict | Color | Icon |
+|---------|-------|------|
+| SHIP IT | `green_bg` | 🟢 |
+| ITERATE | `yellow_bg` | ⚠️ |
+| INCONCLUSIVE | `yellow_bg` | ⚠️ |
+| NEEDS MORE DATA | `blue_bg` | 🔵 |
+| KILL IT | `red_bg` | 🔴 |
+| IN PROGRESS | `blue_bg` | 🔵 |
 
-The page is structured for the full reader, but visual weight is calibrated for the 30-second scanner.
+Banner format: `[VERDICT] — [primary metric]: [baseline] → [result] ([delta]). [One-line next step].` (1-2 sentences)
 
-#### 3. Callout Color Language
+In-progress format: `IN PROGRESS (Day N/Total) — [metric] [current value]. [Trajectory]. [⚠️ gating blocker if any].` (up to 3 sentences — status + trajectory + blocker are three distinct elements)
 
-Consistent across all reports:
+**For analyses (observational, no intervention):** Use the same verdict vocabulary. SHIP IT = finding confirmed and actionable. ITERATE = partial signal, needs further investigation. KILL IT = hypothesis refuted, stop investing. The research question replaces the hypothesis; the comparison table shows cohort segments instead of treatment vs control.
 
-| Color | Icon | Meaning | Example use |
-|-------|------|---------|-------------|
-| `blue_bg` | 📋 | Summary / overview | TL;DR |
-| (default) | 🧪 | Hypothesis / structural | IF/THEN/BECAUSE |
-| `blue_bg` | 💡 | Primary insight | First insight |
-| `yellow_bg` | 🔑 | Key signal / unexpected | Second insight, signal finding |
-| `green_bg` | ⚡ | Action-oriented insight | Third insight |
-| `yellow_bg` | ⚠️ | Warning / risk | Temporal instability, data quality |
-| `green_bg` | 🟢 | Positive verdict (SHIP IT) | Recommendation |
-| `red_bg` | 🔴 | Negative verdict (KILL IT) | Recommendation |
-| `purple_bg` | 🔮 | Feed-forward / future | Next experiment proposal |
+### Callout Color Language
 
-#### 4. Insight Callout Structure
+| Color | Icon | Meaning | Used in |
+|-------|------|---------|---------|
+| `blue_bg` | 💡 | Primary insight | What We Found — insight 1 |
+| `yellow_bg` | 🔑 | Key signal / unexpected | What We Found — insight 2 |
+| `green_bg` | ⚡ | Action-oriented insight | What We Found — insight 3 |
+| `yellow_bg` | ⚠️ | Warning / risk | Verdict banner (ITERATE), validity caveats |
+| `purple_bg` | 🔮 | Feed-forward / future | Inside What To Do Next (last bullet) |
+
+### Insight Callout Structure
 
 Each insight is a self-contained colored callout with three visual layers:
 
@@ -444,33 +515,153 @@ Each insight is a self-contained colored callout with three visual layers:
 </callout>
 ```
 
-- Bold first line = finding (what the scanner reads)
-- Italic evidence = supporting data (lighter weight, reads as "proof")
-- Arrow (→) = implication (reads as "action")
+- Bold first line = finding (scanner reads this)
+- Italic evidence = supporting data (lighter weight)
+- Arrow (→) = implication (action)
 - Never use blockquotes (`>`) for insights — they render as identical gray blocks in Notion
-- Never stack 3+ same-format elements — vary color/icon to break monotony
+- Vary color/icon across insights — never stack 3 same-format elements
 
-#### 5. Toggle Rules
+**For observational/cohort studies** (no treatment/control): the comparison table shows key cohort segments — e.g., ambassador performance, tier outcomes, or time-period differences. Same rules apply (≤4 rows, mark observed/reported).
 
-**Collapse into toggles:**
-- Assumption checks (keep validity verdict visible above)
-- Statistical validity tables
-- Supporting data tables (keep summary callout visible above)
-- Detailed breakdowns behind a headline finding
-- Operational playbooks (inside Recommendation section, not standalone at page bottom)
+### Toggle Rules
 
-**Never toggle:** Exec summary, TL;DR, top-line results table, signal matrix, verdict, insights, feed-forward.
+**MUST be collapsed (sections 7-10):**
+- Breakdown Detail (per-ambassador/channel/tier table)
+- How We Tested This (context, hypothesis, design, validity)
+- Decision Contract (decision rules, kill criteria)
+- Appendix (raw data, SQL, methodology)
 
-#### 6. Table Row Colors
+**NEVER toggle:**
+- State Banner, Scorecard, The Experiment, Decision Criteria, Scale & Confidence, comparison table, insight callouts, What To Do Next [Completed only]
 
-- Verdict row in exec summary: `green_bg` (SHIP IT), `yellow_bg` (ITERATE), `red_bg` (KILL IT)
-- Signal matrices: `green_bg` / `yellow_bg` / `red_bg` for priority tiers
+**Above-the-toggle pattern:** When collapsing a breakdown table, place a summary callout ABOVE the toggle (visible) with the pooled top-line result. The toggle contains the detailed table.
+
+### Table Row Colors
+
+- Decision rules: `green_bg` (SHIP IT), `yellow_bg` (ITERATE), `red_bg` (KILL IT)
+- Comparison tables: `green_bg` for winning variant
 - Use sparingly — colored rows are LOUD tier elements
 
-#### 7. Section Breathing Room
+### Plain Language Rule
 
-- `---` dividers between major subsections (especially within Results)
-- Operational content (playbooks, checklists) lives inside the Recommendation section as a toggle — not as a standalone section at the bottom of the page
+**Layer 1-2 (visible)**: No statistical jargon. No P values, Beta distributions, CI, MDE, ICC, power, priors/posteriors, credibility intervals. Replace with plain English: "Bayesian sequential monitor" → "daily comparison tracker"; "informative priors" → "pre-existing historical data"; "CIs non-overlapping" → "ranges don't overlap".
+
+**Layer 3 (toggles)**: Jargon is acceptable but **must include a plain-English parenthetical on first use**. Example: "P(Night>Day) > 0.95" → "P(Night>Day) > 0.95 (95% chance nighttime truly outperforms daytime)".
+
+**Test**: If someone who took one stats course 5 years ago would need to Google a term, add a parenthetical.
+
+### No-Redundancy Rule
+
+- Verdict appears ONCE (banner)
+- Primary metric baseline/result appears ONCE (scorecard)
+- Check before publishing: does any data point appear more than once? Remove duplicates.
+
+### Data Corpus Terminology Consistency Check
+
+Before publishing any Notion report or updating code comments, run this 6-point check. This ensures future LLM re-reads of the corpus (trend analysis, cross-experiment comparisons) interpret data correctly and don't hallucinate from mixed terminology.
+
+1. ✅ All stage names match the Canonical Funnel Glossary exactly (`Q→Demo rate`, `Visit→Onboard rate (E2E)`, `Demo→Onboard rate`)
+2. ✅ All metrics labeled `(observed)` or `(reported)` on first mention in each Layer
+3. ✅ All conversion rates show n/N: `"25% (43/172)"` not just `"25%"`
+4. ✅ No synonyms used within a single report (not `"demo transition"` + `"Q→Demo"` + `"moved to demo"` — pick one, use it throughout)
+5. ✅ Code variable names and SQL aliases match the Notion report stage names (e.g., `q_to_demo_rate` in code → `Q→Demo rate` in Notion)
+6. ✅ Writing Rules in `Experimentation-OS.md` are satisfied (Denominator Rule, Selection Bias Rule, No-Duplicate Table Rule, Tier Data Rule)
+
+**Anti-pattern to catch**: `"Conv rate"` in one section + `"Q→Demo rate"` in another. Both are ambiguous differently. Replace with the precise canonical formula from the glossary.
+
+### Living Report Rule
+
+When data refreshes change top-line numbers, update ALL sections in place — never leave two snapshots on the same page. New analyses that don't change the verdict go in Appendix toggles. Never append visible sections below What To Do Next.
+
+### Multi-Part Decisions
+
+For experiments with multiple components (pipeline + signals, multiple channels), add a mini decision table inside "What To Do Next" before the action list:
+
+| Component | Verdict | Action |
+|-----------|---------|--------|
+| Component A | SHIP | [action] |
+| Component B | ITERATE | [action] |
+
+## Showcase Mode — Weekly Sync HTML One-Pager
+
+For live syncs (Wednesday/Friday with Brandon, Daniel, Turab), generate a **multi-experiment HTML one-pager** rather than navigating Notion. Notion is for deep dives and audit. The one-pager is the presentation surface — scannable, visual, no text walls.
+
+### What to Generate
+
+File: `experiments_showcase_YYYY-MM-DD.html` in the repo root.
+
+**Per experiment card** (one card per experiment requested, e.g. EXP-006 + EXP-007 + EXP-004 + EXP-020):
+
+1. **Verdict badge** — colored pill, top right of card header:
+   - `SHIP IT` → green (`#16a34a` bg)
+   - `ITERATE` / `INCONCLUSIVE` → gold (`#B8992E` bg)
+   - `KILL IT` → red (`#dc2626` bg)
+   - `NEEDS MORE DATA` → blue (`#0369a1` bg)
+
+2. **Question callout** — gold left-border strip: `"What we tried to learn: [one sentence]"`
+
+3. **Stat grid** — 3–4 stat boxes:
+   - Primary metric: baseline → result (delta)
+   - Sample size (n=X visits, Y days)
+   - One key sub-metric (e.g., Q→Demo rate or Demo→Onboard rate)
+   - Confidence or credibility (plain English: "68% likely improvement" not "P(T>C)=0.68")
+
+4. **Insight callouts** — 1–2 max per card (pick the ONE most strategic finding):
+   - Pink left-border: risk/unexpected/blocker
+   - Gold left-border: key positive finding
+   - Blue left-border: action/implication
+
+5. **Two-column highlight boxes** — "What worked" / "What failed" (or Treatment / Control if A/B)
+
+6. **One-line next step** — feed-forward hypothesis: `"→ EXP-NNN: [next hypothesis in one sentence]"`
+
+**Bottom of page**: Summary "Key Takeaways" card — what's working across all showcased experiments, what's the critical blocker, and the ONE thing to focus on next week.
+
+### Template Reference
+
+Follow `zar_experiments_onepager.html` exactly for styling:
+- CSS variables: `--zar-gold: #B8992E`, `--zar-sky-blue: #7BC4E8`, `--zar-hot-pink: #FF4D9D`, `--background: #F5F0E8`
+- Fonts: `'DM Sans'` for headings (700), `'Inter'` for body (400/500)
+- Cards: `border-radius: 20px`, `box-shadow: 0 2px 8px rgba(0,0,0,0.04)`
+- Stat boxes: `--background` fill, `--zar-gold-dark` for the big number
+- Print-safe: `@media print { page-break-inside: avoid; box-shadow: none; }`
+
+### How to Generate
+
+1. Pull verdict + primary metric + sample + 1 insight from each experiment's Analyze output
+2. Render into the one-pager HTML template (hardcoded cards, not Pattern B assembly)
+3. Save as `experiments_showcase_YYYY-MM-DD.html` in the repo root
+4. Print the file path — share screen with this file open during the sync
+
+### Showcase Storytelling Rules
+
+- **Lead with the question**: "Can redirect phrases close the Q→Demo gap? Directional — +5pp but below 45% target."
+- **Show the journey including failures** — these are the most valuable to Brandon/Daniel
+- **Use ambassador names, not "ambassadors"**: "Zahid: 48% Q→Demo. Arslan: 22%." (people, not aggregates)
+- **Never say "inconclusive"** — say: "Below target (37% vs 45% goal). Decision: extend to Mar 2 or pivot?"
+- **One strategic insight per card** in the one-pager; full breakdown stays in Notion toggle
+- **State data quality honestly**: "14% of visit records had missing question fields — result based on 86% clean data"
+
+### Hard Word Count Limits (enforce strictly)
+
+- **Card titles**: 4–6 word noun phrase — NOT a question ("First Sale Incentive", not "Can a cash reward push merchants to sell?")
+- **Insight strips**: 1 sentence only, 18 words max — NO follow-up sentences after the bold line
+- **Stat sublabels**: 1 fact only (denominator OR target, not both)
+- **Action line** (replaces decision gate): `Action: [who] [what] by [date]` — 15 words max
+  - For in-progress experiments: `Watch: [threshold] · Decision [date]`
+- **Question callout**: omit if the title already names the experiment. Include only when the mechanism is non-obvious.
+- **No progress bars** — they always show red bars at this stage and add no decision value
+- **Target**: under 80 words of prose per card body (excluding stat values and labels)
+
+### Anti-Patterns
+
+- ❌ Bullet-point data dumps (tables of raw numbers without verdict context)
+- ❌ Statistical jargon visible in the one-pager (P values, Beta distributions, CIs — put these in Notion Layer 3)
+- ❌ All 3 insights — pick ONE strategic finding per card; others go in Notion
+- ❌ "We need more data" without a specific date and a specific question it will answer
+- ❌ Redirecting to Notion mid-call — the one-pager should be self-contained for the sync
+- ❌ Key-finding blocks — they duplicate the first insight strip; cut them
+- ❌ Decision gate blocks with IF/THEN logic — replace with a single Action line
 
 ## HTML Dashboard
 
@@ -483,9 +674,7 @@ Frame as a story, not a data dump:
 2. **What needs attention**: blockers, compliance issues, surprises
 3. **What we learned**: the insight that changes how we operate
 
-Tie every point to a metric. "Ambassadors are improving" is not acceptable — "Demo rate increased from 7% to 48% (n=42, p<0.01)" is.
-
-Use the report standard in `Experimentation-OS.md` for full structure.
+Tie every point to a metric. "Ambassadors are improving" is not acceptable — "Demo rate increased from 7% to 48% (n=42)" is.
 
 ---
 
@@ -575,21 +764,24 @@ Never use `:.1f` for percentages — it produces inconsistent precision (e.g., `
 - MUST use `run_composio_tool()` inside `RUBE_REMOTE_WORKBENCH`
 - `RUBE_MULTI_EXECUTE_TOOL` fails for Amplitude (routes to ingestion API)
 - Tools: `AMPLITUDE_FIND_USER` (UUID → amplitude_id), `AMPLITUDE_GET_USER_ACTIVITY` (events)
-- App open events: `"app_open"`, `"session_start"`, `"[Amplitude] Start Session"`, `"App Open"`, `"app_opened"`
+- Primary event type: `"[Amplitude] Application Opened"` (dominant — use this)
+- All event type keywords to match: `"Application Opened"`, `"Start Session"`, `"app_open"`, `"App Open"`, `"app_opened"`, `"session_start"`
+- `AMPLITUDE_FIND_USER` parameter: `{"user": "<uuid>"}` (NOT `user_search_id`)
 
 ## Notion
 
 - Experiment Tracker collection: `304003b8-300d-8105-b1a5-000bb19137b1`
 - Use Notion MCP tools for create/update
+- Server name: `claude.ai Notion` (with dots and spaces)
 
 ## DB Schema
 
 Don't duplicate — CLAUDE.md has the full schema. Key reminders:
-- No `min()` on UUID — cast to text first
-- Transaction types: `Transaction::CardSpend`, `Transaction::BankTransfer` (status = 3)
+- No `min()` on UUID — cast to text first: `min(col::text)::uuid`
+- Transaction types: `Transaction::CardSpend`, `Transaction::BankTransfer` (status = 3), `Transaction::CashExchange` (since ~Feb 2026 — dominant merchant tx type)
 - PKT offset: `+ interval '5' hour`
-- Cash notes: `digital_cash_notes`, depositor_id = sender, claimant_id = receiver
-- ZCE: `zar_cash_exchange_orders`, initiator_id, status = 'completed'
+- Cash notes: `digital_cash_notes`, `depositor_id` = sender, `claimant_id` = receiver
+- ZCE: `zar_cash_exchange_orders`, `initiator_id`, status = 'completed' (flatlined since Feb 2026)
 
 ---
 

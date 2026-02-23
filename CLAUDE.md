@@ -14,8 +14,6 @@ Standalone experiment tracking for Zar's ground force (field ambassador) team. E
 
 **Experiment reports:** All experiment reports live on Notion (Experiment Tracker database). `Experimentation-OS.md` defines the report structure and writing rules. The **Helix** agent (`.claude/agents/helix.md`) manages the full experiment lifecycle: draft, design, plan, run, analyze, present. Invoke with `claude --agent helix`.
 
-Key principles: lead with verdict (SHIP IT / ITERATE / KILL IT / NEEDS MORE DATA), include statistical validity check, use INSIGHT/Evidence/Implication format, prefer observed metrics over self-reported.
-
 **Where to find experiment details:** Each experiment with code has an experiment card (`.md` file in its directory) with hypothesis, decision rules, design decisions, and findings. Notion pages have the latest reports. CLAUDE.md only maps files, run commands, and IDs — not narratives.
 
 ## Architecture Patterns
@@ -80,6 +78,7 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 | EXP-009 | `directed-day/` | B | Structured daily task lists with geo-clustered visits |
 | EXP-018 | `exp-018-direct-to-training.md` + `hiring-flyer/` | C | Direct-to-training hiring sprint |
 | EXP-019 | `exp-019-channel-yield.md` | C | Which sourcing channels produce hires |
+| EXP-020 | `ramadan-timing/` | A | Ramadan visit timing: daytime vs post-Taraweeh nighttime |
 | — | `merchant-user-onboardings/` | B | Merchant onboarding, activation, retention dashboard |
 | — | `demo-dollars-usage/` | B | What demo-dollar recipients did (includes EXP-007) |
 | EXP-010–017 | Notion-only | C | See Notion-only experiments below |
@@ -138,11 +137,14 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 ### Demo Dollars Usage (EXP-001+ / EXP-007)
 
 - **Files:** `demo-dollars-usage/` (Pattern B standard files)
-- **Queries:** `recipient_overview_query()`, `note_distribution_query()`, `recipient_activity_query()`, `ambassador_summary_query()`, `recipient_timing_query()`, `demo_merchant_transactions_query()`, `time_to_first_tx_query()`, `all_activity_timestamps_query()`
-- **Cache arrays:** `recipient_overview`, `note_distribution`, `recipient_activity`, `ambassador_summary`, `app_opens`, `recipient_timing`, `app_opens_detailed`, `merchant_transactions`, `time_to_first_tx`
+- **Queries:** `recipient_overview_query()`, `note_distribution_query()`, `recipient_activity_query()`, `ambassador_summary_query()`, `recipient_timing_query()`, `demo_merchant_transactions_query()`, `time_to_first_tx_query()`, `all_activity_timestamps_query()`, `note_detail_query()`
+- **Cache arrays:** `recipient_overview`, `note_distribution`, `recipient_activity`, `ambassador_summary`, `app_opens`, `recipient_timing`, `app_opens_detailed`, `merchant_transactions`, `time_to_first_tx`, `all_activity_timestamps`, `note_detail`
 - **Run:** `cd demo-dollars-usage && python3 run.py --json <cache.json>`
 - **Notion page:** `306003b8-300d-8118-a728-f93f4f321d6e`
 - **Note:** `app_opens` and `app_opens_detailed` sourced from Amplitude (not SQL) — see Rube MCP section
+- **`app_opens_detailed` format:** Flat rows `{recipient_id, event_type, event_time, hours_after_demo}` — NOT pre-grouped by recipient. `buildIndexes()` in `app.js` groups them into `{recipient_id, opens: [...]}` at runtime.
+- **Business name resolution:** Dual MOS join in SQL (phone match + `merchant_id` fallback) → visits sheet enrichment in `run.py` (Google Sheet `1bFf0NAQFFXIYYxMC1yJeqowRz6MwT_-xawZeg5H9wUQ`, col N=Shop Name, col P=Merchant Phone)
+- **`recipient_overview_query()` dual MOS join:** Primary join on `mos.phone_number = u.phone_number`, fallback join on `mos_mid.merchant_id = rb.recipient_id` (only when primary misses). Select uses `coalesce(mos.business_name, mos_mid.business_name)`
 
 ### EXP-018 + EXP-019: Hiring Sprint
 
@@ -153,6 +155,27 @@ EXP-018 (pipeline) and EXP-019 (channel yield) share a single tracking sheet and
 - **PNG renders:** `hiring-flyer/growth-partner-flyer.png`, `hiring-flyer/growth-partner-flyer-ur.png`
 - **Tracking sheet:** `1Y3o_BfXk3rdREHEpLc3SBdwWFJd4DfKmuf0hwh-BZYI` — tabs: "Feb 18 Onwards" (pipeline), "Broadcast Log" (flyer tracking)
 - **Notion pages:** EXP-018 `30a003b8-300d-816a-9f2d-da9328a7f891`, EXP-019 `30a003b8-300d-8183-b8f1-e65d3d1b2e6f`
+
+### EXP-020: Ramadan Visit Timing
+
+- **Files:** `ramadan-timing/` (Pattern A standard files + time bucketing extensions)
+- **Experiment card:** `ramadan-timing/exp-020-ramadan-timing.md`
+- **Notion page:** `30c003b8-300d-81b5-b044-cc2fd2e52d90`
+- **Run:** `cd ramadan-timing && python3 run.py`
+- **Output:** `ramadan_timing.html`
+- **Key extensions over standard Pattern A:**
+  - City-aware time bucketing (Karachi vs Lahore Iftar/Taraweeh times)
+  - `fetch_tagging()` — reads "tagging" tab for ambassador→city mapping
+  - `split_by_ramadan()` — pre-Ramadan vs Ramadan period split
+  - `split_by_window()` — daytime/evening/nighttime classification
+  - `detect_batch_logging()` — flags 3+ visits within 5 min
+  - Bayesian P(night > day) comparison — both uninformative and informative priors
+  - `bayesian_p_with_prior()` — pre-Ramadan data as informative Beta priors (20/489 day, 50/622 evening)
+  - `bayesian_p_vs_baseline()` — one-sample P(Ramadan night ≥ pre-Ramadan evening 8%)
+  - `sequential_credibility()` — daily cumulative P trajectory for sequential monitoring
+  - `credibility_estimate()` — linear extrapolation of days to P > 0.95
+  - Hourly heatmap (ambassador × hour grid)
+  - Weekly trend for cumulative fatigue tracking
 
 ### Notion-Only Experiments (EXP-010 — EXP-017)
 
@@ -194,6 +217,7 @@ from lib.sql import EXCLUDED_IDS_SQL, merchants_cte, ambassadors_cte
 |----------|-----------|----------------|---------|
 | `ambassadors_cte` | `()` | `ambassadors` | demo-dollars-usage, question-redirect |
 | `merchants_cte` | `(city=None, since=None)` | `mos_merchants`, `pe_merchants`, `merchants`; + `qualifying` if `since` set | merchant-user-onboardings, directed-day, exp-004 |
+| `merchant_sales_cte` | `()` | `merchant_sales` (ZCE orders + CashExchange) | exp-004, directed-day, merchant-user-onboardings |
 | `demo_dollars_cte` | `()` | `demo_dollars` (requires `ambassadors` CTE in scope) | demo-dollars-usage |
 | `is_onboarded_check` | `(user_id_col, phone_col)` | Boolean expression (not a CTE) | demo-dollars-usage |
 
@@ -228,6 +252,8 @@ from lib.sql import EXCLUDED_IDS_SQL, merchants_cte, ambassadors_cte
 - `product_enrollments`: `user_id`, `state` (0=available, 1=onboarding, 2=enabled, 3=disabled), `product_definition_id`, `created_at`
 - `product_definitions`: `code` column, merchant code = `'zar_cash_exchange_merchant'`
 - Since Dec 13 (SHIP-2069), new merchants use `product_enrollments` instead of `merchant_onboarding_submissions`. All merchant queries UNION both sources (MOS + PE). Zero overlap.
+- `Transaction::CashExchange` — new transaction type for merchant cash note sales. Lives on `transactions` table. Each sale creates two rows: merchant-side (`direction=0`, `metadata->>'role' = 'merchant'`) and customer-side (`direction=1`, `metadata->>'role' = 'customer'`). Metadata contains `ad_snapshot` (rate, currency, merchant_name), `cash_note_ref`, `counterparty_id`. `status = 3` = completed, `amount` = atomic USDC (÷ 1e6 for dollars). Filter `coalesce(metadata->>'cancelled', 'false') != 'true'` to exclude cancelled.
+- Since ~Feb 2026, nearly all merchant activity uses `Transaction::CashExchange` (via `digital_cash_notes`) instead of `zar_cash_exchange_orders`. ZCE orders have flatlined. All merchant queries UNION both ZCE + CashExchange sources via `merchant_sales_cte()` in `lib/sql.py`.
 
 ## Rube MCP (Composio)
 
@@ -240,7 +266,9 @@ from lib.sql import EXCLUDED_IDS_SQL, merchants_cte, ambassadors_cte
 - Tools: `AMPLITUDE_FIND_USER` (UUID → amplitude_id), `AMPLITUDE_GET_USER_ACTIVITY` (event stream)
 - **Critical**: These tools FAIL via `RUBE_MULTI_EXECUTE_TOOL` (routes to `api2.amplitude.com`, returns 404)
 - **Workaround**: Use `run_composio_tool()` inside `RUBE_REMOTE_WORKBENCH`
-- Event types for app opens: `"app_open"`, `"session_start"`, `"[Amplitude] Start Session"`, `"App Open"`, `"app_opened"`
+- **Primary event type**: `"[Amplitude] Application Opened"` (this is the dominant one — most app open events use this exact string)
+- All event type keywords to match: `"Application Opened"`, `"Start Session"`, `"app_open"`, `"App Open"`, `"app_opened"`, `"session_start"`
+- `AMPLITUDE_FIND_USER` parameter is `{"user": "<uuid>"}` (NOT `user_search_id`)
 
 ### Cache JSON Workflow
 
@@ -280,6 +308,7 @@ from lib.sql import EXCLUDED_IDS_SQL, merchants_cte, ambassadors_cte
 | EXP-017 | `309003b8-300d-8117-ad4d-c5323ab320b1` |
 | EXP-018 | `30a003b8-300d-816a-9f2d-da9328a7f891` |
 | EXP-019 | `30a003b8-300d-8183-b8f1-e65d3d1b2e6f` |
+| EXP-020 | `30c003b8-300d-81b5-b044-cc2fd2e52d90` |
 
 **Missing from Notion**: EXP-009 (Directed Day) — no Notion page found.
 
@@ -295,7 +324,7 @@ from lib.sql import EXCLUDED_IDS_SQL, merchants_cte, ambassadors_cte
 **Formatting patterns:**
 - Callout: `<callout icon="📋" color="blue_bg">` with tab-indented content
 - Colored table rows: `<tr color="green_bg">`, `yellow_bg`, `red_bg`, `blue_bg`
-- Toggle headings: `▶## Heading {color="gray"}` with tab-indented children
+- Toggle headings: `## Heading {toggle="true"}` with tab-indented children (no color attribute — headings render in black)
 - Tables: `<table header-row="true">` with `<colgroup>/<col width="N">` for column widths
 
 ## Glossary
