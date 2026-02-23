@@ -10,17 +10,19 @@ See [`CLAUDE.md`](CLAUDE.md) for full conventions, run commands, DB schema, and 
 
 | ID | Directory | Pattern | What it tests |
 |----|-----------|---------|---------------|
+| EXP-000 | Notion-only | C | Merchants as user-acquisition channel — CAC and retention analysis |
 | EXP-001 | `exp-001-show-dont-tell/` | A | Demo-first opener vs verbal pitch |
 | EXP-002 | `exp-002-social-proof-map/` | A | Showing nearby-merchant map at opener |
 | EXP-004 | `exp-004-merchant-activation/` | B (queries only) | Tiered cash incentive to activate dormant merchants |
 | EXP-006 | `exp-006-question-redirect/` | A | Universal redirect phrase for Q→Demo |
 | EXP-007 | `exp-007-demo-dollars/` | B | What demo-dollar recipients did |
 | EXP-008 | `exp-008-gold-market-research/` | C | Merchant demand for digital gold |
-| EXP-009 | `exp-009-directed-day/` | B | Structured daily task lists with geo-clustered visits |
+| EXP-009 | `deprecated/exp-009-directed-day/` | B | Structured daily task lists with geo-clustered visits *(deprecated)* |
+| EXP-010 | `exp-010-demo-shadow/` | C | Observational shadow of ambassador demos to identify execution gaps |
+| EXP-011–017 | Notion-only | C | See CLAUDE.md |
 | EXP-018 | `exp-018-direct-to-training/` | C | Direct-to-training hiring sprint |
 | EXP-019 | `exp-019-channel-yield/` | C | Which sourcing channels produce hires |
 | EXP-020 | `exp-020-ramadan-timing/` | A | Ramadan visit timing: daytime vs post-Taraweeh nighttime |
-| EXP-010–017 | Notion-only | C | See CLAUDE.md |
 | — | `merchant-user-onboardings/` | B | Merchant onboarding, activation, retention dashboard |
 
 ## Architecture Patterns
@@ -50,4 +52,3 @@ cd exp-007-demo-dollars && python3 run.py --json demo_dollars_cache.json
 
 [`docs/`](docs/) — project-level reference documents:
 - `Experimentation-OS.md` — experiment report structure and writing rules
-- `zar_experiments_onepager.html` — visual overview

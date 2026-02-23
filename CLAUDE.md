@@ -70,20 +70,28 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 
 | ID | Directory | Pattern | What it tests |
 |----|-----------|---------|---------------|
+| EXP-000 | Notion-only | C | Merchants as user-acquisition channel — CAC and retention analysis |
 | EXP-001 | `exp-001-show-dont-tell/` | A | Demo-first opener vs verbal pitch |
 | EXP-002 | `exp-002-social-proof-map/` | A | Showing nearby-merchant map at opener |
 | EXP-004 | `exp-004-merchant-activation/` | B (queries only) | Tiered cash incentive to activate dormant merchants |
 | EXP-006 | `exp-006-question-redirect/` | A | Universal redirect phrase for Q→Demo |
 | EXP-007 | `exp-007-demo-dollars/` | B | What demo-dollar recipients did |
 | EXP-008 | `exp-008-gold-market-research/` | C | Merchant demand for digital gold |
-| EXP-009 | `exp-009-directed-day/` | B | Structured daily task lists with geo-clustered visits |
+| EXP-009 | `deprecated/exp-009-directed-day/` | B | Structured daily task lists with geo-clustered visits *(deprecated)* |
+| EXP-010 | `exp-010-demo-shadow/` | C | Observational shadow of ambassador demos to identify execution gaps |
+| EXP-011–017 | Notion-only | C | See Notion-only experiments below |
 | EXP-018 | `exp-018-direct-to-training/` | C | Direct-to-training hiring sprint |
 | EXP-019 | `exp-019-channel-yield/` | C | Which sourcing channels produce hires |
 | EXP-020 | `exp-020-ramadan-timing/` | A | Ramadan visit timing: daytime vs post-Taraweeh nighttime |
 | — | `merchant-user-onboardings/` | B | Merchant onboarding, activation, retention dashboard |
-| EXP-010–017 | Notion-only | C | See Notion-only experiments below |
 
 ## Experiment Quick Reference
+
+### EXP-000: Merchants Growing the ZAR Network
+
+- **Status:** Complete
+- **Notion page:** `306003b8-300d-819a-bc08-f31aa413765e`
+- **Finding:** Merchants onboarded 1,164 users (40 merchants), but 97.4% never return to transact. Merchants are a transaction channel, not an acquisition channel. CAC $0.82.
 
 ### EXP-001: Show Don't Tell
 
@@ -134,12 +142,12 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 - **Experiment card:** `exp-008-gold-market-research/exp-008-digital-gold.md`
 - **Notion page:** `306003b8-300d-817c-9221-d858c9638c36`
 
-### EXP-009: Directed Day
+### EXP-009: Directed Day *(deprecated)*
 
-- **Files:** `exp-009-directed-day/` — `run.py`, `queries.py`, `task_generator.py`, `ui/` (Pattern B)
-- **Experiment card:** `exp-009-directed-day/exp-009-directed-day.md`
+- **Files:** `deprecated/exp-009-directed-day/` — `run.py`, `queries.py`, `task_generator.py`, `ui/` (Pattern B)
+- **Experiment card:** `deprecated/exp-009-directed-day/exp-009-directed-day.md`
 - **Queries:** `reactivation_targets_query()`, `onboarding_status_check_query()`, `onboarding_outcome_query()`, `reactivation_outcome_query()`, `pool_health_query()`
-- **Run:** `cd exp-009-directed-day && python3 run.py --json targets_cache.json` (dashboard) or add `--generate` (generate routes + dashboard)
+- **Run:** `cd deprecated/exp-009-directed-day && python3 run.py --json targets_cache.json` (dashboard) or add `--generate` (generate routes + dashboard)
 
 ### Merchant-User Onboardings (dashboard)
 
@@ -177,10 +185,16 @@ EXP-018 (pipeline) and EXP-019 (channel yield) share a single tracking sheet and
   - Hourly heatmap (ambassador × hour grid)
   - Weekly trend for cumulative fatigue tracking
 
-### Notion-Only Experiments (EXP-010 — EXP-017)
+### EXP-010: Demo Shadow
+
+- **Files:** `exp-010-demo-shadow/shadow-experiment-v2.pdf`
+- **Notion page:** `309003b8-300d-8100-8420-ec6c6be3737c`
+- **Status:** Draft (planned)
+- **Design:** Observational shadow of 4 ambassadors × 3 visits (12 sessions) to identify execution gaps behind 20–25% demo rate. Non-intervention, directional findings only.
+
+### Notion-Only Experiments (EXP-011 — EXP-017)
 
 **Pakistan Pitch & Training:**
-- EXP-010: Demo Shadow — explain Q-to-Demo variance across ambassadors
 - EXP-011: WhatsApp Follow-Up — 2h post-demo WhatsApp template
 - EXP-012: Preemptive Pitch — 15s "how it works" explanation before demo
 
