@@ -12,7 +12,7 @@ Standalone experiment tracking for Zar's ground force (field ambassador) team. E
 
 **Percentage formatting:** All percentages use 2 significant digits via `_sig2()` helper. Terminal `output.py` and HTML `flowchart.py` must both use this function. Example: `18%` not `18.0%`, `5.9%` not `5.90%`.
 
-**Experiment reports:** All experiment reports live on Notion (Experiment Tracker database). `Experimentation-OS.md` defines the report structure and writing rules. The **Helix** agent (`.claude/agents/helix.md`) manages the full experiment lifecycle: draft, design, plan, run, analyze, present. Invoke with `claude --agent helix`.
+**Experiment reports:** All experiment reports live on Notion (Experiment Tracker database). `docs/Experimentation-OS.md` defines the report structure and writing rules. The **Helix** agent (`.claude/agents/helix.md`) manages the full experiment lifecycle: draft, design, plan, run, analyze, present. Invoke with `claude --agent helix`.
 
 **Where to find experiment details:** Each experiment with code has an experiment card (`.md` file in its directory) with hypothesis, decision rules, design decisions, and findings. Notion pages have the latest reports. CLAUDE.md only maps files, run commands, and IDs — not narratives.
 
@@ -70,98 +70,98 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 
 | ID | Directory | Pattern | What it tests |
 |----|-----------|---------|---------------|
-| EXP-001 | `show-dont-tell/` | A | Demo-first opener vs verbal pitch |
-| EXP-002 | `social-proof-map/` | A | Showing nearby-merchant map at opener |
+| EXP-001 | `exp-001-show-dont-tell/` | A | Demo-first opener vs verbal pitch |
+| EXP-002 | `exp-002-social-proof-map/` | A | Showing nearby-merchant map at opener |
 | EXP-004 | `exp-004-merchant-activation/` | B (queries only) | Tiered cash incentive to activate dormant merchants |
-| EXP-006 | `question-redirect/` | A | Universal redirect phrase for Q→Demo |
-| EXP-008 | `gold-market-research/` | C | Merchant demand for digital gold |
-| EXP-009 | `directed-day/` | B | Structured daily task lists with geo-clustered visits |
-| EXP-018 | `exp-018-direct-to-training.md` + `hiring-flyer/` | C | Direct-to-training hiring sprint |
-| EXP-019 | `exp-019-channel-yield.md` | C | Which sourcing channels produce hires |
-| EXP-020 | `ramadan-timing/` | A | Ramadan visit timing: daytime vs post-Taraweeh nighttime |
+| EXP-006 | `exp-006-question-redirect/` | A | Universal redirect phrase for Q→Demo |
+| EXP-007 | `exp-007-demo-dollars/` | B | What demo-dollar recipients did |
+| EXP-008 | `exp-008-gold-market-research/` | C | Merchant demand for digital gold |
+| EXP-009 | `exp-009-directed-day/` | B | Structured daily task lists with geo-clustered visits |
+| EXP-018 | `exp-018-direct-to-training/` | C | Direct-to-training hiring sprint |
+| EXP-019 | `exp-019-channel-yield/` | C | Which sourcing channels produce hires |
+| EXP-020 | `exp-020-ramadan-timing/` | A | Ramadan visit timing: daytime vs post-Taraweeh nighttime |
 | — | `merchant-user-onboardings/` | B | Merchant onboarding, activation, retention dashboard |
-| — | `demo-dollars-usage/` | B | What demo-dollar recipients did (includes EXP-007) |
 | EXP-010–017 | Notion-only | C | See Notion-only experiments below |
 
 ## Experiment Quick Reference
 
 ### EXP-001: Show Don't Tell
 
-- **Files:** `show-dont-tell/` (Pattern A standard files)
+- **Files:** `exp-001-show-dont-tell/` (Pattern A standard files)
 - **Notion page:** `304003b8-300d-8130-86db-d02471345411`
-- **Run:** `cd show-dont-tell && python3 run.py`
+- **Run:** `cd exp-001-show-dont-tell && python3 run.py`
 - **Output:** `dont_show_tell_exp.html`
 
 ### EXP-002: Social Proof Map
 
-- **Files:** `social-proof-map/` (Pattern A standard files)
-- **Experiment card:** `social-proof-map/exp-002-social-proof-map.md`
+- **Files:** `exp-002-social-proof-map/` (Pattern A standard files)
+- **Experiment card:** `exp-002-social-proof-map/exp-002-social-proof-map.md`
 - **Notion page:** `304003b8-300d-8132-bc22-fdb87bbf7864`
-- **Run:** `cd social-proof-map && python3 run.py`
+- **Run:** `cd exp-002-social-proof-map && python3 run.py`
 - **Output:** `social_proof_map.html`
 
 ### EXP-004: Merchant Activation Incentive
 
-- **Files:** `exp-004-merchant-activation/queries.py`, `growth-partner-incentive-structure.md`
+- **Files:** `exp-004-merchant-activation/queries.py`, `exp-004-merchant-activation/growth-partner-incentive-structure.md`
 - **Queries:** `merchant_qualification_query()`, `distribution_summary_query()`, `fraud_signals_query()`
 - **Notion page:** `304003b8-300d-81f7-8957-cb0636073abd`
 - **Data refresh:** Run queries via Rube MCP → results go directly to Notion (no cache JSON or HTML dashboard)
 
 ### EXP-006: Question Redirect Protocol
 
-- **Files:** `question-redirect/` (Pattern A + DB overlay via `queries.py`)
-- **Experiment card:** `question-redirect/exp-006-question-redirect.md`
+- **Files:** `exp-006-question-redirect/` (Pattern A + DB overlay via `queries.py`)
+- **Experiment card:** `exp-006-question-redirect/exp-006-question-redirect.md`
 - **Queries:** `demo_onboarding_status_query()`
 - **Cache arrays:** `db_status`
 - **Notion page:** `306003b8-300d-8195-b35c-e9d072bd8d24`
-- **Run:** `cd question-redirect && python3 run.py` (sheet-only) or `python3 run.py --json db_status.json` (DB-verified)
+- **Run:** `cd exp-006-question-redirect && python3 run.py` (sheet-only) or `python3 run.py --json db_status.json` (DB-verified)
 - **Output:** `question_redirect.html`
 
-### EXP-008: Digital Gold Market Research
+### EXP-007: Demo Dollars
 
-- **Experiment card:** `gold-market-research/exp-008-digital-gold.md`
-- **Notion page:** `306003b8-300d-817c-9221-d858c9638c36`
-
-### EXP-009: Directed Day
-
-- **Files:** `directed-day/` — `run.py`, `queries.py`, `task_generator.py`, `ui/` (Pattern B)
-- **Experiment card:** `directed-day/exp-009-directed-day.md`
-- **Queries:** `reactivation_targets_query()`, `onboarding_status_check_query()`, `onboarding_outcome_query()`, `reactivation_outcome_query()`, `pool_health_query()`
-- **Run:** `cd directed-day && python3 run.py --json targets_cache.json` (dashboard) or add `--generate` (generate routes + dashboard)
-
-### Merchant-User Onboardings (dashboard)
-
-- **Files:** `merchant-user-onboardings/` (Pattern B standard files)
-- **Run:** `cd merchant-user-onboardings && python3 run.py --json <cache.json>`
-
-### Demo Dollars Usage (EXP-001+ / EXP-007)
-
-- **Files:** `demo-dollars-usage/` (Pattern B standard files)
+- **Files:** `exp-007-demo-dollars/` (Pattern B standard files)
 - **Queries:** `recipient_overview_query()`, `note_distribution_query()`, `recipient_activity_query()`, `ambassador_summary_query()`, `recipient_timing_query()`, `demo_merchant_transactions_query()`, `time_to_first_tx_query()`, `all_activity_timestamps_query()`, `note_detail_query()`
 - **Cache arrays:** `recipient_overview`, `note_distribution`, `recipient_activity`, `ambassador_summary`, `app_opens`, `recipient_timing`, `app_opens_detailed`, `merchant_transactions`, `time_to_first_tx`, `all_activity_timestamps`, `note_detail`
-- **Run:** `cd demo-dollars-usage && python3 run.py --json <cache.json>`
+- **Run:** `cd exp-007-demo-dollars && python3 run.py --json <cache.json>`
 - **Notion page:** `306003b8-300d-8118-a728-f93f4f321d6e`
 - **Note:** `app_opens` and `app_opens_detailed` sourced from Amplitude (not SQL) — see Rube MCP section
 - **`app_opens_detailed` format:** Flat rows `{recipient_id, event_type, event_time, hours_after_demo}` — NOT pre-grouped by recipient. `buildIndexes()` in `app.js` groups them into `{recipient_id, opens: [...]}` at runtime.
 - **Business name resolution:** Dual MOS join in SQL (phone match + `merchant_id` fallback) → visits sheet enrichment in `run.py` (Google Sheet `1bFf0NAQFFXIYYxMC1yJeqowRz6MwT_-xawZeg5H9wUQ`, col N=Shop Name, col P=Merchant Phone)
 - **`recipient_overview_query()` dual MOS join:** Primary join on `mos.phone_number = u.phone_number`, fallback join on `mos_mid.merchant_id = rb.recipient_id` (only when primary misses). Select uses `coalesce(mos.business_name, mos_mid.business_name)`
 
+### EXP-008: Digital Gold Market Research
+
+- **Experiment card:** `exp-008-gold-market-research/exp-008-digital-gold.md`
+- **Notion page:** `306003b8-300d-817c-9221-d858c9638c36`
+
+### EXP-009: Directed Day
+
+- **Files:** `exp-009-directed-day/` — `run.py`, `queries.py`, `task_generator.py`, `ui/` (Pattern B)
+- **Experiment card:** `exp-009-directed-day/exp-009-directed-day.md`
+- **Queries:** `reactivation_targets_query()`, `onboarding_status_check_query()`, `onboarding_outcome_query()`, `reactivation_outcome_query()`, `pool_health_query()`
+- **Run:** `cd exp-009-directed-day && python3 run.py --json targets_cache.json` (dashboard) or add `--generate` (generate routes + dashboard)
+
+### Merchant-User Onboardings (dashboard)
+
+- **Files:** `merchant-user-onboardings/` (Pattern B standard files)
+- **Run:** `cd merchant-user-onboardings && python3 run.py --json <cache.json>`
+
 ### EXP-018 + EXP-019: Hiring Sprint
 
 EXP-018 (pipeline) and EXP-019 (channel yield) share a single tracking sheet and run as one sprint.
 
-- **Experiment cards:** `exp-018-direct-to-training.md`, `exp-019-channel-yield.md`
-- **Artifacts:** `hiring-flyer/growth-partner-flyer.html`, `hiring-flyer/growth-partner-flyer-ur.html` (Urdu variant), `hiring-flyer/sheet-guide.html`
-- **PNG renders:** `hiring-flyer/growth-partner-flyer.png`, `hiring-flyer/growth-partner-flyer-ur.png`
+- **Experiment cards:** `exp-018-direct-to-training/exp-018-direct-to-training.md`, `exp-019-channel-yield/exp-019-channel-yield.md`
+- **Artifacts:** `exp-018-direct-to-training/flyers/growth-partner-flyer.html`, `exp-018-direct-to-training/flyers/growth-partner-flyer-ur.html` (Urdu variant), `exp-018-direct-to-training/flyers/sheet-guide.html`
+- **PNG renders:** `exp-018-direct-to-training/flyers/growth-partner-flyer.png`, `exp-018-direct-to-training/flyers/growth-partner-flyer-ur.png`
 - **Tracking sheet:** `1Y3o_BfXk3rdREHEpLc3SBdwWFJd4DfKmuf0hwh-BZYI` — tabs: "Feb 18 Onwards" (pipeline), "Broadcast Log" (flyer tracking)
 - **Notion pages:** EXP-018 `30a003b8-300d-816a-9f2d-da9328a7f891`, EXP-019 `30a003b8-300d-8183-b8f1-e65d3d1b2e6f`
 
 ### EXP-020: Ramadan Visit Timing
 
-- **Files:** `ramadan-timing/` (Pattern A standard files + time bucketing extensions)
-- **Experiment card:** `ramadan-timing/exp-020-ramadan-timing.md`
+- **Files:** `exp-020-ramadan-timing/` (Pattern A standard files + time bucketing extensions)
+- **Experiment card:** `exp-020-ramadan-timing/exp-020-ramadan-timing.md`
 - **Notion page:** `30c003b8-300d-81b5-b044-cc2fd2e52d90`
-- **Run:** `cd ramadan-timing && python3 run.py`
+- **Run:** `cd exp-020-ramadan-timing && python3 run.py`
 - **Output:** `ramadan_timing.html`
 - **Key extensions over standard Pattern A:**
   - City-aware time bucketing (Karachi vs Lahore Iftar/Taraweeh times)
@@ -215,17 +215,27 @@ from lib.sql import EXCLUDED_IDS_SQL, merchants_cte, ambassadors_cte
 
 | Function | Signature | Returns CTE(s) | Used by |
 |----------|-----------|----------------|---------|
-| `ambassadors_cte` | `()` | `ambassadors` | demo-dollars-usage, question-redirect |
-| `merchants_cte` | `(city=None, since=None)` | `mos_merchants`, `pe_merchants`, `merchants`; + `qualifying` if `since` set | merchant-user-onboardings, directed-day, exp-004 |
-| `merchant_sales_cte` | `()` | `merchant_sales` (ZCE orders + CashExchange) | exp-004, directed-day, merchant-user-onboardings |
-| `demo_dollars_cte` | `()` | `demo_dollars` (requires `ambassadors` CTE in scope) | demo-dollars-usage |
-| `is_onboarded_check` | `(user_id_col, phone_col)` | Boolean expression (not a CTE) | demo-dollars-usage |
+| `ambassadors_cte` | `()` | `ambassadors` | exp-007-demo-dollars, exp-006-question-redirect |
+| `merchants_cte` | `(city=None, since=None)` | `mos_merchants`, `pe_merchants`, `merchants`; + `qualifying` if `since` set | merchant-user-onboardings, exp-009-directed-day, exp-004-merchant-activation |
+| `merchant_sales_cte` | `()` | `merchant_sales` (ZCE orders + CashExchange) | exp-004-merchant-activation, exp-009-directed-day, merchant-user-onboardings |
+| `demo_dollars_cte` | `()` | `demo_dollars` (requires `ambassadors` CTE in scope) | exp-007-demo-dollars |
+| `is_onboarded_check` | `(user_id_col, phone_col)` | Boolean expression (not a CTE) | exp-007-demo-dollars |
 
 **`merchants_cte()` notes:**
 - `city="Karachi"` → filters MOS by city. PE has no city field (returns 0 PE rows with city filter — known limitation).
 - `since="2026-02-01"` → adds `qualifying` CTE. Downstream queries should reference `qualifying` instead of `merchants`.
 
 **Rule:** When the DB schema changes (new onboarding pathway, new exclusion list entry), fix `lib/sql.py` once. All experiments inherit the fix automatically.
+
+### Central Query Registry — `lib/queries.py`
+
+Every SQL query function in the repo is importable from `lib/queries.py`. Use this as the single entry point for Rube MCP and Helix when you need a query by name without knowing which experiment it lives in.
+
+```python
+from lib.queries import recipient_overview_query, pool_health_query  # etc.
+```
+
+Covers: EXP-004, EXP-006, EXP-007, EXP-009, and all merchant-user-onboardings queries.
 
 ## DB Schema
 
