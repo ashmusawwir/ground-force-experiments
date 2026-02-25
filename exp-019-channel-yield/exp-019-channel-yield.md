@@ -1,26 +1,72 @@
 # EXP-019: Channel Yield + Flyer Optimization
 
-> **One-liner**: "We're measuring which sourcing channels and flyer variants produce candidates who complete the EOI → Training → Field pipeline, so we can kill underperformers and scale winners."
+**STATUS: RUNNING** — Observational measurement of which sourcing channels and flyer variants produce candidates who complete the EOI → Training → Field pipeline, so we can kill underperformers and scale winners.
 
-## Experiment Card
+---
 
-| Element | Detail |
-|---------|--------|
-| Research Question | Which sourcing channels (WhatsApp groups, Facebook groups, Referral, Direct) produce candidates who complete the full hiring pipeline, and does flyer content affect conversion? |
-| Decision This Informs | Where to allocate sourcing effort for future hiring sprints. Turab/Qasim decide. Kill channels <5% EOI-to-active, scale channels >20%. |
-| Primary Metric | EOI-to-7-day-active conversion rate by channel (observed) |
-| Confirmation Metric | EOI volume by channel (a great channel with no volume is useless) |
-| Baseline | Historical: Referral 75% interview show, Bazaar 60%, 3PL 36% (0% E2E) |
-| Target | At least 1 channel with >20% EOI-to-active AND sufficient volume |
-| Sample Size | 120+ EOIs across channels (from EXP-018 sprint) |
-| Controls | Cross-channel comparison (same flyer, different groups) |
-| Duration | 1 week (same sprint as EXP-018) |
+## Scorecard
 
-## Classification
+| Metric | Baseline | Current | Target |
+|--------|----------|---------|--------|
+| EOI-to-7-day-active conversion by channel | Referral: best signal; Bazaar: 10%; 3PL: 0% | — | ≥1 channel >20% EOI-to-active with sufficient volume |
+| EOI volume by channel | No data for WA/FB groups | — | 120+ EOIs across channels |
+| Sample | 120+ EOIs from EXP-018 sprint | — | — |
 
-ANALYSIS (observation, not intervention). We're not changing channels — we're measuring which ones work. Runs in parallel with EXP-018 using the same candidate pool.
+## Hypothesis
 
-## Historical Channel Data
+Which sourcing channels (WhatsApp groups, Facebook groups, Referral, Direct) produce candidates who complete the full hiring pipeline, and does flyer content affect conversion?
+
+## Success Criteria
+
+- **Scale:** Channel EOI → active > 20% → find more groups like this, post weekly
+- **Maintain:** Channel EOI → active 5–20% → keep posting but don't invest more
+- **Kill:** Channel EOI → active < 5% → stop posting, reallocate to top channels
+- **Build program:** Referral EOI → active > 30% → formalize: each top performer refers 2–3/month
+- **Ship flyer variant:** One flyer variant 2× better → all future posts use winning variant
+- **Inconclusive if:** All channels roughly equal → channel doesn't matter — maximize volume everywhere
+
+## The Experiment
+
+Historical data shows massive channel variance: Referral (75% show rate) vs 3PL (36% show rate, 0% E2E). The team is now sourcing from new channels (WhatsApp groups, Facebook groups) with no performance data. As EXP-018 runs the hiring sprint, EXP-019 piggybacks to measure which channels actually produce hires. Runs in parallel with the same candidate pool. Analysis only — no channel intervention.
+
+## Minimum Viable Test
+
+- **Intervention:** None — observational. Tag every EOI with source group and channel type in the tracking sheet.
+- **Who:** All EOIs from EXP-018 sprint
+- **How:** Track full funnel by channel: EOI → training showed → training passed → field → 7-day active. Post flyer to multiple groups across channels in Day 1 blitz. If volume allows, test flyer variants (A: lead with earnings, B: lead with flexibility).
+- **Duration:** 1 week (same sprint as EXP-018)
+- **Controls:** Cross-channel comparison (same flyer, different groups)
+
+## Results
+
+### What happened
+
+*Sprint in progress.*
+
+### What we learned
+
+*Pending.*
+
+### What we'd do differently
+
+*Pending.*
+
+**Decision:** —
+**Decision notes:** —
+
+## What Happens Next
+
+- **Channel kill list:** Day 5 Friday retro — channels below 5% EOI-to-active get cut
+- **Scale list:** Channels above 20% get prioritized for all future sprints
+- **Assumption update:** Pending sprint completion
+
+## Detail
+
+### Raw Data
+
+Sheet: `1Y3o_BfXk3rdREHEpLc3SBdwWFJd4DfKmuf0hwh-BZYI`
+
+**Historical channel data:**
 
 | Channel | Interview Show Rate | E2E (to live) | Status |
 |---------|-------------------|---------------|--------|
@@ -30,15 +76,9 @@ ANALYSIS (observation, not intervention). We're not changing channels — we're 
 | Facebook | No data | — | New channel, untested |
 | WhatsApp Groups | No data | — | New channel, untested |
 
-## Design
+### Methodology
 
-- Tag every EOI with source group and channel type in the tracking sheet
-- Track full funnel by channel: EOI → training showed → training passed → field → 7-day active
-- Post flyer to multiple groups across channels in Day 1 blitz
-- If volume allows, test flyer variants (A: lead with earnings, B: lead with flexibility)
-- Review channel data on Day 5 (Friday retro) and Day 7
-
-### Metrics by Channel
+**Metrics by channel:**
 
 | Metric | What it tells us |
 |--------|-----------------|
@@ -49,24 +89,9 @@ ANALYSIS (observation, not intervention). We're not changing channels — we're 
 | 7-day active rate | Channel durability — do they stick? |
 | EOI-to-active conversion | The single number that matters |
 
-## Decision Rules
+**Classification**: ANALYSIS (observation, not intervention). Runs in parallel with EXP-018.
 
-| Result | Action |
-|--------|--------|
-| Channel EOI → active > 20% | **SCALE** — find more groups like this, post weekly |
-| Channel EOI → active 5-20% | **MAINTAIN** — keep posting but don't invest more |
-| Channel EOI → active < 5% | **KILL** — stop posting, reallocate to top channels |
-| Referral EOI → active > 30% | **BUILD PROGRAM** — formalize: each top performer refers 2-3/month |
-| One flyer variant 2x better | **SHIP** — all future posts use winning variant |
-| All channels roughly equal | Channel doesn't matter — maximize volume everywhere |
-
-## Tracking
-
-Sheet: `1Y3o_BfXk3rdREHEpLc3SBdwWFJd4DfKmuf0hwh-BZYI`
-
-### Tab 1: Candidate Pipeline — "Feb 18 Onwards" (one row per candidate)
-
-Single tab covering the full pipeline: EOI → Interview → Training → Field. Day 3/Day 7 retention tracked from the visits sheet.
+**Tab 1: Candidate Pipeline — "Feb 18 Onwards" (one row per candidate):**
 
 | Column | Type | Who fills | When |
 |--------|------|----------|------|
@@ -87,11 +112,7 @@ Single tab covering the full pipeline: EOI → Interview → Training → Field.
 
 **Interview note**: Observational only — no one is rejected. Everyone proceeds to training regardless of scores.
 
-**Conditional formatting**: Green = Pass. Red = No-show or Fail. Yellow = Has interview date but no Pass/Fail yet (in progress).
-
-**Learning output**: After the sprint, correlate interview scores with field retention (from visits sheet) to identify which of the 4 interview signals predict Day 7 success → embed predictive signals into flyer and training at scale.
-
-### Tab 2: Broadcast Log (one row per flyer post)
+**Tab 2: Broadcast Log (one row per flyer post):**
 
 | Column | Type | Example |
 |--------|------|---------|
@@ -103,21 +124,24 @@ Single tab covering the full pipeline: EOI → Interview → Training → Field.
 | EOIs Received | Number | 12 |
 | Notes | Text | "Very active group" |
 
-## Context
+### Per-Ambassador Breakdown
 
-### What prompted this
+N/A — this experiment tracks candidates by channel, not ambassador performance.
 
-Historical data shows massive channel variance: Referral (75% show rate) vs 3PL (36% show rate, 0% E2E). The team is now sourcing from new channels (WhatsApp groups, Facebook groups) with no performance data. As EXP-018 runs the hiring sprint, EXP-019 piggybacks to measure which channels actually produce hires.
+### Gate Log
 
-### Absorbs previous experiments
+| Date | From | To | Rationale | By |
+|------|------|-----|-----------|-----|
+| | | | | |
 
-- **Old EXP-017 (Hiring Tournament)**: The tournament format (3 pools × 3 candidates, 5-day trial) was too slow. Channel yield is now tracked in real-time during the sprint.
-- **Old EXP-019 (Referral Hiring)**: Referral is one of the channels being measured. Top performers should refer candidates into the same pipeline — no separate experiment needed.
-
-## Kill Criteria
+**Kill criteria:**
 
 | Check | Trigger | Authority |
 |-------|---------|-----------|
 | Day 1 EOI volume | < 50 total EOIs from 20+ groups | Turab — flyer isn't landing, redesign |
 | Day 5 channel data | All channels within 5pp of each other | Channel doesn't matter — stop segmenting, maximize volume |
 | Day 7 | No channel above 15% EOI-to-active | Problem is pipeline (EXP-018), not channels |
+
+**Absorbs previous experiments:**
+- Old EXP-017 (Hiring Tournament): Tournament format was too slow. Channel yield tracked in real-time during sprint.
+- Old EXP-019 (Referral Hiring): Referral is one of the channels being measured — no separate experiment needed.

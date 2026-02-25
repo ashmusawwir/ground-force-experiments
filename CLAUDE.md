@@ -12,9 +12,9 @@ Standalone experiment tracking for Zar's ground force (field ambassador) team. E
 
 **Percentage formatting:** All percentages use 2 significant digits via `_sig2()` helper. Terminal `output.py` and HTML `flowchart.py` must both use this function. Example: `18%` not `18.0%`, `5.9%` not `5.90%`.
 
-**Experiment reports:** All experiment reports live on Notion (Experiment Tracker database). `docs/Experimentation-OS.md` defines the report structure and writing rules. The **Helix** agent (`.claude/agents/helix.md`) manages the full experiment lifecycle: draft, design, plan, run, analyze, present. Invoke with `claude --agent helix`.
+**Experiment reports:** All experiment reports live on Empirium (team: sigma). Notion pages are archived references only. `docs/Experimentation-OS.md` defines the report structure and writing rules. The **Helix** agent (`.claude/agents/helix.md`) manages the full experiment lifecycle: draft, design, plan, run, analyze, present. Invoke with `claude --agent helix`.
 
-**Where to find experiment details:** Each experiment with code has an experiment card (`.md` file in its directory) with hypothesis, decision rules, design decisions, and findings. Notion pages have the latest reports. CLAUDE.md only maps files, run commands, and IDs — not narratives.
+**Where to find experiment details:** Each experiment with code has an experiment card (`.md` file in its directory) with hypothesis, decision rules, design decisions, and findings. Empirium is the source of truth for status, findings, and decisions. CLAUDE.md maps files, run commands, and Empirium IDs — not narratives.
 
 ## Architecture Patterns
 
@@ -68,21 +68,21 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 
 ## Experiment Catalog
 
-| ID | Directory | Pattern | What it tests |
-|----|-----------|---------|---------------|
-| EXP-000 | `exp-000-merchant-network/` | B | Merchants as user-acquisition channel — CAC and retention analysis |
-| EXP-001 | `exp-001-show-dont-tell/` | A | Demo-first opener vs verbal pitch |
-| EXP-002 | `exp-002-social-proof-map/` | A | Showing nearby-merchant map at opener |
-| EXP-004 | `exp-004-merchant-activation/` | B (queries only) | Tiered cash incentive to activate dormant merchants |
-| EXP-006 | `exp-006-question-redirect/` | A | Universal redirect phrase for Q→Demo |
-| EXP-007 | `exp-007-demo-dollars/` | B | What demo-dollar recipients did |
-| EXP-008 | `exp-008-gold-market-research/` | C | Merchant demand for digital gold |
-| EXP-009 | `deprecated/exp-009-directed-day/` | B | Structured daily task lists with geo-clustered visits *(deprecated)* |
-| EXP-010 | `exp-010-demo-shadow/` | C | Observational shadow of ambassador demos to identify execution gaps |
-| EXP-011–017 | Notion-only | C | See Notion-only experiments below |
-| EXP-018 | `exp-018-direct-to-training/` | C | Direct-to-training hiring sprint |
-| EXP-019 | `exp-019-channel-yield/` | C | Which sourcing channels produce hires |
-| EXP-020 | `exp-020-ramadan-timing/` | A | Ramadan visit timing: daytime vs post-Taraweeh nighttime |
+| ID | Directory | Pattern | What it tests | Empirium ID |
+|----|-----------|---------|---------------|-------------|
+| EXP-000 | `exp-000-merchant-network/` | B | Merchants as user-acquisition channel — CAC and retention analysis | — |
+| EXP-001 | `exp-001-show-dont-tell/` | A | Demo-first opener vs verbal pitch | — |
+| EXP-002 | `exp-002-social-proof-map/` | A | Showing nearby-merchant map at opener | — |
+| EXP-004 | `exp-004-merchant-activation/` | B (queries only) | Tiered cash incentive to activate dormant merchants | — |
+| EXP-006 | `exp-006-question-redirect/` | A | Universal redirect phrase for Q→Demo | — |
+| EXP-007 | `exp-007-demo-dollars/` | B | What demo-dollar recipients did | — |
+| EXP-008 | `exp-008-gold-market-research/` | C | Merchant demand for digital gold | EXP-003 |
+| EXP-009 | `deprecated/exp-009-directed-day/` | B | Structured daily task lists with geo-clustered visits *(deprecated)* | — |
+| EXP-010 | `exp-010-demo-shadow/` | C | Observational shadow of ambassador demos to identify execution gaps | — |
+| EXP-011–017 | Notion-only | C | See Notion-only experiments below | — |
+| EXP-018 | `exp-018-direct-to-training/` | C | Direct-to-training hiring sprint | — |
+| EXP-019 | `exp-019-channel-yield/` | C | Which sourcing channels produce hires | — |
+| EXP-020 | `exp-020-ramadan-timing/` | A | Ramadan visit timing: daytime vs post-Taraweeh nighttime | — |
 
 ## Experiment Quick Reference
 
@@ -94,13 +94,15 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 - **Cache arrays:** `merchant_static`, `user_onboardings`, `user_activations`, `merchant_daily_activity`, `user_txn_breakdown`, `user_invitations`, `user_first_transactions`, `user_cycling`, `rapid_onboarding`, `cycling_timing`, `merchant_fraud_summary`, `merchant_retention`
 - **Run:** `cd exp-000-merchant-network && python3 run.py --json <cache.json>`
 - **Output:** `network_growth_through_merchants.html`
-- **Notion page:** `306003b8-300d-819a-bc08-f31aa413765e`
+- **Empirium ID:** — (pending)
+- **Notion page (archive):** `306003b8-300d-819a-bc08-f31aa413765e`
 - **Finding:** Merchants onboarded 1,164 users (40 merchants), but 97.4% never return to transact. Merchants are a transaction channel, not an acquisition channel. CAC $0.82.
 
 ### EXP-001: Show Don't Tell
 
 - **Files:** `exp-001-show-dont-tell/` (Pattern A standard files)
-- **Notion page:** `304003b8-300d-8130-86db-d02471345411`
+- **Empirium ID:** — (pending)
+- **Notion page (archive):** `304003b8-300d-8130-86db-d02471345411`
 - **Run:** `cd exp-001-show-dont-tell && python3 run.py`
 - **Output:** `dont_show_tell_exp.html`
 
@@ -108,7 +110,8 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 
 - **Files:** `exp-002-social-proof-map/` (Pattern A standard files)
 - **Experiment card:** `exp-002-social-proof-map/exp-002-social-proof-map.md`
-- **Notion page:** `304003b8-300d-8132-bc22-fdb87bbf7864`
+- **Empirium ID:** — (pending)
+- **Notion page (archive):** `304003b8-300d-8132-bc22-fdb87bbf7864`
 - **Run:** `cd exp-002-social-proof-map && python3 run.py`
 - **Output:** `social_proof_map.html`
 
@@ -116,7 +119,8 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 
 - **Files:** `exp-004-merchant-activation/queries.py`, `exp-004-merchant-activation/growth-partner-incentive-structure.md`
 - **Queries:** `merchant_qualification_query()`, `distribution_summary_query()`, `fraud_signals_query()`
-- **Notion page:** `304003b8-300d-81f7-8957-cb0636073abd`
+- **Empirium ID:** — (pending)
+- **Notion page (archive):** `304003b8-300d-81f7-8957-cb0636073abd`
 - **Data refresh:** Run queries via Rube MCP → results go directly to Notion (no cache JSON or HTML dashboard)
 
 ### EXP-006: Question Redirect Protocol
@@ -125,7 +129,8 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 - **Experiment card:** `exp-006-question-redirect/exp-006-question-redirect.md`
 - **Queries:** `demo_onboarding_status_query()`
 - **Cache arrays:** `db_status`
-- **Notion page:** `306003b8-300d-8195-b35c-e9d072bd8d24`
+- **Empirium ID:** — (pending)
+- **Notion page (archive):** `306003b8-300d-8195-b35c-e9d072bd8d24`
 - **Run:** `cd exp-006-question-redirect && python3 run.py` (sheet-only) or `python3 run.py --json db_status.json` (DB-verified)
 - **Output:** `question_redirect.html`
 
@@ -135,7 +140,8 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 - **Queries:** `recipient_overview_query()`, `note_distribution_query()`, `recipient_activity_query()`, `ambassador_summary_query()`, `recipient_timing_query()`, `demo_merchant_transactions_query()`, `time_to_first_tx_query()`, `all_activity_timestamps_query()`, `note_detail_query()`
 - **Cache arrays:** `recipient_overview`, `note_distribution`, `recipient_activity`, `ambassador_summary`, `app_opens`, `recipient_timing`, `app_opens_detailed`, `merchant_transactions`, `time_to_first_tx`, `all_activity_timestamps`, `note_detail`
 - **Run:** `cd exp-007-demo-dollars && python3 run.py --json <cache.json>`
-- **Notion page:** `306003b8-300d-8118-a728-f93f4f321d6e`
+- **Empirium ID:** — (pending)
+- **Notion page (archive):** `306003b8-300d-8118-a728-f93f4f321d6e`
 - **Note:** `app_opens` and `app_opens_detailed` sourced from Amplitude (not SQL) — see Rube MCP section
 - **`app_opens_detailed` format:** Flat rows `{recipient_id, event_type, event_time, hours_after_demo}` — NOT pre-grouped by recipient. `buildIndexes()` in `app.js` groups them into `{recipient_id, opens: [...]}` at runtime.
 - **Business name resolution:** Dual MOS join in SQL (phone match + `merchant_id` fallback) → visits sheet enrichment in `run.py` (Google Sheet `1bFf0NAQFFXIYYxMC1yJeqowRz6MwT_-xawZeg5H9wUQ`, col N=Shop Name, col P=Merchant Phone)
@@ -144,12 +150,14 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 ### EXP-008: Digital Gold Market Research
 
 - **Experiment card:** `exp-008-gold-market-research/exp-008-digital-gold.md`
-- **Notion page:** `306003b8-300d-817c-9221-d858c9638c36`
+- **Empirium ID:** EXP-003
+- **Notion page (archive):** `306003b8-300d-817c-9221-d858c9638c36`
 
 ### EXP-009: Directed Day *(deprecated)*
 
 - **Files:** `deprecated/exp-009-directed-day/` — `run.py`, `queries.py`, `task_generator.py`, `ui/` (Pattern B)
 - **Experiment card:** `deprecated/exp-009-directed-day/exp-009-directed-day.md`
+- **Empirium ID:** — (pending)
 - **Queries:** `reactivation_targets_query()`, `onboarding_status_check_query()`, `onboarding_outcome_query()`, `reactivation_outcome_query()`, `pool_health_query()`
 - **Run:** `cd deprecated/exp-009-directed-day && python3 run.py --json targets_cache.json` (dashboard) or add `--generate` (generate routes + dashboard)
 
@@ -161,13 +169,15 @@ EXP-018 (pipeline) and EXP-019 (channel yield) share a single tracking sheet and
 - **Artifacts:** `exp-018-direct-to-training/flyers/growth-partner-flyer.html`, `exp-018-direct-to-training/flyers/growth-partner-flyer-ur.html` (Urdu variant), `exp-018-direct-to-training/flyers/sheet-guide.html`
 - **PNG renders:** `exp-018-direct-to-training/flyers/growth-partner-flyer.png`, `exp-018-direct-to-training/flyers/growth-partner-flyer-ur.png`
 - **Tracking sheet:** `1Y3o_BfXk3rdREHEpLc3SBdwWFJd4DfKmuf0hwh-BZYI` — tabs: "Feb 18 Onwards" (pipeline), "Broadcast Log" (flyer tracking)
-- **Notion pages:** EXP-018 `30a003b8-300d-816a-9f2d-da9328a7f891`, EXP-019 `30a003b8-300d-8183-b8f1-e65d3d1b2e6f`
+- **Empirium ID:** EXP-018: — (pending), EXP-019: — (pending)
+- **Notion pages (archive):** EXP-018 `30a003b8-300d-816a-9f2d-da9328a7f891`, EXP-019 `30a003b8-300d-8183-b8f1-e65d3d1b2e6f`
 
 ### EXP-020: Ramadan Visit Timing
 
 - **Files:** `exp-020-ramadan-timing/` (Pattern A standard files + time bucketing extensions)
 - **Experiment card:** `exp-020-ramadan-timing/exp-020-ramadan-timing.md`
-- **Notion page:** `30c003b8-300d-81b5-b044-cc2fd2e52d90`
+- **Empirium ID:** — (pending)
+- **Notion page (archive):** `30c003b8-300d-81b5-b044-cc2fd2e52d90`
 - **Run:** `cd exp-020-ramadan-timing && python3 run.py`
 - **Output:** `ramadan_timing.html`
 - **Key extensions over standard Pattern A:**
@@ -187,7 +197,8 @@ EXP-018 (pipeline) and EXP-019 (channel yield) share a single tracking sheet and
 ### EXP-010: Demo Shadow
 
 - **Files:** `exp-010-demo-shadow/shadow-experiment-v2.pdf`
-- **Notion page:** `309003b8-300d-8100-8420-ec6c6be3737c`
+- **Empirium ID:** — (pending)
+- **Notion page (archive):** `309003b8-300d-8100-8420-ec6c6be3737c`
 - **Status:** Draft (planned)
 - **Design:** Observational shadow of 4 ambassadors × 3 visits (12 sessions) to identify execution gaps behind 20–25% demo rate. Non-intervention, directional findings only.
 
@@ -304,6 +315,8 @@ Covers: EXP-000, EXP-004, EXP-006, EXP-007, EXP-009.
 
 ## Notion MCP
 
+> Notion is an archived reference. Use Empirium MCP for all active experiment tracking.
+
 **Tools**: `notion-fetch`, `notion-update-page`, `notion-search`, `notion-create-pages`
 
 **Server name**: `claude.ai Notion` (with dots and spaces — NOT `claude_ai_Notion`)
@@ -363,6 +376,12 @@ Covers: EXP-000, EXP-004, EXP-006, EXP-007, EXP-009.
 Be concise. Prefer final data, clean numbers, and verdicts — not detailed templates, exhaustive explanations, or lengthy writeups. When updating docs or reports, default to tight, executive-style prose unless told otherwise.
 
 ## Tools & Integrations
+
+### Empirium (Experiment Tracking)
+
+**Team slug:** `sigma`
+**Tools:** `experiments_list`, `experiments_get`, `experiments_create`, `experiments_update`, `experiments_transition`, `experiments_decide`, `experiments_add_learning`
+**Source of truth for:** status, hypothesis, success criteria, MVT, results, decisions, learnings
 
 ### MCP Integrations
 

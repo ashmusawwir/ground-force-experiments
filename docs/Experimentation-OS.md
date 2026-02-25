@@ -2,8 +2,7 @@
 
 > **Last updated:** 2026-02-25
 > **Aligned with:** Empirium experiment data model, Canon/Praxis agent framework
-> **Notion tracker:** `304003b8-300d-815c-825e-c826473dcbeb`
-> **Template page:** [TEMPLATE: Experiment Format v2](https://www.notion.so/TEMPLATE-Experiment-Format-v2-Empirium-Aligned-312003b8300d81aea036ff0937dd2518)
+> **Experiment format:** [v2 Template](https://www.notion.so/zardotapp/TEMPLATE-Experiment-Format-v2-312003b8300d81aea036ff0937dd2518) — Empirium `description` field follows this structure
 
 ---
 
@@ -76,9 +75,9 @@ Every status transition requires documented rationale. These are the required fi
 
 ---
 
-## 3. Experiment Database Schema (Notion)
+## 3. Experiment Data Model (Empirium)
 
-These properties map 1:1 to Empirium's data model for future migration.
+These properties are Empirium's live data model. Each maps to an Empirium field.
 
 | Property | Type | Options / Format |
 |----------|------|-----------------|
@@ -100,7 +99,7 @@ These properties map 1:1 to Empirium's data model for future migration.
 
 ## 4. Experiment Page Template
 
-Every experiment page in Notion follows this structure. Use the [Notion template page](https://www.notion.so/TEMPLATE-Experiment-Format-v2-Empirium-Aligned-312003b8300d81aea036ff0937dd2518) as your starting point.
+Every experiment's Empirium `description` field follows this structure. Use the [v2 template](https://www.notion.so/zardotapp/TEMPLATE-Experiment-Format-v2-312003b8300d81aea036ff0937dd2518) as reference. Local `.md` experiment cards use the same section headings (standard Markdown, no toggles).
 
 ### State Banner (callout, top of page)
 
@@ -312,8 +311,8 @@ These are the three metrics with the most room for improvement (identified Feb 2
 
 ## 10. Where This Lives
 
-- **Notion** -- Experiment Tracker database (primary experiment pages and reports)
-- **GitHub** -- `ashmusawwir/ground-force-experiments` (code, analysis scripts, experiment cards)
-- **Empirium** -- Future system of record (this Notion structure is designed to migrate cleanly)
-- **Wednesday Sync** -- Mid-week update for Brandon/Daniel
-- **Friday Showcase** -- Weekly presentation of experiment journey and findings
+- **Empirium** — System of record. All live experiment status, findings, learnings. Team: sigma.
+- **GitHub** — `ground-force-experiments` repo. Code, analysis scripts, experiment cards (.md).
+- **Notion (Archive)** — Historical experiment pages. Read-only reference. Not updated going forward.
+- **Wednesday Sync** — Mid-week update for Brandon/Daniel
+- **Friday Showcase** — Weekly presentation of experiment journey and findings
