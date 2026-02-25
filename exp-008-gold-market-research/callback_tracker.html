@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EXP-008 R2 — 48h Callback Tracker</title>
+<style>
+  :root { --gold: #C8920A; --gold-light: #FEF3C7; --gold-border: #F59E0B; --navy: #0C1A2E; --bg: #F5F4F1; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: #1a1a1a; font-size: 14px; }
+
+  header { background: var(--navy); color: #fff; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; height: 52px; border-bottom: 2px solid var(--gold); }
+  .header-left { display: flex; align-items: baseline; gap: 14px; }
+  .header-logo { font-size: 1rem; font-weight: 800; letter-spacing: 0.06em; color: var(--gold); }
+  header h1 { font-size: 0.88rem; font-weight: 600; color: #e2e8f0; }
+  header span { font-size: 0.75rem; color: #64748b; }
+
+  .summary-bar { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 10px 28px; display: flex; gap: 28px; align-items: center; }
+  .stat { display: flex; flex-direction: column; gap: 1px; }
+  .stat-val { font-size: 1.2rem; font-weight: 800; color: var(--gold); }
+  .stat-val.muted { color: #9ca3af; }
+  .stat-val.red { color: #dc2626; }
+  .stat-val.green { color: #16a34a; }
+  .stat-label { font-size: 0.68rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.04em; }
+  .stat-sep { width: 1px; background: #e5e5e5; align-self: stretch; margin: 0 4px; }
+
+  .script-panel { margin: 14px 28px; background: var(--navy); color: #e2e8f0; border-radius: 8px; overflow: hidden; }
+  .script-toggle { width: 100%; padding: 10px 16px; background: transparent; border: none; color: var(--gold); font-size: 0.78rem; font-weight: 700; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; letter-spacing: 0.04em; text-transform: uppercase; }
+  .script-toggle:hover { background: rgba(255,255,255,0.04); }
+  .script-body { display: none; padding: 0 16px 14px; font-size: 0.78rem; line-height: 1.6; }
+  .script-body.open { display: block; }
+  .script-gate { margin-bottom: 10px; }
+  .script-gate-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gold); margin-bottom: 3px; }
+  .script-line { background: rgba(255,255,255,0.06); border-left: 2px solid var(--gold); padding: 6px 10px; border-radius: 0 4px 4px 0; color: #f1f5f9; margin-bottom: 4px; }
+  .script-note { font-size: 0.7rem; color: #64748b; margin-top: 2px; }
+
+  .filter-bar { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 9px 28px; display: flex; gap: 6px; align-items: center; }
+  .filter-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-right: 6px; }
+  .filter-btn { padding: 4px 14px; border-radius: 16px; border: 1px solid #e5e5e5; background: #fff; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.15s; color: #374151; }
+  .filter-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .filter-btn.active { background: var(--gold); color: #fff; border-color: var(--gold); }
+
+  .notice { margin: 10px 28px; padding: 8px 12px; background: var(--gold-light); border: 1px solid var(--gold-border); border-radius: 6px; font-size: 0.78rem; color: #78350f; }
+
+  .city-sep { margin: 16px 28px 0; padding: 7px 0 4px; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold); border-top: 2px solid var(--gold); }
+
+  table { width: calc(100% - 56px); margin: 0 28px 20px; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  thead tr { background: #f8f7f4; border-bottom: 2px solid #e8e5df; }
+  th { padding: 8px 12px; text-align: left; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #9ca3af; white-space: nowrap; }
+  td { padding: 9px 12px; border-bottom: 1px solid #f0ede8; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fdfcfa; }
+
+  .id { font-weight: 700; font-size: 0.72rem; color: #9ca3af; }
+  .shop { font-weight: 600; }
+  .shop.unknown { color: #c4b8a0; font-style: italic; font-weight: 400; }
+  .loc { font-size: 0.78rem; color: #4b5563; }
+
+  .maps-link { display: inline-block; padding: 2px 8px; background: var(--gold-light); color: var(--gold); border-radius: 4px; font-size: 0.72rem; text-decoration: none; white-space: nowrap; font-weight: 600; border: 1px solid #fde68a; }
+  .maps-link:hover { background: #fde68a; }
+
+  .phone-cell { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82rem; }
+  .phone-input { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.8rem; border: 1px solid #e5e5e5; border-radius: 4px; padding: 4px 6px; width: 130px; color: #1a1a1a; background: #fafaf9; }
+  .phone-input:focus { outline: none; border-color: var(--gold); }
+  .phone-input[value]:not([value=""]) { color: #1a1a1a; }
+  .phone-input::placeholder { color: #d1d5db; font-style: italic; font-family: inherit; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+  .badge-yes { background: #dcfce7; color: #15803d; }
+  .badge-conditional { background: var(--gold-light); color: #92400e; }
+  .badge-no { background: #fee2e2; color: #b91c1c; }
+
+  .gate-col { text-align: center; }
+  .gate-btn { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #e5e5e5; background: #fff; cursor: pointer; font-size: 0.85rem; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .gate-btn:hover { border-color: var(--gold); }
+  .gate-btn.pass { background: var(--gold); border-color: var(--gold); color: #fff; }
+  .gate-btn.fail { background: #dc2626; border-color: #dc2626; color: #fff; }
+
+  .notes-cell textarea { width: 160px; border: 1px solid #e5e5e5; border-radius: 4px; padding: 4px 6px; font-size: 0.73rem; resize: none; font-family: inherit; color: #374151; background: #fafaf9; }
+  .notes-cell textarea:focus { outline: none; border-color: var(--gold); }
+
+  .date-row { padding: 5px 28px; font-size: 0.7rem; font-weight: 700; color: #fff; letter-spacing: 0.02em; }
+  .date-row.sat { background: #5b21b6; }
+  .date-row.sun { background: #1d4ed8; }
+  .date-row.mon { background: #065f46; }
+  .date-row.tue { background: #92400e; }
+
+  @media print {
+    body { background: #fff; }
+    table { box-shadow: none; border: 1px solid #ccc; }
+    .gate-btn, .notes-cell textarea, .filter-bar, .script-panel { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <span class="header-logo">ZAR</span>
+    <h1>EXP-008 · 48h Callback Tracker</h1>
+  </div>
+  <span>40 merchants · RWP + ISB + KHI · Feb 21–25, 2026</span>
+</header>
+
+<div class="summary-bar">
+  <div class="stat">
+    <div class="stat-val">40</div>
+    <div class="stat-label">Total interviewed</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val red" id="stat-no-phone">20</div>
+    <div class="stat-label">No phone number</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val green" id="stat-g1">0</div>
+    <div class="stat-label">Gate 1 — Pickup</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val green" id="stat-g2">0</div>
+    <div class="stat-label">Gate 2 — Recall</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val green" id="stat-g3">0</div>
+    <div class="stat-label">Gate 3 — WhatsApp Yes</div>
+  </div>
+</div>
+
+<div class="script-panel">
+  <button class="script-toggle" onclick="this.nextElementSibling.classList.toggle('open'); this.querySelector('.arrow').textContent = this.nextElementSibling.classList.contains('open') ? '▲' : '▼'">
+    Call Script — 3-Gate Flow (Urdu + English) <span class="arrow">▼</span>
+  </button>
+  <div class="script-body">
+    <div class="script-gate">
+      <div class="script-gate-label">Gate 1 — Pickup</div>
+      <div class="script-line">Call twice at different times. If no pickup after 2 attempts → mark <em>No pickup</em> and stop.</div>
+    </div>
+    <div class="script-gate">
+      <div class="script-gate-label">Gate 2 — Recall</div>
+      <div class="script-line">"Bhai, hum ne 2 din pehle digital gold ke baare mein baat ki thi — kya yaad hai?"</div>
+      <div class="script-line">"Brother, we spoke about digital gold 2 days ago — do you remember?"</div>
+      <div class="script-note">If they forget → mark <em>No recall</em> and stop. Do NOT remind them.</div>
+    </div>
+    <div class="script-gate">
+      <div class="script-gate-label">Gate 3 — WhatsApp Commitment</div>
+      <div class="script-line">"Hum ek WhatsApp group bana rahe hain un merchants ke liye jo early access chahte hain — kya main aapko add kar sakta hoon?"</div>
+      <div class="script-line">"We're creating a WhatsApp group for merchants who want early access — can I add you?"</div>
+      <div class="script-note">Yes → add them + mark ✓. No / hesitant → mark ✗ and stop.</div>
+    </div>
+    <div class="script-note" style="margin-top:6px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px;">Target: ≥30% pass all 3 gates = real demand. &lt;15% recall = pitch didn't stick.</div>
+  </div>
+</div>
+
+<div class="notice">
+  ⚠️ RWP/ISB phone numbers were not saved in the survey file — fill manually. KHI numbers are pre-filled from the Google Form. The <em>No phone</em> count updates as you type.
+</div>
+
+<div class="filter-bar">
+  <span class="filter-label">City</span>
+  <button class="filter-btn active" onclick="filterCity('all', this)">All (40)</button>
+  <button class="filter-btn" onclick="filterCity('rwp', this)">Rawalpindi (10)</button>
+  <button class="filter-btn" onclick="filterCity('isb', this)">Islamabad (10)</button>
+  <button class="filter-btn" onclick="filterCity('khi', this)">Karachi (20)</button>
+</div>
+
+<div class="date-row sat" data-city="rwp">Saturday 21 Feb 2026 · Rawalpindi</div>
+
+<table id="table-sat" data-city="rwp">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Shop</th>
+      <th>Location</th>
+      <th>Maps</th>
+      <th>Phone / WhatsApp</th>
+      <th>Q6</th>
+      <th>G1 Pickup</th>
+      <th>G2 Recall</th>
+      <th>G3 WA Yes</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+
+    <tr>
+      <td class="id">R2-07</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Saddar, Rawalpindi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/z7cQS8QmS5efqTQk6" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-no">NO</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)" title="Toggle pickup">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)" title="Toggle recall">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)" title="Toggle WA">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">R2-08</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Saddar, Rawalpindi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/z7cQS8QmS5efqTQk6" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-yes">YES</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">R2-09</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Saddar, Rawalpindi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/aSXzqSHge5NBYVwo6" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">R2-10</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Saddar, Rawalpindi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/aSXzqSHge5NBYVwo6" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-yes">YES</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">R2-11</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Saddar, Rawalpindi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/aSXzqSHge5NBYVwo6" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">R2-16</td>
+      <td class="shop">Hafiz Mobile</td>
+      <td class="loc">PWD, Rawalpindi</td>
+      <td><span style="color:#9ca3af;font-size:0.72rem;">no pin</span></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">R2-17</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Lalkurti Bazaar, Rawalpindi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/AH2HWUHZGrr92qAL9" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">R2-18</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Lalkurti Bazaar, Rawalpindi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/AH2HWUHZGrr92qAL9" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-no">NO</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">R2-19</td>
+      <td class="shop">Mz Graphics &amp; Stationers</td>
+      <td class="loc">Lalkurti Bazaar, Rawalpindi</td>
+      <td><span style="color:#9ca3af;font-size:0.72rem;">no pin</span></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">R2-20</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Sadiqabad, Rawalpindi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/shDVgMzoqbQnkYUu6" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+  </tbody>
+</table>
+
+<div class="date-row sun" data-city="isb">Sunday 22 Feb 2026 · Islamabad</div>
+
+<table id="table-sun" data-city="isb">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Shop</th>
+      <th>Location</th>
+      <th>Maps</th>
+      <th>Phone / WhatsApp</th>
+      <th>Q6</th>
+      <th>G1 Pickup</th>
+      <th>G2 Recall</th>
+      <th>G3 WA Yes</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+
+    <tr>
+      <td class="id">R2-01</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">I-8 Markaz, Islamabad</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/ix5Bn7Sw4DzwX5Ue8" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">R2-02</td>
+      <td class="shop">Mobile Link</td>
+      <td class="loc">I-8 Markaz, Islamabad</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/ix5Bn7Sw4DzwX5Ue8" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-yes">YES</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">R2-03</td>
+      <td class="shop unknown">— (basement)</td>
+      <td class="loc">I-8 Markaz, Islamabad</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/ix5Bn7Sw4DzwX5Ue8" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-no">NO</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">R2-04</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">I-10 Markaz, Islamabad</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/NbDpfxqCUBQU74k38" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">R2-05</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">I-10 Markaz, Islamabad</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/NbDpfxqCUBQU74k38" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">R2-06</td>
+      <td class="shop">Smart Phones</td>
+      <td class="loc">I-10 Markaz, Islamabad</td>
+      <td><span style="color:#9ca3af;font-size:0.72rem;">no pin</span></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-yes">YES</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">R2-12</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">G-13, Islamabad</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/j7Z7AARWji3ivsXs6" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">R2-13</td>
+      <td class="shop">AtoZ Communication</td>
+      <td class="loc">G-10, Islamabad</td>
+      <td><span style="color:#9ca3af;font-size:0.72rem;">no pin</span></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-yes">YES</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">R2-14</td>
+      <td class="shop unknown">— (jeweler)</td>
+      <td class="loc">G-10, Islamabad</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/oDKcQaSyuxsame6p7" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">R2-15</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">F-10, Islamabad</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/5pxhSKvRV4wZPqgV7" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+  </tbody>
+</table>
+
+<div class="city-sep" data-city="khi">Karachi — Surveyor: Faisal Soomro</div>
+
+<div class="date-row mon" data-city="khi">Monday 24 Feb 2026 · Karachi · 13 merchants</div>
+
+<table data-city="khi">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Shop</th>
+      <th>Location</th>
+      <th>Maps</th>
+      <th>Phone / WhatsApp</th>
+      <th>Q6</th>
+      <th>G1 Pickup</th>
+      <th>G2 Recall</th>
+      <th>G3 WA Yes</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+
+    <tr>
+      <td class="id">K-01</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Clifton, Karachi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/GHfAs4dHpAesnNbWA" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" value="03003731584" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">K-02</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Clifton, Karachi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/JkZrJ5ysrYR1bKmt8" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" value="03013371133" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">K-03</td>
+      <td class="shop">HSK Electro Mart</td>
+      <td class="loc">Clifton, Karachi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/gx1RnuMziCGmDzRT8" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">K-04</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Clifton, Karachi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/39CsD3ZLbL63ty5x6" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" value="03333113854" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">K-05</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Clifton, Karachi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/Eq8wbGvXwTWt9sUh6" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" value="03408649043" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-yes">YES</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">K-06</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">DHA, Karachi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/UK4f3rWKZAERN1ah6" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" value="03482188525" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-no">NO</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">K-07</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">DHA, Karachi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/pUcu8EmxNegftStV7" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" value="03426360108" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-yes">YES</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">K-08</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">DHA, Karachi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/pRWXhUViY9hc8t4z5" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" value="03041125215" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-yes">YES</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">K-09</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Karachi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/hmZ73ZzPWasXRYnv5" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" value="03412632659" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">K-10</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Gulshan-e-Iqbal, Karachi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/M2jLtqEgZKrzoy9o9" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" value="03081005560" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-yes">YES</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">K-11</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Gulshan-e-Iqbal, Karachi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/h3mgmFdddmayGPRt8" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" value="03222237311" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">K-12</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Gulshan-e-Iqbal, Karachi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/cv9SmnZ5r6gvXWhq5" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" value="03330259491" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">K-13</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Gulshan-e-Iqbal, Karachi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/MLaTDj32DtZ6Fos76" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" value="03263401150" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+  </tbody>
+</table>
+
+<div class="date-row tue" data-city="khi">Tuesday 25 Feb 2026 · Karachi · 7 merchants</div>
+
+<table data-city="khi">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Shop</th>
+      <th>Location</th>
+      <th>Maps</th>
+      <th>Phone / WhatsApp</th>
+      <th>Q6</th>
+      <th>G1 Pickup</th>
+      <th>G2 Recall</th>
+      <th>G3 WA Yes</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+
+    <tr>
+      <td class="id">K-14</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Gulshan-e-Iqbal, Karachi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/2XrW6C3B27BZEXr7A" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" value="03457111450" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-conditional">CONDITIONAL</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">K-15</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Gulshan-e-Iqbal, Karachi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/7T9c3HgxrKKP84Je8" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" value="03310569815" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-no">NO</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">K-16</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Gulshan-e-Iqbal, Karachi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/em8WQcpFoT2fK2c17" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" value="03462813934" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-no">NO</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">K-17</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Gulshan-e-Iqbal, Karachi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/vVXN6RDm1aWxXHcL7" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" value="03212771167" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-yes">YES</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">K-18</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Gulshan-e-Iqbal, Karachi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/fJ8n8tGEoNPoxkGh6" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" value="03219774604" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-yes">YES</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">K-19</td>
+      <td class="shop unknown">—</td>
+      <td class="loc">Gulshan-e-Iqbal, Karachi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/RUYx163rsgKMfart5" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" value="03112992316" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-yes">YES</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+    <tr>
+      <td class="id">K-20</td>
+      <td class="shop">Faisal Communication</td>
+      <td class="loc">Gulshan-e-Iqbal, Karachi</td>
+      <td><a class="maps-link" href="https://maps.app.goo.gl/ctMhuv5GjEgX2oWU9" target="_blank">↗ Map</a></td>
+      <td class="phone-cell"><input class="phone-input" type="tel" placeholder="03XX-XXXXXXX" oninput="updateNoPhone()"></td>
+      <td><span class="badge badge-yes">YES</span></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="gate-col"><button class="gate-btn" onclick="toggleGate(this)">—</button></td>
+      <td class="notes-cell"><textarea rows="2" placeholder="Notes…"></textarea></td>
+    </tr>
+
+  </tbody>
+</table>
+
+<script>
+  function toggleGate(btn) {
+    if (btn.textContent === '—') {
+      btn.textContent = '✓';
+      btn.classList.add('pass');
+    } else if (btn.classList.contains('pass')) {
+      btn.textContent = '✗';
+      btn.classList.remove('pass');
+      btn.classList.add('fail');
+    } else {
+      btn.textContent = '—';
+      btn.classList.remove('fail');
+    }
+    updateStats();
+  }
+
+  function updateStats() {
+    const allRows = document.querySelectorAll('tbody tr');
+    let g1 = 0, g2 = 0, g3 = 0;
+    allRows.forEach(row => {
+      const btns = row.querySelectorAll('.gate-btn');
+      if (btns[0] && btns[0].classList.contains('pass')) g1++;
+      if (btns[1] && btns[1].classList.contains('pass')) g2++;
+      if (btns[2] && btns[2].classList.contains('pass')) g3++;
+    });
+    document.getElementById('stat-g1').textContent = g1;
+    document.getElementById('stat-g2').textContent = g2;
+    document.getElementById('stat-g3').textContent = g3;
+  }
+
+  function updateNoPhone() {
+    const inputs = document.querySelectorAll('.phone-input');
+    let empty = 0;
+    inputs.forEach(i => { if (!i.value.trim()) empty++; });
+    document.getElementById('stat-no-phone').textContent = empty;
+  }
+
+  function filterCity(city, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('[data-city]').forEach(el => {
+      el.style.display = (city === 'all' || el.dataset.city === city) ? '' : 'none';
+    });
+  }
+
+  updateNoPhone();
+  updateStats();
+</script>
+
+</body>
+</html>

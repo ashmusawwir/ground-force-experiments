@@ -4,6 +4,24 @@ __pycache__/
 *.pyc
 .DS_Store
 node_modules/
+.wrangler/
+
+# Generated HTML artifacts
+exp-000-merchant-network/network_growth_through_merchants.html
+exp-001-show-dont-tell/dont_show_tell_exp.html
+exp-007-demo-dollars/demo_dollars_usage.html
+exp-002-social-proof-map/social_proof_map.html
+exp-006-question-redirect/question_redirect.html
+exp-020-ramadan-timing/ramadan_timing.html
+
+# Cache / data dumps
+exp-000-merchant-network/merchant_cache_granular.json
+exp-007-demo-dollars/demo_dollars_cache.json
+
+# Large binary / media
+"exp-008-gold-market-research/Voice Recordings/"
+
+# Legacy paths (pre-restructure)
 merchant-user-onboardings/merchant_cache_granular.json
 merchant-user-onboardings/network_growth_through_merchants.html
 show-dont-tell/dont_show_tell_exp.html

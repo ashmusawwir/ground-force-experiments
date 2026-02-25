@@ -10,7 +10,7 @@ See [`CLAUDE.md`](CLAUDE.md) for full conventions, run commands, DB schema, and 
 
 | ID | Directory | Pattern | What it tests |
 |----|-----------|---------|---------------|
-| EXP-000 | Notion-only | C | Merchants as user-acquisition channel — CAC and retention analysis |
+| EXP-000 | `exp-000-merchant-network/` | B | Merchants as user-acquisition channel — CAC and retention analysis |
 | EXP-001 | `exp-001-show-dont-tell/` | A | Demo-first opener vs verbal pitch |
 | EXP-002 | `exp-002-social-proof-map/` | A | Showing nearby-merchant map at opener |
 | EXP-004 | `exp-004-merchant-activation/` | B (queries only) | Tiered cash incentive to activate dormant merchants |
@@ -23,7 +23,6 @@ See [`CLAUDE.md`](CLAUDE.md) for full conventions, run commands, DB schema, and 
 | EXP-018 | `exp-018-direct-to-training/` | C | Direct-to-training hiring sprint |
 | EXP-019 | `exp-019-channel-yield/` | C | Which sourcing channels produce hires |
 | EXP-020 | `exp-020-ramadan-timing/` | A | Ramadan visit timing: daytime vs post-Taraweeh nighttime |
-| — | `merchant-user-onboardings/` | B | Merchant onboarding, activation, retention dashboard |
 
 ## Architecture Patterns
 

@@ -19,8 +19,8 @@ def _load(rel, alias):
 _q004 = _load('exp-004-merchant-activation/queries.py',  'q004')
 _q006 = _load('exp-006-question-redirect/queries.py',    'q006')
 _q007 = _load('exp-007-demo-dollars/queries.py',         'q007')
-_q009 = _load('exp-009-directed-day/queries.py',         'q009')
-_qmuo = _load('merchant-user-onboardings/queries.py',    'qmuo')
+_q009 = _load('deprecated/exp-009-directed-day/queries.py', 'q009')
+_qmuo = _load('exp-000-merchant-network/queries.py',     'qmuo')
 
 # ── EXP-004: Merchant Activation Incentive ──────────────────────────────────
 merchant_qualification_query   = _q004.merchant_qualification_query
@@ -48,7 +48,7 @@ onboarding_outcome_query       = _q009.onboarding_outcome_query
 reactivation_outcome_query     = _q009.reactivation_outcome_query
 pool_health_query              = _q009.pool_health_query
 
-# ── Dashboard: merchant-user-onboardings ────────────────────────────────────
+# ── EXP-000: Merchants Growing the ZAR Network ──────────────────────────────
 merchant_summary_query          = _qmuo.merchant_summary_query
 merchant_static_query           = _qmuo.merchant_static_query
 user_onboardings_query          = _qmuo.user_onboardings_query

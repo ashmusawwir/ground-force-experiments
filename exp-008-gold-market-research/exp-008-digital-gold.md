@@ -14,8 +14,8 @@
 | Decision This Informs | Should ZAR invest product resources in a digital gold feature? Present findings with recommendation to leadership. Decision authority: Turab / Brandon. |
 | Primary Signal | Sentiment shift at Q4 (premium savings pitch section) — does the jeweler markup argument move merchants from baseline reaction to positive? |
 | Confirmation Metric | 48-hour callback conversion (pickup → recall → WhatsApp micro-commitment). Filters performative interest from real demand. |
-| Sample | Round 1: 14 interviews (Rawalpindi, completed). Round 2: 20 interviews (Islamabad, planned). |
-| Duration | Round 1: Feb 12, 2026 (1 day). Round 2: TBD (1-2 days). |
+| Sample | Round 1: 14 interviews (Rawalpindi, completed). Round 2: 40 interviews across two parallel arms (ISB/RWP n=20 + Karachi n=20, completed). |
+| Duration | Round 1: Feb 12, 2026 (1 day). Round 2: Feb 21–25, 2026 (ISB/RWP: Feb 21–22; Karachi: Feb 24–25). |
 
 ---
 
@@ -95,12 +95,22 @@ Round 1 tested a vague concept. Round 2 tests whether a **specific, detailed pit
 
 | Element | Detail |
 |---------|--------|
-| Sample | 20 EP/JC agent shops |
-| Location | Islamabad (fresh city — avoids Rawalpindi priming) |
-| Areas | F-sectors, G-sectors, Blue Area, I-8/I-10 markets (3-4 geographic zones) |
+| Sample | 40 interviews across two parallel arms |
+| ISB/RWP arm | 20 EP/JC agent shops — Islamabad & Rawalpindi; Feb 21–22, 2026; Surveyor A; audio + transcripts |
+| Karachi arm | 20 communications shops — Clifton, DHA, Gulshan-e-Iqbal, Malir; Feb 24–25, 2026; Faisal Soomro; form data only (no audio) |
 | Duration per interview | 5-7 minutes |
-| Budget | Rs. 20,000 (Rs. 1,000 per interview consent fee) |
+| Budget | Rs. 20,000 per arm |
 | Isolates gold | No dollars comparison — gold-only pitch |
+
+### Round 2 City Mapping
+
+| Karachi Area | # Shops | ISB/RWP Analog |
+|-------------|---------|----------------|
+| Clifton | 5 | F-8/F-6 ISB — upscale mixed |
+| DHA Phase 1–6 | 3 | No direct ISB equivalent — upscale residential strips |
+| Gulshan-e-Iqbal | 12 | I-10/G-10/G-13 ISB — dense middle-class commercial markaz |
+
+**Cross-city pair for apples-to-apples comparison:** Gulshan-e-Iqbal (12/20) vs ISB I-10/G-10 cluster.
 
 ### Sequential Interview Format
 
@@ -250,9 +260,9 @@ This is not a statistical validity check — it's an honesty check about what n=
 - Price sensitivity (what commission rate makes merchants act — need real transactions)
 - Customer demand (we're testing merchant willingness to sell, not end-user willingness to buy)
 
-### Why n=34 is appropriate
+### Why n=54 is appropriate
 
-Discovery research follows information saturation, not statistical power. In qualitative research, new themes typically stop emerging after 12-15 interviews in a homogeneous population (Pakistani shopkeepers in urban markets). At n=34 (14 Round 1 + 20 Round 2), we're well past saturation for theme identification. We're NOT trying to estimate a population proportion — we're trying to identify patterns, barriers, and positioning.
+Discovery research follows information saturation, not statistical power. In qualitative research, new themes typically stop emerging after 12-15 interviews in a homogeneous population (Pakistani shopkeepers in urban markets). At n=54 (14 Round 1 + 20 ISB/RWP + 20 Karachi), we're well past saturation for theme identification. We're NOT trying to estimate a population proportion — we're trying to identify patterns, barriers, and positioning. The Karachi arm adds value by testing geographic generalizability of ISB/RWP findings.
 
 ---
 
@@ -409,75 +419,65 @@ Discovery research follows information saturation, not statistical power. In qua
 
 ---
 
-## Post-Research Template
+## Post-Research Results — Round 2 (n=40)
 
-*To be completed after Round 2 field execution.*
+*Combined ISB/RWP (n=20, Feb 21–22) + Karachi (n=20, Feb 24–25).*
 
 ### Signal Matrix Results
 
-| Signal | Minimum Bar | Actual Result | Status |
-|--------|-------------|---------------|--------|
-| Behavioral (unprompted demand) | ≥3 merchants | /20 | |
-| Economic argument (Q4 sentiment shift) | ≥50% positive shift | /20 | |
-| Distribution willingness (Q6 = Yes) | ≥40% | /20 | |
-| Callback conversion (all 3 gates) | ≥30% of phone-givers | /N | |
+| Signal | Minimum Bar | ISB/RWP (n=20) | Karachi (n=20) | Combined R2 (n=40) | Status |
+|--------|-------------|----------------|----------------|-------------------|--------|
+| Behavioral (unprompted demand) | ≥3 merchants | 4 confirmed | 3 borderline (K-09, K-13, K-17) | ~7 | GREEN ✓ |
+| Q4 sentiment shift | ≥50% positive shift | 8/20 = 40% | 12/20 = 60% | 20/40 = 50% | AMBER (at threshold) |
+| Distribution willingness (Q6) | ≥40% | 8/20 = 40% | 14/20 = 70% | ~22/40 = 55% | GREEN ✓ |
+| 48h callback | ≥30% of phone-givers | Not conducted | Not conducted | N/A | N/A |
 
-**Overall**: ___ / 4 signals green → Recommendation: PROCEED / ITERATE / SHELVE
+**Overall**: 2 confirmed green (Q6 distribution, behavioral), 1 amber (Q4 at threshold), 1 N/A → **ITERATE, closer to PROCEED than ISB alone suggested**
 
-### Q4 Sentiment Shift (The Critical Metric)
+### City Comparison
 
-| Q3 Reaction (before markup argument) | → Q4 Reaction (after markup argument) | Count | Shifted? |
-|---------------------------------------|---------------------------------------|-------|----------|
-| | | | |
+| Metric | ISB/RWP (n=20) | Karachi (n=20) | Delta |
+|--------|----------------|----------------|-------|
+| Q4 sentiment shift | 40% (8/20) | 60% (12/20) | +20pp Karachi higher |
+| Q6 distribution willing | 40% (8/20) | 70% (14/20) | +30pp Karachi higher |
+| Top barrier | Fraud/scam app memory | Shop-type mismatch + scam | Different primary |
+| Authenticity demand | ~15/20 | ~15/20 | Identical |
+| Behavioral signals | 4 confirmed | 3 borderline | Similar |
 
-### Top Barriers (Ranked by Frequency)
+### Key Karachi-Specific Findings
 
-| Rank | Barrier | Count | Addressable? |
-|------|---------|-------|-------------|
-| 1 | | | |
-| 2 | | | |
-| 3 | | | |
+**What's stronger in Karachi:** Q4 interest rate 2× ISB (60% vs 40%) — markup argument lands harder. Distribution willingness also higher (70% vs 40%).
 
-### Top Unprompted Actions
+**What's the same:** Authenticity certificate demanded by ~15/20 in both cities. Physical possession preference. Fraud/scam frame dominant.
 
-| Action | Count | What it signals |
-|--------|-------|----------------|
-| Asked for launch date | | Timing urgency |
-| Offered phone number | | Wants to be contacted |
-| Called over others | | Social validation seeking |
-| Asked commission specifics | | Revenue thinking |
-| Asked minimum amount | | Accessibility concern |
+**Unique Karachi barriers (not prominent in ISB/RWP):**
+1. **Shop-type mismatch** — 12/20 explicitly stated "meri mobile ki dukaan hai, iska taluq sonay se hai hi nai"
+2. **Purchasing-power ceiling** (K-07, K-11) — customer base argues over Rs 10-15 price differences
+3. **Robbery paranoia** (K-11) — fears word getting out that shop holds digital gold
 
-### Callback Results
+### Top Barriers (Combined n=40)
 
-| Gate | Count | Rate |
-|------|-------|------|
-| Attempted calls | /N | |
-| Picked up (2 attempts) | | % |
-| Remembered pitch | | % |
-| Accepted WhatsApp group | | % |
-
-### Positioning Insights
-
-| Pitch Section | Average Sentiment | Best Verbatim Quote | Worst Verbatim Quote |
-|--------------|-------------------|--------------------|--------------------|
-| A: Core concept (Q3) | | | |
-| B: Markup savings (Q4) | | | |
-| C: Redemption (Q5) | | | |
+| Rank | Barrier | Combined Count | Karachi-Specific? |
+|------|---------|---------------|-------------------|
+| 1 | Fraud/scam app memory | ~18/40 | No (both cities) |
+| 2 | Physical possession anxiety | ~12/40 | No (both cities) |
+| 3 | Shop-type mismatch | ~12/40 | **Yes — primarily Karachi** |
+| 4 | Regulatory/government backing absent | ~10/40 | No (both cities) |
+| 5 | Purchasing-power ceiling | ~6/40 | **Yes — primarily Karachi** |
 
 ### Recommendation
 
-[PROCEED / ITERATE / SHELVE] — [1-2 sentence rationale with data]
+**ITERATE** — Combined n=40 delivers 2 green signals (distribution willingness 55%, behavioral demand). Q4 shift is at threshold (50%). The shop-type mismatch finding from Karachi suggests that Round 3 should target gold-adjacent shops (jewelers, pawn shops, savings agents) rather than generic communications shops. The authenticity/fraud barrier remains constant across both cities and requires institutional resolution.
 
 ### Key Learnings
 
-1. [Learning 1]
-2. [Learning 2]
-3. [Learning 3]
+1. The jeweler markup argument works better in Karachi than ISB (60% vs 40% Q4 shift) — possibly because Karachi merchants have more daily exposure to gold transactions and price fluctuations.
+2. Shop-type mismatch is the dominant Karachi barrier — 12/20 explicitly said their shop has nothing to do with gold. This barrier barely appeared in ISB/RWP. Round 3 must qualify shop type more carefully or pivot to gold-adjacent shops.
+3. Authenticity certificate demand is universal and consistent across both cities — this is not resolvable through pitch improvements alone; it requires a physical artifact or verifiable institutional anchor.
 
 ### Feed-Forward
 
-> "This suggests we should test whether [next hypothesis]. Proposed: EXP-NNN."
+> Round 3 hypothesis: A trust-resolved pitch (institutional anchor + vault certificate physical artifact) delivered to gold-adjacent shops (jewelers, savings agents, pawn shops) in both cities would achieve ≥50% Q4 shift and ≥30% callback conversion. Proposed: EXP-008 Round 3.
 
 ---
 

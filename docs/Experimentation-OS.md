@@ -1,349 +1,319 @@
-# Experiment Report Standard
+# Ground Force Experimentation OS
 
-The canonical structure for all ground force experiment reports. Reports live on Notion (Experiment Tracker database: `304003b8-300d-8105-b1a5-000bb19137b1`). This document defines the report structure and writing rules. Helix reads this as its authoritative source.
-
----
-
-## Experiment States
-
-Every page is in one of three states. The state determines which sections are visible and what the banner says.
-
-| State | Banner Color | Audience | Trigger |
-|-------|-------------|----------|---------|
-| **Planned** | Blue | Merchant sync + internal | Before data collection starts |
-| **In Progress** | Blue | Internal only | Active data collection |
-| **Completed** | Green / Yellow / Red | Merchant sync + internal | Post-verdict |
-
-**Merchant sync rule:** Only **Planned** and **Completed** experiments are shown in the merchant sync. In-Progress pages are for internal alignment only.
-
-### State Banner Formats
-
-- **Planned**: `PLANNED — Starting [date]. [One-line: what we're testing and the question it answers.]`
-- **In Progress**: `IN PROGRESS (Day X/Y) — [Metric so far]. [Trajectory.] ⚠️ [Any blockers]`
-- **Completed**: `SHIP IT / ITERATE / KILL IT — [Primary metric with delta]. [One-line so-what.]`
+> **Last updated:** 2026-02-25
+> **Aligned with:** Empirium experiment data model, Canon/Praxis agent framework
+> **Notion tracker:** `304003b8-300d-815c-825e-c826473dcbeb`
+> **Template page:** [TEMPLATE: Experiment Format v2](https://www.notion.so/TEMPLATE-Experiment-Format-v2-Empirium-Aligned-312003b8300d81aea036ff0937dd2518)
 
 ---
 
-## Page Structure: 3 Layers, 10 Sections
+## 1. Operating Structure
 
-Every report follows a funnel — not a catalog. Each section serves one reader at one depth.
+### Weekly Cycle
+```
+IDENTIFY --> FOCUS --> EXPERIMENT --> LEARN --> REPEAT
+```
 
-### Layer 1 — The Scan (30 seconds, all states)
+| Step | What happens | Who |
+|------|-------------|-----|
+| **IDENTIFY** | Spot anomalies in funnel data, surface strategic questions from Delta teams, review Brandon's research priorities | Turab + Asharib |
+| **FOCUS** | Rank by urgency x leverage x speed-to-insight. Pick highest-impact experiment. | Turab |
+| **EXPERIMENT** | Design experiment (hypothesis, success criteria, MVT). Execute in field. | Turab designs, Qasim executes, Asharib builds data visibility |
+| **LEARN** | Document outcome, update assumptions, feed into playbook | All |
 
-| # | Section | Format | Max Length |
-|---|---------|--------|------------|
-| 0 | **State Banner** | Colored callout (green/yellow/red/blue) | 1-3 sentences |
-| 1 | **Scorecard** | 5-row table | 5 rows, never more |
+### Experiment Sources
+| Source | Description | Example |
+|--------|-------------|---------|
+| Data-driven | Asharib/Turab spot anomalies in funnel data | "90% drop-off between opener and demo -- why?" |
+| Team-directed | Turab/Qasim define experiments based on what we need to learn | "Can we activate merchants in 1 day?" |
+| Strategic | Aligned with Delta teams or Brandon's research priorities | "Would merchants respond to gold as an offering?" |
 
-### Layer 2 — The Read (2 minutes, state-aware)
-
-| # | Section | States | Format | Max Length |
-|---|---------|--------|--------|------------|
-| 2 | **The Experiment** | All | Prose paragraph | ~50 words |
-| 2.5 | **Design Brief** | Intervention experiments only | 1 compact table | 1 table, 3–5 rows |
-| 3 | **Decision Criteria** | All | Simplified decision rules table + 1 plain-English criterion | ~100 words |
-| 4 | **Scale & Confidence** | All | Prose | ~80 words |
-| 5 | **Early Signals** | In-Progress only | Headline callout + comparison table + 1 implication line | ~300 words |
-| 6a | **What Happens Next** | In-Progress only | Single bullet | 1 sentence |
-| 5 | **What We Found** | Completed only | Final comparison table + 2-3 insight callouts | ~400 words |
-| 6 | **What To Do Next** | Completed only | Numbered list with owners | 3-5 bullets |
-
-*Sections 5 and 6 are state-conditional: Early Signals appears only In-Progress; What We Found and What To Do Next appear only Completed.*
-
-### Layer 3 — The Audit (full read, all states, all collapsed)
-
-| # | Section | Format | Always Collapsed |
-|---|---------|--------|-----------------|
-| 7 | **Breakdown Detail** | Toggle with table | Yes |
-| 8 | **How We Tested This** | Toggle: context, hypothesis, design, validity | Yes |
-| 9 | **Decision Contract** | Toggle: decision rules + kill criteria + Planned Actions (In-Progress) | Yes |
-| 10 | **Appendix** | Toggle: raw data, SQL, methodology | Yes |
+### Team Roles
+| Step | Turab | Qasim | Asharib |
+|------|-------|-------|---------|
+| IDENTIFY | Reviews data, defines experiments, maintains backlog | Reports field observations | Pulls data, builds dashboard views |
+| FOCUS | Picks top experiment, writes rationale | Input on field feasibility | Provides data cuts |
+| EXPERIMENT | Designs experiment, sets metrics | Executes in field, ensures compliance | Creates experiment-specific data visibility |
+| LEARN | Documents learnings, presents to leadership | Shares ambassador feedback | Final data pull, analysis |
 
 ---
 
-## Section-by-Section Spec
+## 2. Experiment Lifecycle (Empirium State Machine)
 
-### 0. State Banner
+Every experiment follows a strict state machine. Status and Decision are **separate concepts**.
 
-Full-width colored callout, first thing on the page. Nothing before it.
+### Status States
+```
+Design --> Running --> Analyzing --> Complete
+                                 \-> Abandoned (from any state)
+```
 
-- **Blue = PLANNED** — experiment designed, not yet running
-- **Blue = IN PROGRESS** — live experiment, internal only
-- Green = SHIP IT, Yellow = ITERATE / NEEDS MORE DATA, Red = KILL IT
-- **Gating blockers** get a warning flag inline: if something must be resolved before the experiment can conclude, it goes in the banner, not buried in a toggle
-- **Length**: 1 sentence for Planned. 1-2 sentences for Completed. Up to 3 for IN PROGRESS (status + trajectory + blocker are three distinct elements).
+| Status | What it means | Who sees it |
+|--------|--------------|-------------|
+| **Design** | Experiment designed, not yet running. Hypothesis and success criteria being defined. | Internal only |
+| **Running** | Active data collection in the field. | Internal only |
+| **Analyzing** | Data collection complete. Processing results and forming decision. | Internal only |
+| **Complete** | Decision made. Results documented. | Everyone (syncs, showcases) |
+| **Abandoned** | Stopped early. Reason and learnings documented. | Internal only |
 
-Examples:
-- Planned: `PLANNED — Starting Mar 1. Testing whether structured nighttime routes improve onboardings/hour post-Taraweeh.`
-- In-progress: `IN PROGRESS (Day 5/14) — L1 activation 18% (9/49). Trending toward SUFFICIENT. ⚠️ L2 fraud vulnerability must be mitigated before payout.`
-- Completed: `ITERATE — Q→Demo: 18% → 21% (+3pp), target 45%. Complete 7-day observation by Feb 22.`
-- Multi-part: `MIXED — Pipeline SHIP (22% EOI-to-active vs 20% target). Signals ITERATE (Engagement strong, Communication inconclusive).`
+### Decision (only set when Complete)
+| Decision | Meaning |
+|----------|---------|
+| **Validated** | Hypothesis confirmed. Findings are strong enough to act on. |
+| **Invalidated** | Hypothesis disproved. Evidence shows the intervention doesn't work. |
+| **Inconclusive** | Not enough evidence either way. Need more data or a redesigned experiment. |
+
+### Gate Requirements (status transitions)
+
+Every status transition requires documented rationale. These are the required fields at each gate:
+
+| Transition | Required before moving |
+|------------|----------------------|
+| **Design --> Running** | hypothesis, success_criteria, minimum_viable_test, target_date |
+| **Running --> Analyzing** | preliminary observations, data collection status |
+| **Analyzing --> Complete** | results, decision (validated/invalidated/inconclusive), decision_notes |
+| **Any --> Abandoned** | reason + what_we_learned |
 
 ---
 
-### 1. Scorecard
+## 3. Experiment Database Schema (Notion)
 
-Exactly 5 rows:
+These properties map 1:1 to Empirium's data model for future migration.
+
+| Property | Type | Options / Format |
+|----------|------|-----------------|
+| **Experiment** | title | `EXP-0XX: Name` |
+| **Status** | select | `Design`, `Running`, `Analyzing`, `Complete`, `Abandoned` |
+| **Decision** | select | `Validated`, `Invalidated`, `Inconclusive`, `--` |
+| **Health** | select | `On Track`, `At Risk`, `Off Track` |
+| **Priority** | select | `Urgent`, `High`, `Medium`, `Low` |
+| **Focus** | select | `Merchant Acquisition`, `Merchant Activation`, `Ambassador Recruitment`, `Ambassador Training`, `Expansion`, `Growth` |
+| **Timeframe** | select | `1 Week`, `2 Weeks`, `1 Month`, `1 Quarter` |
+| **Lead** | person | Experiment owner |
+| **Metric** | relation | Linked metric being moved |
+| **Initiative** | relation | Parent strategic initiative |
+| **Start Date** | date | When data collection begins |
+| **Target Date** | date | When decision is expected |
+| **Assumptions** | rich_text | Which assumptions this experiment tests |
+
+---
+
+## 4. Experiment Page Template
+
+Every experiment page in Notion follows this structure. Use the [Notion template page](https://www.notion.so/TEMPLATE-Experiment-Format-v2-Empirium-Aligned-312003b8300d81aea036ff0937dd2518) as your starting point.
+
+### State Banner (callout, top of page)
+
+Full-width colored callout. Nothing before it.
+
+| Color | Status |
+|-------|--------|
+| Blue | Design / Running |
+| Yellow | Analyzing |
+| Green | Complete: Validated |
+| Gray | Complete: Invalidated / Inconclusive |
+| Red | Abandoned |
+
+**Formats:**
+- Design: `DESIGN -- [One-line: what we're testing and what question it answers.]`
+- Running: `RUNNING (Day X/Y) -- [Metric so far]. [Trajectory.]`
+- Analyzing: `ANALYZING -- Data collected. [Key preliminary observation.]`
+- Complete: `VALIDATED / INVALIDATED / INCONCLUSIVE -- [Primary metric with delta]. [One-line so-what.]`
+- Abandoned: `ABANDONED -- [Reason]. [What we learned.]`
+
+### Scorecard (visible, not collapsed)
+
+| Row | Content |
+|-----|---------|
+| **Primary Metric** | `[metric]: Baseline [X] | Current [Y] | Target [Z]` |
+| **Confirmation Metric** | Same outcome measured by a different method, or a post-hoc validity check |
+| **Sample** | Design: `[N target] over [duration]` / Running: `[N collected] of [N target]` / Complete: `[N total] over [actual duration]` |
+
+---
+
+### Toggle Heading: Hypothesis
+
+> IF [intervention], THEN [outcome], BECAUSE [mechanism].
+
+Write a falsifiable, specific hypothesis. This is the experiment's identity. It cannot change after the experiment moves to Running.
+
+---
+
+### Toggle Heading: Success Criteria
+
+Pre-committed before Running. These **cannot change** after data collection begins.
+
+- **Validated if:** [specific measurable condition]
+- **Invalidated if:** [specific measurable condition]
+- **Inconclusive if:** [e.g., insufficient sample, confounding variable]
+
+---
+
+### Toggle Heading: The Experiment
+
+**50 words max.** Answers: what prompted this --> what we're testing --> what decision it informs.
+
+- One number max (the baseline or bottleneck metric)
+- No methodology, no caveats
+- Written for someone who has never seen this experiment
+- Context = 1 number + 1 sentence: the bottleneck that made this necessary
+
+---
+
+### Toggle Heading: Minimum Viable Test
+
+Required before status can move to Analyzing.
+
+- **Intervention:** what's different from the control
+- **Who:** target population and selection criteria
+- **How:** method (A/B, interview, observation, survey)
+- **Duration:** planned timeline
+- **Controls:** what's held constant
+
+---
+
+### Toggle Heading: Results
+
+Required before status can move to Complete.
+
+**What happened**
+Data, numbers, observations. Use standardized funnel terminology -- always prefix conversion rates (e.g., "demo-to-onboarding conversion: 42%", never just "conversion rate: 42%").
+
+**What we learned**
+3 insights max. Each with a "so what?" implication. If you have 4+, pick the 3 that change decisions.
+
+**What we'd do differently**
+Hindsight improvements for future experiments.
+
+**Decision:** Validated / Invalidated / Inconclusive
+**Decision notes:** Rationale for the decision.
+
+---
+
+### Toggle Heading: What Happens Next
+
+- **Next experiment:** [link to follow-up experiment if applicable]
+- **Assumption update:** [which assumption, old confidence --> new confidence]
+- **Implementation:** [what action, who owns it]
+
+---
+
+### Toggle Heading: Detail (collapsed, for audit)
+
+Contains nested toggles:
+
+**Raw Data** -- Full data tables, Google Sheets links, SQL queries, Amplitude dashboards.
+
+**Methodology** -- How we collected data, controlled variables, measured outcomes. Statistical validity assessment. Jargon acceptable here but must include plain-English parenthetical on first use.
+
+**Per-Ambassador Breakdown** -- Individual performance splits. Tier definitions:
+- **Reliable:** n >= 20
+- **Directional:** 5 <= n < 20
+- **Insufficient:** n < 5
+
+**Gate Log** -- All status transitions with rationale and dates.
+
+| Date | From | To | Rationale | By |
+|------|------|-----|-----------|-----|
+| | | | | |
+
+---
+
+## 5. Writing Rules
+
+### Funnel Terminology Standard
+**Always prefix conversion rates.** "Conversion rate: 42%" is banned. Use:
+- "demo-to-onboarding conversion: 42%"
+- "opener-to-demo conversion: 7%"
+- "visit-to-onboarding conversion: 5%"
+- "interested-to-onboarded GP conversion: 12%"
+
+This prevents context poisoning when LLMs process the corpus and when humans read across experiments.
+
+### No Filler
+Delete every sentence that doesn't add information. "It's worth noting that" --> delete. "Interestingly" --> delete. Just state the finding.
+
+### Specificity Standard
+Every number needs a source: "(n=42, Feb 10-14 data)". Every claim needs evidence: "Demo rate increased" --> "Demo rate increased from 7% to 48% (20/42)". Reject "improved" without magnitude.
+
+### Observed Over Reported
+Always flag: (observed) = system/database data, (reported) = ambassador self-report. When they conflict, observed wins. The gap between observed and reported is itself a finding.
+
+### Denominator Rule
+When citing a fraction, always use the full population denominator. If data coverage is partial, state coverage separately.
+
+### Selection Bias Rule
+If any data source has known selection bias, report TWO rates:
+- Comparable rate (excl. biased data) as the headline
+- Pooled rate (incl. biased data) as a parenthetical
+
+### Plain Language
+- **Sections visible to all:** No statistical jargon. No P-values, Beta distributions, CI, MDE. Replace with plain English.
+- **Detail toggles:** Jargon acceptable but must include a plain-English parenthetical on first use.
+- **Test:** Read each sentence aloud. If someone who took one stats course 5 years ago would need to Google a term, add a parenthetical.
+
+### Storytelling Frame
+Every finding must answer "so what?" -- if it doesn't change a decision, cut it. The audience is Turab and Brandon -- they care about decisions, not methodology.
+
+---
+
+## 6. Learnings Structure (Empirium-aligned)
+
+Every completed experiment produces structured learnings:
 
 | Field | Content |
 |-------|---------|
-| Primary Metric | `[metric]: [baseline] → [result] ([delta])` |
-| Confirmation | `[metric]: [value]` — only if it contradicts/qualifies primary |
+| **What happened** | Factual summary of the experiment outcome |
+| **What we learned** | Insights and implications for the business |
+| **What we'd do differently** | Hindsight improvements for future experiments |
 
-Confirmation is for one of two uses only:
-- (A) Same outcome measured by a different method (observed vs. reported)
-- (B) A post-hoc validity check that tests if behavior will persist (e.g., "Do merchants sell again 7 days after the incentive ends?")
-
-Do NOT use Confirmation for a secondary metric that measures a different outcome (e.g., L2 rate is not a confirmation of L1 — it's a separate tier).
-
-| Confidence | `High/Medium/Low — [one-phrase basis]` (not Beta distributions) |
-| Sample | Planned: `"[N target] over [planned duration]"` · In-Progress: `"[N collected] of [N target] ([%] complete)"` · Completed: `"[N total] over [actual duration]"` |
-| Next Step | `[action] (Owner)` |
-
-Rules:
-- No "Experiment" row (that's the page title)
-- No "Verdict" row (that's the banner)
-- Confidence communicates, not calculates: "Medium — 5 ambassadors, directional only" not "P(B>A) = 0.87 via Beta-Binomial"
+Learnings should flag cross-team relevance when applicable (e.g., findings that inform Delta teams).
 
 ---
 
-### 2. The Experiment
+## 7. Assumptions Tracking
 
-2-3 sentences, **50 words max**.
+Experiments test assumptions. Each assumption has a confidence level that updates as evidence accumulates:
 
-- Answers: what prompted this → what we're testing → what question it answers
-- One number max (the headline context metric or baseline)
-- No methodology, no caveats, no "DB-verified" flags
-- Written for someone who has never seen this experiment
-- Context (the "what prompted this") should be 1 number + 1 sentence: the bottleneck, gap, or failure rate that made this experiment necessary. Example: "78% of merchants never sell. Testing whether a small cash incentive closes the 0→1 gap." Do not reference prior experiment versions — state the problem directly.
-- For Completed experiments: add what happened (one clause)
+| Confidence | Meaning |
+|------------|---------|
+| **Zero** | No evidence at all |
+| **Unknown** | Haven't tested this |
+| **Low** | Some evidence, not enough to act |
+| **Medium** | Enough evidence for directional decisions |
+| **High** | Strong evidence, safe to build on |
 
----
+Categories: `business_model`, `customer`, `market`, `technical`, `operational`, `financial`
 
-### 2.5. Design Brief (Intervention experiments only)
-
-**When to use:** Any experiment where the treatment mechanics need to be understood before the decision criteria make sense. Use for: incentive tiers, message templates, training protocols, pricing structures. Skip for observation-only experiments.
-
-**Format:** 1 compact table. Section title adapts:
-- Incentive experiments → **"The Offer"**
-- Messaging experiments → **"The Message"**
-- Training experiments → **"The Protocol"**
-
-**Rules:**
-- 1 table max, 3–5 rows
-- For incentives: Level | What Merchant/Person Does | Reward
-- Include 1–2 footnote lines: what counts, what doesn't, delivery method
-- If tiers stack or have a cap, state it in one line below the table
-- No fraud rules, validity caveats, or cost models here — those go in toggles
+When an experiment completes, update the linked assumption's confidence level and note the evidence.
 
 ---
 
-### 3. Decision Criteria
+## 8. Brandon's Three Priority Metrics
 
-**All states.** Pulled out of the Decision Contract toggle — visible to every reader.
+These are the three metrics with the most room for improvement (identified Feb 20, 2026 Friday sync). All experiments should ladder up to at least one:
 
-**Format:**
-1. A simplified 2-3 row table: Result → Verdict → plain-English Action (no stats jargon)
-2. One plain-English criterion sentence: "If X happens, we'll Y."
-
-Rules:
-- No row colors in the Decision Criteria table — the text labels (SHIP IT / ITERATE / KILL IT) carry the signal. Colors create visual noise when the table is already readable.
-- Row colors are reserved for Breakdown Detail (Layer 3) where color encodes tier or cohort performance at a glance across many rows.
-- No MDE, no P-values, no Beta distributions in this section
-- Each row must be a clear observable outcome, not a statistical threshold
+1. **Interested GP --> Onboarded GP** (hiring funnel conversion)
+2. **Opener --> Demo** (merchant acquisition first contact)
+3. **Demo --> Onboarded Merchant** (merchant conversion)
 
 ---
 
-### 4. Scale & Confidence
+## 9. Data Sources
 
-**All states.** Two components, **80 words max total**:
-
-1. **Sample progress** — "X [collected/logged] of Y needed (Z% of target). At current pace, [on track for date / behind by N days]." For Planned: "We need X over Y days." For Completed: "X total over Y days."
-
-2. **Validity + Actionability** — 1-2 sentences: state the design type in plain English, then say what findings will and won't support.
-   - Observational: "Ambassadors chose their own hours — findings are directional. Enough to decide Phase 2; not enough to permanently restructure operations."
-   - Controlled (RCT): "Randomly assigned — findings are causal. Sufficient to act."
-   - Time-split: "Pre/post comparison — trends could explain part of any improvement."
-
-Rules:
-- No jargon: "statistical power" → "confident enough to act"; "MDE" → "the minimum difference we care about"; "confound" → "other factors that could explain the result"
-- Use SUFFICIENT / WEAK / INSUFFICIENT as a 1-word header if helpful
+- **Visit form:** Google Sheet `1bFf0NAQFFXIYYxMC1yJeqowRz6MwT_-xawZeg5H9wUQ` / "Visits" tab
+- **CRITICAL:** Filter by Visit Type = "New Onboarding" (column G) -- excludes Revisit type visits
+- **Onboarded** = Column AD "Merchant Wants To Onboard" (TRUE/Yes)
+- **Demo** = Golden Flow Amount column (any non-null value)
+- **PostgreSQL** via Metabase -- backend transaction and user data
+- **Amplitude** -- app analytics (app opens, sessions)
 
 ---
 
-### 5. Early Signals [In-Progress only]
+## 10. Where This Lives
 
-Preliminary data. **Insight-first order** — the headline is the point; the table proves it.
-
-**Structure (in this order):**
-1. **Headline callout** — one bold sentence: the single most important thing the data shows so far. Mark *(preliminary)* at the end of the header. Color matches direction: blue = neutral/watch, yellow = caution, green = positive signal. Format: bold statement → *Evidence: [data]* → [implication in one line]
-
-2. **One comparison table** — Baseline vs Current (side-by-side epochs). Even when current is still accumulating, the column structure must be present from day one. Use "—" for empty cells. Footer: *"Need X [visits] for confidence; Y logged so far (Day N/total)."*
-
-   Required columns:
-   | Window | Baseline visits | Baseline rate | Current visits | Current rate | vs. Target |
-
-3. **One implication line** — plain prose, max 20 words: "→ [what this means for the decision when current data fills in]"
-
-Cap: **1 headline callout + 1 table + 1 implication line.** No additional callouts.
-
----
-
-### 6a. What Happens Next [In-Progress only]
-
-Single sentence: "[Data collection action] by [Date]. [Who updates the page]."
-
-Example: "Final L1/L2/L3 counts on Feb 28 once all windows close. Asharib updates this page with verdict."
-
-Rule: The deadline belongs in the Scorecard (row 5) and here — NOT in the State Banner. The banner states the blocker; the Scorecard and this section state the timeline.
-
----
-
-### 5. What We Found [Completed only]
-
-Two components:
-
-**One comparison table** (max 4 rows): before vs after, or treatment vs control. Mark metrics (observed) or (reported) inline.
-
-**2-3 insight callouts** using the INSIGHT/Evidence/Implication format. Each insight gets a different-colored callout (blue, yellow, green). Goodhart checks, temporal stability, and heterogeneity findings become insights here — not a separate section.
-
-Cap: **3 insights maximum.** If you have more, pick the 3 that change decisions.
-
----
-
-### 6. What To Do Next [Completed only]
-
-Numbered list, 3-5 items.
-
-- Each item: **bold action** + context + (Owner)
-- Feed-forward (next experiment proposal) is the last bullet, not a separate section
-- No conditional trees — if the decision isn't made yet, say "Decide at [date] sync"
-
-**Multi-part decisions** (e.g., pipeline + signals, multiple channels): use a mini decision table before the action list:
-
-| Component | Verdict | Action |
-|-----------|---------|--------|
-| Pipeline (EOI→active) | SHIP (22%) | Scale to next cohort |
-| Signal: Engagement | SHIP | Embed in flyer + interview |
-| Signal: Communication | ITERATE | Needs larger sample |
-
----
-
-### 7. Breakdown Detail (collapsed toggle)
-
-Adapts by experiment type:
-
-- **Funnel experiments**: per-ambassador table with tier labels (Reliable/Directional/Insufficient)
-- **Hiring experiments**: per-channel or per-signal table
-- **Incentive experiments**: per-tier or per-merchant-cohort table
-
-Rules:
-- Single consolidated table (pre + post as columns, not separate tables)
-- Tier/color labels as colored row backgrounds
-- Summary callout placed **ABOVE the toggle** (visible without expanding) with the pooled top-line result
-- Section title adapts: "Per-Ambassador Detail" / "Channel Breakdown" / "Tier Breakdown"
-- **Never show the same table in Layer 2 AND here.** The detailed version lives in this toggle; the summary lives in What We Found.
-- **Tier data is required** whenever the dashboard computes per-recipient or per-ambassador tiers — include the full tier breakdown here even if the visible layer only references the aggregate. This is operational output that field leads need.
-
-Tier definitions for ambassador breakdowns:
-- **Reliable**: n ≥ 20
-- **Directional**: 5 ≤ n < 20
-- **Insufficient**: n < 5
-
----
-
-### 8. How We Tested This (collapsed toggle)
-
-Contains (~400 words total):
-- **Context**: what prompted the experiment (1-2 paragraphs)
-- **Formal hypothesis** (IF/THEN/BECAUSE) or research question
-- **Design**: split type, treatment/control, duration
-- **Assumption check** (5 questions, answered inline)
-- **Statistical validity** table + verdict + any clustering/confound discussion
-
----
-
-### 9. Decision Contract (collapsed toggle)
-
-- **Decision Rules** table (3-4 rows, colored: green for SHIP IT, yellow for ITERATE, red for KILL IT)
-- **Kill Criteria** table (3-4 rows)
-- **Planned Actions** subsection [In-Progress only] — numbered list of actions pre-committed for when the experiment concludes. Owners assigned in advance.
-
----
-
-### 10. Appendix (collapsed toggle)
-
-- Raw data tables
-- SQL queries used
-- Methodology notes (Beta distributions, ICC, design effects — all the math lives here)
-- Excluded data and rationale
-- Baseline detail tables
-
----
-
-## No-Redundancy Rule
-
-- Verdict appears **ONCE** (banner)
-- Primary metric baseline/result appears **ONCE** (scorecard)
-- Never repeat the same data point across sections
-
----
-
-## Writing Rules
-
-### No Filler
-Delete every sentence that doesn't add information. "It's worth noting that" → delete. "Interestingly" → delete. Just state the finding. If a section has nothing meaningful, write "No findings" — don't pad it.
-
-### Specificity Standard
-Every number needs a source: "(n=42, Feb 10-14 data)". Every claim needs evidence: "Demo rate increased" → "Demo rate increased from 7% to 48% (20/42)". Reject "improved" without magnitude. Reject "significant" without statistical test.
-
-### Observed Over Reported
-Always flag: (observed) = system/database data, (reported) = ambassador self-report. When they conflict, observed wins. Note the discrepancy — the gap between observed and reported is itself a finding.
-
-### 50-Word Cap on The Experiment
-Count words. If over 50, cut. Methodology and caveats belong in the toggle, not here.
-
-### 1-Callout Cap on Early Signals
-In-Progress pages: max 1 headline callout. It must include *(preliminary)* in the header. Treat as a hypothesis, not a finding.
-
-### 3-Insight Cap on What We Found
-Completed pages: if you have 4+ insights, pick the 3 that change decisions. The rest go in the Appendix.
-
-### Toggle Test
-"Can a non-data reader make the correct decision without this section?" If yes → it belongs in a collapsed toggle (Layer 3). If no → it stays visible (Layer 1 or 2).
-
-### Denominator Rule
-When citing a fraction, always use the full population denominator. If data coverage is partial, state coverage separately:
-- ❌ "29/33 covered non-onboarded" (reader confuses 33 with a different cohort)
-- ✅ "29/35 non-onboarded (83%). Amplitude coverage: 33/35."
-
-### Selection Bias Rule
-If any data source has known selection bias (e.g., ambassador only logs successes), report TWO rates:
-- Comparable rate (excl. biased data) as the headline
-- Pooled rate (incl. biased data) as a parenthetical
-- ❌ "49% onboarding rate" (inflated by biased ambassador)
-- ✅ "35% comparable (17/49, Arslan+Zahid), 49% pooled (33/68, incl. Owais selection bias)"
-
-### No-Duplicate Table Rule
-Never show the same table in Layer 2 and Layer 3. If a table appears in "What We Found," it does NOT appear in "Breakdown Detail." The detailed version lives in the toggle; the summary lives in Layer 2.
-
-### Tier Data Rule
-If the dashboard computes per-recipient or per-ambassador tiers, the Notion report MUST include the full tier breakdown in the Breakdown Detail toggle — even if the visible layer only references the aggregate. This is operational output that field leads need.
-
-### Narrative Quality
-Write for people who will skim. Bold the verdict, bold the key numbers. Use tables for comparison, prose for interpretation. One insight per callout. No compound insights.
-
-### Plain Language in Layers 1-2
-
-**Layer 1-2 (visible)**: No statistical jargon. No P values, Beta distributions, CI, MDE, ICC, power, priors/posteriors, credibility intervals. Replace with plain English: "Bayesian sequential monitor" → "daily comparison tracker"; "informative priors" → "pre-existing historical data"; "CIs non-overlapping" → "ranges don't overlap".
-
-**Layer 3 (toggles)**: Jargon is acceptable but **must include a plain-English parenthetical on first use**. The reader may not have seen these concepts in months. Examples:
-- "Beta(21, 470) prior" → "Beta(21, 470) prior (encoding 20 onboardings from 489 daytime visits — the more data, the narrower the range)"
-- "P(Night>Day) > 0.95" → "P(Night>Day) > 0.95 (95% chance nighttime truly outperforms daytime)"
-- "Informative priors" → "informative priors (using historical data as a starting point instead of starting from scratch)"
-- "Sequential monitoring" → "sequential monitoring (checking results daily as data accumulates, instead of waiting until the end)"
-
-**Test**: Read each sentence aloud. If someone who took one stats course 5 years ago would need to Google a term, add a parenthetical.
-
-### Storytelling Frame
-Executive summaries for syncs follow: what happened → what needs attention → what we learned. Every finding should answer "so what?" — if it doesn't change a decision, cut it. The audience is Turab and Brandon (CEO) — they care about decisions, not methodology.
+- **Notion** -- Experiment Tracker database (primary experiment pages and reports)
+- **GitHub** -- `ashmusawwir/ground-force-experiments` (code, analysis scripts, experiment cards)
+- **Empirium** -- Future system of record (this Notion structure is designed to migrate cleanly)
+- **Wednesday Sync** -- Mid-week update for Brandon/Daniel
+- **Friday Showcase** -- Weekly presentation of experiment journey and findings

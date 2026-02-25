@@ -70,7 +70,7 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 
 | ID | Directory | Pattern | What it tests |
 |----|-----------|---------|---------------|
-| EXP-000 | Notion-only | C | Merchants as user-acquisition channel — CAC and retention analysis |
+| EXP-000 | `exp-000-merchant-network/` | B | Merchants as user-acquisition channel — CAC and retention analysis |
 | EXP-001 | `exp-001-show-dont-tell/` | A | Demo-first opener vs verbal pitch |
 | EXP-002 | `exp-002-social-proof-map/` | A | Showing nearby-merchant map at opener |
 | EXP-004 | `exp-004-merchant-activation/` | B (queries only) | Tiered cash incentive to activate dormant merchants |
@@ -83,13 +83,17 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 | EXP-018 | `exp-018-direct-to-training/` | C | Direct-to-training hiring sprint |
 | EXP-019 | `exp-019-channel-yield/` | C | Which sourcing channels produce hires |
 | EXP-020 | `exp-020-ramadan-timing/` | A | Ramadan visit timing: daytime vs post-Taraweeh nighttime |
-| — | `merchant-user-onboardings/` | B | Merchant onboarding, activation, retention dashboard |
 
 ## Experiment Quick Reference
 
 ### EXP-000: Merchants Growing the ZAR Network
 
 - **Status:** Complete
+- **Files:** `exp-000-merchant-network/` (Pattern B standard files)
+- **Queries:** `merchant_static_query()`, `user_onboardings_query()`, `user_activations_query()`, `merchant_daily_activity_query()`, `user_txn_breakdown_query()`, `user_invitations_query()`, `user_first_transactions_query()`, `user_cycling_query()`, `rapid_onboarding_query()`, `cycling_timing_query()`, `merchant_fraud_summary_query()`, `merchant_retention_query()`
+- **Cache arrays:** `merchant_static`, `user_onboardings`, `user_activations`, `merchant_daily_activity`, `user_txn_breakdown`, `user_invitations`, `user_first_transactions`, `user_cycling`, `rapid_onboarding`, `cycling_timing`, `merchant_fraud_summary`, `merchant_retention`
+- **Run:** `cd exp-000-merchant-network && python3 run.py --json <cache.json>`
+- **Output:** `network_growth_through_merchants.html`
 - **Notion page:** `306003b8-300d-819a-bc08-f31aa413765e`
 - **Finding:** Merchants onboarded 1,164 users (40 merchants), but 97.4% never return to transact. Merchants are a transaction channel, not an acquisition channel. CAC $0.82.
 
@@ -148,11 +152,6 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 - **Experiment card:** `deprecated/exp-009-directed-day/exp-009-directed-day.md`
 - **Queries:** `reactivation_targets_query()`, `onboarding_status_check_query()`, `onboarding_outcome_query()`, `reactivation_outcome_query()`, `pool_health_query()`
 - **Run:** `cd deprecated/exp-009-directed-day && python3 run.py --json targets_cache.json` (dashboard) or add `--generate` (generate routes + dashboard)
-
-### Merchant-User Onboardings (dashboard)
-
-- **Files:** `merchant-user-onboardings/` (Pattern B standard files)
-- **Run:** `cd merchant-user-onboardings && python3 run.py --json <cache.json>`
 
 ### EXP-018 + EXP-019: Hiring Sprint
 
@@ -230,8 +229,8 @@ from lib.sql import EXCLUDED_IDS_SQL, merchants_cte, ambassadors_cte
 | Function | Signature | Returns CTE(s) | Used by |
 |----------|-----------|----------------|---------|
 | `ambassadors_cte` | `()` | `ambassadors` | exp-007-demo-dollars, exp-006-question-redirect |
-| `merchants_cte` | `(city=None, since=None)` | `mos_merchants`, `pe_merchants`, `merchants`; + `qualifying` if `since` set | merchant-user-onboardings, exp-009-directed-day, exp-004-merchant-activation |
-| `merchant_sales_cte` | `()` | `merchant_sales` (ZCE orders + CashExchange) | exp-004-merchant-activation, exp-009-directed-day, merchant-user-onboardings |
+| `merchants_cte` | `(city=None, since=None)` | `mos_merchants`, `pe_merchants`, `merchants`; + `qualifying` if `since` set | exp-000-merchant-network, exp-009-directed-day, exp-004-merchant-activation |
+| `merchant_sales_cte` | `()` | `merchant_sales` (ZCE orders + CashExchange) | exp-004-merchant-activation, exp-009-directed-day, exp-000-merchant-network |
 | `demo_dollars_cte` | `()` | `demo_dollars` (requires `ambassadors` CTE in scope) | exp-007-demo-dollars |
 | `is_onboarded_check` | `(user_id_col, phone_col)` | Boolean expression (not a CTE) | exp-007-demo-dollars |
 
@@ -249,7 +248,7 @@ Every SQL query function in the repo is importable from `lib/queries.py`. Use th
 from lib.queries import recipient_overview_query, pool_health_query  # etc.
 ```
 
-Covers: EXP-004, EXP-006, EXP-007, EXP-009, and all merchant-user-onboardings queries.
+Covers: EXP-000, EXP-004, EXP-006, EXP-007, EXP-009.
 
 ## DB Schema
 
@@ -350,6 +349,24 @@ Covers: EXP-004, EXP-006, EXP-007, EXP-009, and all merchant-user-onboardings qu
 - Colored table rows: `<tr color="green_bg">`, `yellow_bg`, `red_bg`, `blue_bg`
 - Toggle headings: `## Heading {toggle="true"}` with tab-indented children (no color attribute — headings render in black)
 - Tables: `<table header-row="true">` with `<colgroup>/<col width="N">` for column widths
+
+## Notion Editing Rules
+
+- When editing Notion pages, act directly on the page — do not write to a local file first.
+- Use HTML tables (not pipe-tables) with `<td>` on separate tab-indented lines per Notion spec.
+- Never use emoji circles or decorative formatting — keep it professional and clean.
+- Keep content concise: use final numbers and verdicts, not verbose templates.
+- Always verify after editing: re-read the page to confirm no missed items (e.g., leftover stale mentions, wrong status values).
+
+## Verbosity
+
+Be concise. Prefer final data, clean numbers, and verdicts — not detailed templates, exhaustive explanations, or lengthy writeups. When updating docs or reports, default to tight, executive-style prose unless told otherwise.
+
+## Tools & Integrations
+
+### MCP Integrations
+
+Available MCP servers include Google Drive (via Rube), Notion, Slack, Linear, Figma, and others. Check available MCP tools before saying you can't access a service. Use `ToolSearch` if unsure what's available.
 
 ## Glossary
 
