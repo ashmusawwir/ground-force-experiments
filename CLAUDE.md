@@ -16,6 +16,8 @@ Standalone experiment tracking for Zar's ground force (field ambassador) team. E
 
 **Where to find experiment details:** Each experiment with code has an experiment card (`.md` file in its directory) with hypothesis, decision rules, design decisions, and findings. Empirium is the source of truth for status, findings, and decisions. CLAUDE.md maps files, run commands, and Empirium IDs — not narratives.
 
+**Hypothesis rules:** Every experiment hypothesis must be falsifiable — if no result can disprove it, rewrite until one can. On Empirium, the experiment **name** (title) IS the hypothesis (e.g., "Revisiting demoed merchants on day 2+ converts higher than single-visit"). Short noun-phrase titles go in the description header, not the name field.
+
 ## Architecture Patterns
 
 ### Pattern A: Sheet-Based Funnel
@@ -74,15 +76,17 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 | EXP-001 | `exp-001-show-dont-tell/` | A | Demo-first opener vs verbal pitch | — |
 | EXP-002 | `exp-002-social-proof-map/` | A | Showing nearby-merchant map at opener | — |
 | EXP-004 | `exp-004-merchant-activation/` | B (queries only) | Tiered cash incentive to activate dormant merchants | — |
+| EXP-005 | Notion-only | C | Growth Partner Incentive Model | — |
 | EXP-006 | `exp-006-question-redirect/` | A | Universal redirect phrase for Q→Demo | — |
-| EXP-007 | `exp-007-demo-dollars/` | B | What demo-dollar recipients did | — |
+| EXP-007 | `exp-007-demo-dollars/` | A | Post-demo retargeting — do revisited merchants convert higher | EXP-005 |
 | EXP-008 | `exp-008-gold-market-research/` | C | Merchant demand for digital gold | EXP-003 |
-| EXP-009 | `deprecated/exp-009-directed-day/` | B | Structured daily task lists with geo-clustered visits *(deprecated)* | — |
-| EXP-010 | `exp-010-demo-shadow/` | C | Observational shadow of ambassador demos to identify execution gaps | — |
-| EXP-011–017 | Notion-only | C | See Notion-only experiments below | — |
-| EXP-018 | `exp-018-direct-to-training/` | C | Direct-to-training hiring sprint | — |
-| EXP-019 | `exp-019-channel-yield/` | C | Which sourcing channels produce hires | — |
-| EXP-020 | `exp-020-ramadan-timing/` | A | Ramadan visit timing: daytime vs post-Taraweeh nighttime | — |
+| EXP-009 | `exp-009-demo-shadow/` | C | Observational shadow of ambassador demos to identify execution gaps | — |
+| EXP-010 | `exp-010-channel-yield/` | C | Which sourcing channels produce hires + flyer optimization | — |
+| EXP-011 | Notion-only | C | Growth Partner Referrals | — |
+| EXP-012 | Notion-only | C | University Students Outreach | — |
+| — | `deprecated/exp-009-directed-day/` | B | Structured daily task lists with geo-clustered visits *(deprecated, was EXP-009)* | — |
+| — | `deprecated/exp-018-direct-to-training/` | C | Direct-to-training hiring sprint *(deprecated)* | — |
+| — | `deprecated/exp-020-ramadan-timing/` | A | Ramadan visit timing: daytime vs post-Taraweeh nighttime *(deprecated)* | — |
 
 ## Experiment Quick Reference
 
@@ -134,18 +138,15 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 - **Run:** `cd exp-006-question-redirect && python3 run.py` (sheet-only) or `python3 run.py --json db_status.json` (DB-verified)
 - **Output:** `question_redirect.html`
 
-### EXP-007: Demo Dollars
+### EXP-007: Post-Demo Retargeting
 
-- **Files:** `exp-007-demo-dollars/` (Pattern B standard files)
-- **Queries:** `recipient_overview_query()`, `note_distribution_query()`, `recipient_activity_query()`, `ambassador_summary_query()`, `recipient_timing_query()`, `demo_merchant_transactions_query()`, `time_to_first_tx_query()`, `all_activity_timestamps_query()`, `note_detail_query()`
-- **Cache arrays:** `recipient_overview`, `note_distribution`, `recipient_activity`, `ambassador_summary`, `app_opens`, `recipient_timing`, `app_opens_detailed`, `merchant_transactions`, `time_to_first_tx`, `all_activity_timestamps`, `note_detail`
-- **Run:** `cd exp-007-demo-dollars && python3 run.py --json <cache.json>`
-- **Empirium ID:** — (pending)
+- **Files:** `exp-007-demo-dollars/` (Pattern A standard files)
+- **Experiment card:** `exp-007-demo-dollars/exp-007-post-demo-retargeting.md`
+- **Empirium ID:** EXP-005
 - **Notion page (archive):** `306003b8-300d-8118-a728-f93f4f321d6e`
-- **Note:** `app_opens` and `app_opens_detailed` sourced from Amplitude (not SQL) — see Rube MCP section
-- **`app_opens_detailed` format:** Flat rows `{recipient_id, event_type, event_time, hours_after_demo}` — NOT pre-grouped by recipient. `buildIndexes()` in `app.js` groups them into `{recipient_id, opens: [...]}` at runtime.
-- **Business name resolution:** Dual MOS join in SQL (phone match + `merchant_id` fallback) → visits sheet enrichment in `run.py` (Google Sheet `1bFf0NAQFFXIYYxMC1yJeqowRz6MwT_-xawZeg5H9wUQ`, col N=Shop Name, col P=Merchant Phone)
-- **`recipient_overview_query()` dual MOS join:** Primary join on `mos.phone_number = u.phone_number`, fallback join on `mos_mid.merchant_id = rb.recipient_id` (only when primary misses). Select uses `coalesce(mos.business_name, mos_mid.business_name)`
+- **Run:** `cd exp-007-demo-dollars && python3 run.py`
+- **Output:** `post_demo_retargeting.html`
+- **Analysis:** Retrospective — groups onboarding visits by merchant phone, compares conversion of retargeted (2+ visit days) vs not-retargeted merchants from the "retarget pool" (demoed but not onboarded on first visit)
 
 ### EXP-008: Digital Gold Market Research
 
@@ -153,69 +154,46 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 - **Empirium ID:** EXP-003
 - **Notion page (archive):** `306003b8-300d-817c-9221-d858c9638c36`
 
-### EXP-009: Directed Day *(deprecated)*
+### Directed Day *(deprecated, was EXP-009)*
 
 - **Files:** `deprecated/exp-009-directed-day/` — `run.py`, `queries.py`, `task_generator.py`, `ui/` (Pattern B)
 - **Experiment card:** `deprecated/exp-009-directed-day/exp-009-directed-day.md`
-- **Empirium ID:** — (pending)
 - **Queries:** `reactivation_targets_query()`, `onboarding_status_check_query()`, `onboarding_outcome_query()`, `reactivation_outcome_query()`, `pool_health_query()`
 - **Run:** `cd deprecated/exp-009-directed-day && python3 run.py --json targets_cache.json` (dashboard) or add `--generate` (generate routes + dashboard)
 
-### EXP-018 + EXP-019: Hiring Sprint
+### EXP-009: Demo Shadow
 
-EXP-018 (pipeline) and EXP-019 (channel yield) share a single tracking sheet and run as one sprint.
-
-- **Experiment cards:** `exp-018-direct-to-training/exp-018-direct-to-training.md`, `exp-019-channel-yield/exp-019-channel-yield.md`
-- **Artifacts:** `exp-018-direct-to-training/flyers/growth-partner-flyer.html`, `exp-018-direct-to-training/flyers/growth-partner-flyer-ur.html` (Urdu variant), `exp-018-direct-to-training/flyers/sheet-guide.html`
-- **PNG renders:** `exp-018-direct-to-training/flyers/growth-partner-flyer.png`, `exp-018-direct-to-training/flyers/growth-partner-flyer-ur.png`
-- **Tracking sheet:** `1Y3o_BfXk3rdREHEpLc3SBdwWFJd4DfKmuf0hwh-BZYI` — tabs: "Feb 18 Onwards" (pipeline), "Broadcast Log" (flyer tracking)
-- **Empirium ID:** EXP-018: — (pending), EXP-019: — (pending)
-- **Notion pages (archive):** EXP-018 `30a003b8-300d-816a-9f2d-da9328a7f891`, EXP-019 `30a003b8-300d-8183-b8f1-e65d3d1b2e6f`
-
-### EXP-020: Ramadan Visit Timing
-
-- **Files:** `exp-020-ramadan-timing/` (Pattern A standard files + time bucketing extensions)
-- **Experiment card:** `exp-020-ramadan-timing/exp-020-ramadan-timing.md`
-- **Empirium ID:** — (pending)
-- **Notion page (archive):** `30c003b8-300d-81b5-b044-cc2fd2e52d90`
-- **Run:** `cd exp-020-ramadan-timing && python3 run.py`
-- **Output:** `ramadan_timing.html`
-- **Key extensions over standard Pattern A:**
-  - City-aware time bucketing (Karachi vs Lahore Iftar/Taraweeh times)
-  - `fetch_tagging()` — reads "tagging" tab for ambassador→city mapping
-  - `split_by_ramadan()` — pre-Ramadan vs Ramadan period split
-  - `split_by_window()` — daytime/evening/nighttime classification
-  - `detect_batch_logging()` — flags 3+ visits within 5 min
-  - Bayesian P(night > day) comparison — both uninformative and informative priors
-  - `bayesian_p_with_prior()` — pre-Ramadan data as informative Beta priors (20/489 day, 50/622 evening)
-  - `bayesian_p_vs_baseline()` — one-sample P(Ramadan night ≥ pre-Ramadan evening 8%)
-  - `sequential_credibility()` — daily cumulative P trajectory for sequential monitoring
-  - `credibility_estimate()` — linear extrapolation of days to P > 0.95
-  - Hourly heatmap (ambassador × hour grid)
-  - Weekly trend for cumulative fatigue tracking
-
-### EXP-010: Demo Shadow
-
-- **Files:** `exp-010-demo-shadow/shadow-experiment-v2.pdf`
+- **Files:** `exp-009-demo-shadow/shadow-experiment-v2.pdf`
 - **Empirium ID:** — (pending)
 - **Notion page (archive):** `309003b8-300d-8100-8420-ec6c6be3737c`
 - **Status:** Draft (planned)
 - **Design:** Observational shadow of 4 ambassadors × 3 visits (12 sessions) to identify execution gaps behind 20–25% demo rate. Non-intervention, directional findings only.
 
-### Notion-Only Experiments (EXP-011 — EXP-017)
+### EXP-010: Channel Yield + Flyer Optimization
 
-**Pakistan Pitch & Training:**
-- EXP-011: WhatsApp Follow-Up — 2h post-demo WhatsApp template
-- EXP-012: Preemptive Pitch — 15s "how it works" explanation before demo
+- **Files:** `exp-010-channel-yield/` (Pattern C)
+- **Experiment card:** `exp-010-channel-yield/exp-010-channel-yield.md`
+- **Tracking sheet:** `1Y3o_BfXk3rdREHEpLc3SBdwWFJd4DfKmuf0hwh-BZYI` — tabs: "Feb 18 Onwards" (pipeline), "Broadcast Log" (flyer tracking)
+- **Empirium ID:** — (pending)
+- **Note:** Originally EXP-019. Ran in parallel with EXP-018 (now deprecated).
 
-**Bangladesh Market Entry:**
-- EXP-013: Market Structure Mapping — 30 interviews across 3 Dhaka zones
-- EXP-014: Tracking Infrastructure — forms, GPS, timezone for BD
-- EXP-015: Pitch A/B — savings vs remittance framing
-- EXP-016: Cross-Market Benchmark — PK vs BD funnel comparison
+### EXP-018: Direct-to-Training *(deprecated)*
 
-**Hiring & Recruitment:**
-- EXP-017: Top Performer DNA — pre-hire trait profiling (r > 0.5 threshold)
+- **Files:** `deprecated/exp-018-direct-to-training/` — experiment card + flyers
+- **Artifacts:** `deprecated/exp-018-direct-to-training/flyers/growth-partner-flyer.html`, Urdu variant, `sheet-guide.html`
+- **PNG renders:** `deprecated/exp-018-direct-to-training/flyers/growth-partner-flyer.png`, `deprecated/exp-018-direct-to-training/flyers/growth-partner-flyer-ur.png`
+
+### EXP-020: Ramadan Visit Timing *(deprecated)*
+
+- **Files:** `deprecated/exp-020-ramadan-timing/` (Pattern A standard files + time bucketing extensions)
+- **Experiment card:** `deprecated/exp-020-ramadan-timing/exp-020-ramadan-timing.md`
+- **Run:** `cd deprecated/exp-020-ramadan-timing && python3 run.py`
+
+### Notion-Only Experiments
+
+- EXP-005: Growth Partner Incentive Model
+- EXP-011: Growth Partner Referrals
+- EXP-012: University Students Outreach
 
 ## Shared SQL Library — `lib/sql.py`
 
@@ -240,8 +218,8 @@ from lib.sql import EXCLUDED_IDS_SQL, merchants_cte, ambassadors_cte
 | Function | Signature | Returns CTE(s) | Used by |
 |----------|-----------|----------------|---------|
 | `ambassadors_cte` | `()` | `ambassadors` | exp-007-demo-dollars, exp-006-question-redirect |
-| `merchants_cte` | `(city=None, since=None)` | `mos_merchants`, `pe_merchants`, `merchants`; + `qualifying` if `since` set | exp-000-merchant-network, exp-009-directed-day, exp-004-merchant-activation |
-| `merchant_sales_cte` | `()` | `merchant_sales` (ZCE orders + CashExchange) | exp-004-merchant-activation, exp-009-directed-day, exp-000-merchant-network |
+| `merchants_cte` | `(city=None, since=None)` | `mos_merchants`, `pe_merchants`, `merchants`; + `qualifying` if `since` set | exp-000-merchant-network, deprecated/exp-009-directed-day, exp-004-merchant-activation |
+| `merchant_sales_cte` | `()` | `merchant_sales` (ZCE orders + CashExchange) | exp-004-merchant-activation, deprecated/exp-009-directed-day, exp-000-merchant-network |
 | `demo_dollars_cte` | `()` | `demo_dollars` (requires `ambassadors` CTE in scope) | exp-007-demo-dollars |
 | `is_onboarded_check` | `(user_id_col, phone_col)` | Boolean expression (not a CTE) | exp-007-demo-dollars |
 
@@ -259,7 +237,7 @@ Every SQL query function in the repo is importable from `lib/queries.py`. Use th
 from lib.queries import recipient_overview_query, pool_health_query  # etc.
 ```
 
-Covers: EXP-000, EXP-004, EXP-006, EXP-007, EXP-009.
+Covers: EXP-000, EXP-004, EXP-006, EXP-007, deprecated Directed Day.
 
 ## DB Schema
 
@@ -334,19 +312,7 @@ Covers: EXP-000, EXP-004, EXP-006, EXP-007, EXP-009.
 | EXP-006 | `306003b8-300d-8195-b35c-e9d072bd8d24` |
 | EXP-007 | `306003b8-300d-8118-a728-f93f4f321d6e` |
 | EXP-008 | `306003b8-300d-817c-9221-d858c9638c36` |
-| EXP-010 | `309003b8-300d-8100-8420-ec6c6be3737c` |
-| EXP-011 | `309003b8-300d-815c-9f49-d830d0be7ff5` |
-| EXP-012 | `309003b8-300d-8180-b1b6-f23367b57a52` |
-| EXP-013 | `309003b8-300d-8194-9a9c-f377f3426b51` |
-| EXP-014 | `309003b8-300d-8188-9e86-c0f999021fa0` |
-| EXP-015 | `309003b8-300d-81f8-a7eb-ca9409b163d4` |
-| EXP-016 | `309003b8-300d-81e4-8105-fcc7e9f7688d` |
-| EXP-017 | `309003b8-300d-8117-ad4d-c5323ab320b1` |
-| EXP-018 | `30a003b8-300d-816a-9f2d-da9328a7f891` |
-| EXP-019 | `30a003b8-300d-8183-b8f1-e65d3d1b2e6f` |
-| EXP-020 | `30c003b8-300d-81b5-b044-cc2fd2e52d90` |
-
-**Missing from Notion**: EXP-009 (Directed Day) — no Notion page found.
+| EXP-009 | `309003b8-300d-8100-8420-ec6c6be3737c` |
 
 **Content update commands** (in order of reliability):
 1. **`replace_content`** — replaces entire page. Most reliable.
@@ -382,6 +348,8 @@ Be concise. Prefer final data, clean numbers, and verdicts — not detailed temp
 **Team slug:** `sigma`
 **Tools:** `experiments_list`, `experiments_get`, `experiments_create`, `experiments_update`, `experiments_transition`, `experiments_decide`, `experiments_add_learning`
 **Source of truth for:** status, hypothesis, success criteria, MVT, results, decisions, learnings
+
+**Warning — side effect on `experiments_update`:** Calling `experiments_update` with only `description` can silently overwrite the `hypothesis` field (Empirium appears to auto-generate it from the description). Always verify the `hypothesis` value after any update call, and restore it immediately if it changed.
 
 ### MCP Integrations
 

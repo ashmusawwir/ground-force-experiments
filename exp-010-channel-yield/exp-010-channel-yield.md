@@ -1,4 +1,4 @@
-# EXP-019: Channel Yield + Flyer Optimization
+# EXP-010: Channel Yield + Flyer Optimization
 
 **STATUS: RUNNING** — Observational measurement of which sourcing channels and flyer variants produce candidates who complete the EOI → Training → Field pipeline, so we can kill underperformers and scale winners.
 
@@ -32,7 +32,7 @@ Historical data shows massive channel variance: Referral (75% show rate) vs 3PL 
 ## Minimum Viable Test
 
 - **Intervention:** None — observational. Tag every EOI with source group and channel type in the tracking sheet.
-- **Who:** All EOIs from EXP-018 sprint
+- **Who:** All EOIs from EXP-018 sprint *(EXP-018 now deprecated)*
 - **How:** Track full funnel by channel: EOI → training showed → training passed → field → 7-day active. Post flyer to multiple groups across channels in Day 1 blitz. If volume allows, test flyer variants (A: lead with earnings, B: lead with flexibility).
 - **Duration:** 1 week (same sprint as EXP-018)
 - **Controls:** Cross-channel comparison (same flyer, different groups)
@@ -89,7 +89,7 @@ Sheet: `1Y3o_BfXk3rdREHEpLc3SBdwWFJd4DfKmuf0hwh-BZYI`
 | 7-day active rate | Channel durability — do they stick? |
 | EOI-to-active conversion | The single number that matters |
 
-**Classification**: ANALYSIS (observation, not intervention). Runs in parallel with EXP-018.
+**Classification**: ANALYSIS (observation, not intervention). Originally ran in parallel with EXP-018 *(now deprecated)*.
 
 **Tab 1: Candidate Pipeline — "Feb 18 Onwards" (one row per candidate):**
 

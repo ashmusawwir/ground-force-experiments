@@ -30,18 +30,10 @@ fraud_signals_query            = _q004.fraud_signals_query
 # ── EXP-006: Question Redirect Protocol ─────────────────────────────────────
 demo_onboarding_status_query   = _q006.demo_onboarding_status_query
 
-# ── EXP-007: Demo Dollars ────────────────────────────────────────────────────
-recipient_overview_query         = _q007.recipient_overview_query
-note_distribution_query          = _q007.note_distribution_query
-recipient_activity_query         = _q007.recipient_activity_query
-ambassador_summary_query         = _q007.ambassador_summary_query
-recipient_timing_query           = _q007.recipient_timing_query
-demo_merchant_transactions_query = _q007.demo_merchant_transactions_query
-time_to_first_tx_query           = _q007.time_to_first_tx_query
-all_activity_timestamps_query    = _q007.all_activity_timestamps_query
-note_detail_query                = _q007.note_detail_query
+# ── EXP-007: Post-Demo Retargeting ─────────────────────────────────────────
+retargeting_status_query       = _q007.retargeting_status_query
 
-# ── EXP-009: Directed Day ────────────────────────────────────────────────────
+# ── Directed Day (deprecated, was EXP-009) ───────────────────────────────────
 reactivation_targets_query     = _q009.reactivation_targets_query
 onboarding_status_check_query  = _q009.onboarding_status_check_query
 onboarding_outcome_query       = _q009.onboarding_outcome_query

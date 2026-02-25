@@ -12,11 +12,12 @@ exp-001-show-dont-tell/dont_show_tell_exp.html
 exp-007-demo-dollars/demo_dollars_usage.html
 exp-002-social-proof-map/social_proof_map.html
 exp-006-question-redirect/question_redirect.html
-exp-020-ramadan-timing/ramadan_timing.html
+deprecated/exp-020-ramadan-timing/ramadan_timing.html
 
 # Cache / data dumps
 exp-000-merchant-network/merchant_cache_granular.json
 exp-007-demo-dollars/demo_dollars_cache.json
+exp-007-demo-dollars/retargeting_cache.json
 
 # Large binary / media
 "exp-008-gold-market-research/Voice Recordings/"

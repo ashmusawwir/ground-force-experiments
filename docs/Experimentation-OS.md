@@ -134,7 +134,7 @@ Full-width colored callout. Nothing before it.
 
 > IF [intervention], THEN [outcome], BECAUSE [mechanism].
 
-Write a falsifiable, specific hypothesis. This is the experiment's identity. It cannot change after the experiment moves to Running.
+Write a falsifiable, specific hypothesis. This is the experiment's identity. It cannot change after the experiment moves to Running. The hypothesis is also the experiment's **name** in Empirium — not a short label.
 
 ---
 

@@ -175,9 +175,11 @@ Turn a business problem into a testable experiment card.
 Produce a markdown file in a new experiment directory:
 
 ```markdown
-# EXP-NNN: [Name]
+# EXP-NNN: [Short Noun-Phrase Name]
 
 > **One-liner**: "We're testing whether [method] improves [metric] from [baseline] to [target] for [cohort]."
+
+**Empirium name:** Set the Empirium experiment `name` field to the full hypothesis string (e.g., "Revisiting demoed merchants on day 2+ converts higher than single-visit"). The short noun-phrase title above is for the local card and showcase cards only.
 
 ## Experiment Card
 | Element | Detail |
@@ -590,7 +592,7 @@ For live syncs (Wednesday/Friday with Brandon, Daniel, Turab), generate a **mult
 
 File: `experiments_showcase_YYYY-MM-DD.html` in the repo root.
 
-**Per experiment card** (one card per experiment requested, e.g. EXP-006 + EXP-007 + EXP-004 + EXP-020):
+**Per experiment card** (one card per experiment requested, e.g. EXP-006 + EXP-007 + EXP-004 + EXP-009):
 
 1. **Verdict badge** — colored pill, top right of card header:
    - `SHIP IT` → green (`#16a34a` bg)
@@ -644,7 +646,7 @@ Follow `zar_experiments_onepager.html` exactly for styling:
 
 ### Hard Word Count Limits (enforce strictly)
 
-- **Card titles**: 4–6 word noun phrase — NOT a question ("First Sale Incentive", not "Can a cash reward push merchants to sell?")
+- **Card titles** (showcase cards only): 4–6 word noun phrase — NOT a question ("First Sale Incentive", not "Can a cash reward push merchants to sell?"). Note: Empirium experiment **name** = full hypothesis, not a noun phrase.
 - **Insight strips**: 1 sentence only, 18 words max — NO follow-up sentences after the bold line
 - **Stat sublabels**: 1 fact only (denominator OR target, not both)
 - **Action line** (replaces decision gate): `Action: [who] [what] by [date]` — 15 words max

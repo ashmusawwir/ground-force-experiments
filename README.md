@@ -15,14 +15,15 @@ See [`CLAUDE.md`](CLAUDE.md) for full conventions, run commands, DB schema, and 
 | EXP-002 | `exp-002-social-proof-map/` | A | Showing nearby-merchant map at opener |
 | EXP-004 | `exp-004-merchant-activation/` | B (queries only) | Tiered cash incentive to activate dormant merchants |
 | EXP-006 | `exp-006-question-redirect/` | A | Universal redirect phrase for Q→Demo |
-| EXP-007 | `exp-007-demo-dollars/` | B | What demo-dollar recipients did |
+| EXP-007 | `exp-007-demo-dollars/` | A | Post-demo retargeting — do revisited merchants convert higher |
 | EXP-008 | `exp-008-gold-market-research/` | C | Merchant demand for digital gold |
-| EXP-009 | `deprecated/exp-009-directed-day/` | B | Structured daily task lists with geo-clustered visits *(deprecated)* |
-| EXP-010 | `exp-010-demo-shadow/` | C | Observational shadow of ambassador demos to identify execution gaps |
-| EXP-011–017 | Notion-only | C | See CLAUDE.md |
-| EXP-018 | `exp-018-direct-to-training/` | C | Direct-to-training hiring sprint |
-| EXP-019 | `exp-019-channel-yield/` | C | Which sourcing channels produce hires |
-| EXP-020 | `exp-020-ramadan-timing/` | A | Ramadan visit timing: daytime vs post-Taraweeh nighttime |
+| EXP-009 | `exp-009-demo-shadow/` | C | Observational shadow of ambassador demos to identify execution gaps |
+| EXP-010 | `exp-010-channel-yield/` | C | Which sourcing channels produce hires + flyer optimization |
+| EXP-011 | Notion-only | C | Growth Partner Referrals |
+| EXP-012 | Notion-only | C | University Students Outreach |
+| — | `deprecated/exp-009-directed-day/` | B | Structured daily task lists *(deprecated, was EXP-009)* |
+| — | `deprecated/exp-018-direct-to-training/` | C | Direct-to-training hiring sprint *(deprecated)* |
+| — | `deprecated/exp-020-ramadan-timing/` | A | Ramadan visit timing *(deprecated)* |
 
 ## Architecture Patterns
 
