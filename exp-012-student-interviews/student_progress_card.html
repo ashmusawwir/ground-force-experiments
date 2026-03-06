@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EXP-012 · Student Interviews · Progress</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --zar-gold: #B8992E;
+    --zar-gold-light: #CBAF4A;
+    --zar-gold-dark: #9A7E24;
+    --background: #F5F0E8;
+    --card: #FFFFFF;
+    --border: #E8E3DB;
+    --text: #1A1A1A;
+    --text-secondary: #6B6B6B;
+    --amber: #f59e0b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--background);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    color: var(--text);
+  }
+
+  /* Page header */
+  .page-header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .page-header h1 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.65rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .page-header .subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+  }
+  .status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.9rem;
+    border-radius: 100px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, var(--zar-gold), var(--zar-gold-light));
+    color: #fff;
+  }
+
+  /* Card */
+  .card {
+    background: var(--card);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    max-width: 640px;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  /* Progress banner */
+  .banner {
+    background: linear-gradient(135deg, var(--zar-gold-dark) 0%, var(--zar-gold-light) 100%);
+    padding: 24px 28px 20px;
+    color: #fff;
+  }
+  .banner-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.8;
+    margin-bottom: 6px;
+  }
+  .banner-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+  .pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 16px;
+  }
+  .pill {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .pill span {
+    opacity: 0.78;
+    font-weight: 400;
+  }
+  .progress-wrap {
+    background: rgba(0,0,0,0.18);
+    border-radius: 999px;
+    height: 6px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: #fff;
+    border-radius: 999px;
+    opacity: 0.92;
+  }
+  .progress-label {
+    font-size: 12px;
+    opacity: 0.75;
+  }
+
+  /* Card body */
+  .body {
+    padding: 26px 28px 30px;
+  }
+  .section + .section {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+  .section-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--zar-gold-dark);
+    margin-bottom: 14px;
+  }
+
+  /* Learnings */
+  .learn-list {
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+    list-style: none;
+  }
+  .learn-item {
+    border-left: 3px solid var(--zar-gold);
+    padding-left: 12px;
+  }
+  .learn-text {
+    font-size: 13.5px;
+    color: #374151;
+    line-height: 1.55;
+  }
+  .learn-text strong {
+    color: var(--text);
+  }
+
+  /* Improvements */
+  .improve-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    list-style: none;
+  }
+  .improve-item {
+    display: flex;
+    gap: 11px;
+    align-items: flex-start;
+  }
+  .improve-idx {
+    background: #fef3c7;
+    color: #92400e;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 28px;
+    text-align: center;
+    margin-top: 2px;
+  }
+  .improve-body {}
+  .improve-action {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .improve-detail {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .improve-detail em {
+    color: #92400e;
+    font-style: normal;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>EXP-012 · Student Interviews</h1>
+  <div class="subtitle">University Students Outreach — Mid-Flight Status</div>
+  <span class="status-badge">Running</span>
+</div>
+
+<div class="card">
+
+  <!-- Progress Banner -->
+  <div class="banner">
+    <div class="banner-label">Progress Snapshot</div>
+    <div class="banner-title">129 of 180 interviews collected</div>
+    <div class="pills">
+      <div class="pill">EOD Saturday <span>deadline</span></div>
+      <div class="pill">13 <span>interviewers</span></div>
+      <div class="pill">6 <span>universities</span></div>
+      <div class="pill">68M · 61F <span>gender split</span></div>
+      <div class="pill">5 <span>days in</span></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-fill" style="width: 71.7%;"></div>
+    </div>
+    <div class="progress-label">72% complete</div>
+  </div>
+
+  <div class="body">
+
+    <!-- Section 1: Learnings -->
+    <div class="section">
+      <div class="section-title">What We've Learnt So Far</div>
+      <ul class="learn-list">
+        <li class="learn-item">
+          <span class="learn-text"><strong>The interest pool is real but conditionally committed.</strong> 90% showed Medium+ interest — and of the remaining, 62% of interviewees still had one reservation: their conversion depends entirely on first-week design: clear pay, manageable targets, no ugly surprises.</span>
+        </li>
+        <li class="learn-item">
+          <span class="learn-text"><strong>"Pure commission" triggers fear; a base unlocks performance appetite.</strong> 62% accept lower base + more per sign-up — but only when a guaranteed floor exists. The winning structure is a meaningful base (PKR 15–20K) + per-merchant bonuses targeting PKR 35–45K total.</span>
+        </li>
+        <li class="learn-item">
+          <span class="learn-text"><strong>Shopkeeper rejection — not pay — is the #1 quit trigger.</strong> 27% cite hostile/unresponsive shopkeepers as the thing that makes them walk. Training must lead with rejection reframing, not product knowledge.</span>
+        </li>
+        <li class="learn-item">
+          <span class="learn-text"><strong>The app is their personal credibility proxy.</strong> Students lend their reputation to the product. Several said they'd quit if the app crashes mid-demo — because it makes <em>them</em> look bad. A broken onboarding flow costs you the student, not just the sign-up.</span>
+        </li>
+        <li class="learn-item">
+          <span class="learn-text"><strong>Referral runs on proof of payment, not promises.</strong> 47% of referral motivators reduce to "show me the money first." The most effective next-cohort recruitment is paying the first wave well and on time — then letting them recruit their friends.</span>
+        </li>
+        <li class="learn-item">
+          <span class="learn-text"><strong>Female DPT students face structural barriers to field sales.</strong> 5 of 30 KU interviewees explicitly cited societal or safety norms as barriers to entering shops alone. This sub-group needs a pairing model or different role design — solo field outreach is a non-starter for them.</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Section 2: Improvements -->
+    <div class="section">
+      <div class="section-title">What We're Going to Improve</div>
+      <ul class="improve-list">
+        <li class="improve-item">
+          <span class="improve-idx">1</span>
+          <div class="improve-body">
+            <div class="improve-action">Increase cold outreach participation</div>
+            <div class="improve-detail">Currently <em>82% friend/referral</em>, near-zero cold contacts. Target: ≥50% cold in remaining sessions.</div>
+          </div>
+        </li>
+        <li class="improve-item">
+          <span class="improve-idx">2</span>
+          <div class="improve-body">
+            <div class="improve-action">Ask "Why" more</div>
+            <div class="improve-detail"><em>4 of 92 transcripts</em> showed any probing (~4%). The target is ≥1 "Why?" or "Tell me more" per key answer — every interviewer.</div>
+          </div>
+        </li>
+        <li class="improve-item">
+          <span class="improve-idx">3</span>
+          <div class="improve-body">
+            <div class="improve-action">Stop showing the questions</div>
+            <div class="improve-detail">Interviewers reading off the form creates leading responses. Confirmed in recordings — brief all interviewers before next session.</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

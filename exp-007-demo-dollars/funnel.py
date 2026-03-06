@@ -5,6 +5,7 @@ from collections import defaultdict
 from data import (
     row_date, is_onboarding, did_demo, did_onboard,
     ambassador_name, phone_number, db_demo_date, db_onboard_date,
+    db_demo_amount, shop_name, location_lat, location_lng,
     _db_status,
 )
 
@@ -48,15 +49,25 @@ class MerchantJourney:
             self.onboarded_first = any(did_onboard(r) for r in first_rows)
             self.ever_onboarded = any(did_onboard(r) for r in rows)
 
+        self.demo_amount = db_demo_amount(sample_row) if _db_status else None
+        self.demo_tier = None
+        if self.demoed_first and self.demo_amount is not None:
+            self.demo_tier = "$5+" if self.demo_amount >= 5_000_000 else "< $5"
+
         self.ambassador = ambassador_name(first_rows[0]) if first_rows else "Unknown"
+        self.shop_name = shop_name(first_rows[0]) if first_rows else ""
+        self.lat = location_lat(first_rows[0]) if first_rows else ""
+        self.lng = location_lng(first_rows[0]) if first_rows else ""
 
         self.num_visit_days = len(self.visit_dates)
-        self.was_retargeted = self.num_visit_days > 1
 
-        if self.was_retargeted and self.first_date:
+        if self.num_visit_days > 1 and self.first_date:
             self.days_to_revisit = (self.visit_dates[1] - self.first_date).days
         else:
             self.days_to_revisit = None
+
+        # Retargeted = visited on 2+ different calendar dates
+        self.was_retargeted = self.num_visit_days >= 2
 
     @property
     def in_retarget_pool(self):
@@ -100,6 +111,20 @@ class RetargetingMetrics:
             if self.pool_size else None
         )
 
+        self.tier_stats = {}
+        for tier in ("$5+", "< $5"):
+            tp = [j for j in pool if j.demo_tier == tier]
+            t_rt = [j for j in tp if j.was_retargeted]
+            t_nrt = [j for j in tp if not j.was_retargeted]
+            rt_c = sum(1 for j in t_rt if j.ever_onboarded)
+            nrt_c = sum(1 for j in t_nrt if j.ever_onboarded)
+            self.tier_stats[tier] = {
+                "pool": len(tp), "retargeted": len(t_rt), "not_retargeted": len(t_nrt),
+                "rt_converted": rt_c, "nrt_converted": nrt_c,
+                "rt_rate": rt_c / len(t_rt) * 100 if t_rt else None,
+                "nrt_rate": nrt_c / len(t_nrt) * 100 if t_nrt else None,
+            }
+
         self.days_distribution = defaultdict(int)
         for j in retargeted:
             if j.days_to_revisit is not None:
@@ -132,10 +157,9 @@ class PeriodInfo:
 
 
 def build_journeys(rows):
-    """Group onboarding rows by phone -> MerchantJourney list."""
-    onb = [r for r in rows if is_onboarding(r)]
+    """Group ALL visit rows by phone -> MerchantJourney list."""
     by_phone = defaultdict(list)
-    for r in onb:
+    for r in rows:
         p = phone_number(r)
         if p:
             by_phone[p].append(r)

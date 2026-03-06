@@ -10,8 +10,8 @@ from data import fetch_rows, get_experiment_rows, is_onboarding, set_db_status
 from funnel import build_journeys, RetargetingMetrics, PeriodInfo, no_phone_count, phone_audit
 from output import (
     print_data_quality, print_phone_audit, print_retargeting_funnel,
-    print_conversion_comparison, print_ambassador_breakdown,
-    print_days_distribution,
+    print_conversion_comparison, print_tier_comparison,
+    print_ambassador_breakdown, print_days_distribution, print_retarget_list,
 )
 from flowchart import write_html
 
@@ -23,13 +23,14 @@ def _load_db_status(path):
     records = data.get("db_status", data) if isinstance(data, dict) else data
     mapping = {}
     for rec in records:
-        phone = re.sub(r'\D', '', rec.get("phone_number", ""))
+        phone = re.sub(r'\D', '', rec.get("phone_number") or "")
         if phone:
             mapping[phone] = {
                 "got_demo": bool(rec.get("got_demo", False)),
                 "is_onboarded": bool(rec.get("is_onboarded", False)),
                 "first_demo_date": rec.get("first_demo_date"),
                 "onboarding_date": rec.get("onboarding_date"),
+                "demo_amount": rec.get("demo_amount"),
             }
     set_db_status(mapping)
     print(f"  DB overlay loaded: {len(mapping)} phones", file=sys.stderr)
@@ -66,8 +67,10 @@ def main():
 
     print_retargeting_funnel(metrics, journeys)
     print_conversion_comparison(metrics)
+    print_tier_comparison(metrics)
     print_ambassador_breakdown(journeys)
     print_days_distribution(metrics)
+    print_retarget_list(journeys)
 
     if exp_rows:
         write_html(metrics, journeys, info, total_onb, no_phone)

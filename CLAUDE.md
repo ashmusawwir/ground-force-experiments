@@ -16,7 +16,9 @@ Standalone experiment tracking for Zar's ground force (field ambassador) team. E
 
 **Where to find experiment details:** Each experiment with code has an experiment card (`.md` file in its directory) with hypothesis, decision rules, design decisions, and findings. Empirium is the source of truth for status, findings, and decisions. CLAUDE.md maps files, run commands, and Empirium IDs — not narratives.
 
-**Hypothesis rules:** Every experiment hypothesis must be falsifiable — if no result can disprove it, rewrite until one can. On Empirium, the experiment **name** (title) IS the hypothesis (e.g., "Revisiting demoed merchants on day 2+ converts higher than single-visit"). Short noun-phrase titles go in the description header, not the name field.
+**Hypothesis rules:** Every experiment hypothesis must be falsifiable — if no result can disprove it, rewrite until one can. On Empirium, the experiment **name** (title) IS the hypothesis (e.g., "Revisiting demoed merchants on day 2+ converts higher than single-visit"). Short noun-phrase titles go in the description header, not the name field. Hypotheses must be stated as a testable outcome claim, not as a goal or question.
+
+**Empirium content rules:** Never reference named individuals (team leads, executives, external contacts) in Empirium experiment bodies, assumption evidence, or learnings. Use role/team language instead — "the ground force team was tasked with..." not "Brandon's memo directed...". Empirium is a shared institutional record; personal attributions don't belong there.
 
 ## Architecture Patterns
 
@@ -83,7 +85,8 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 | EXP-009 | `exp-009-demo-shadow/` | C | Observational shadow of ambassador demos to identify execution gaps | — |
 | EXP-010 | `exp-010-channel-yield/` | C | Which sourcing channels produce hires + flyer optimization | — |
 | EXP-011 | Notion-only | C | Growth Partner Referrals | — |
-| EXP-012 | Notion-only | C | University Students Outreach | — |
+| EXP-012 | `exp-012-student-interviews/` | C | University Students Outreach — structured interviews with student persona | EXP-016 |
+| EXP-013 | `exp-013-question-deflection/` | C | Scripted deflection tool for Q→Demo redirect (physical field guide) | — |
 | — | `deprecated/exp-009-directed-day/` | B | Structured daily task lists with geo-clustered visits *(deprecated, was EXP-009)* | — |
 | — | `deprecated/exp-018-direct-to-training/` | C | Direct-to-training hiring sprint *(deprecated)* | — |
 | — | `deprecated/exp-020-ramadan-timing/` | A | Ramadan visit timing: daytime vs post-Taraweeh nighttime *(deprecated)* | — |
@@ -177,6 +180,15 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 - **Empirium ID:** — (pending)
 - **Note:** Originally EXP-019. Ran in parallel with EXP-018 (now deprecated).
 
+### EXP-013: Question Deflection Tool
+
+- **Files:** `exp-013-question-deflection/` (Pattern C)
+- **Experiment card:** `exp-013-question-deflection/exp-013-question-deflection.md`
+- **Artifact:** `exp-013-question-deflection/deflection-guide.html` (mobile-first field tool, 8 deflection categories)
+- **Empirium ID:** — (pending)
+- **Parent:** EXP-006 (Question Redirect)
+- **Status:** DESIGN
+
 ### EXP-018: Direct-to-Training *(deprecated)*
 
 - **Files:** `deprecated/exp-018-direct-to-training/` — experiment card + flyers
@@ -189,11 +201,30 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 - **Experiment card:** `deprecated/exp-020-ramadan-timing/exp-020-ramadan-timing.md`
 - **Run:** `cd deprecated/exp-020-ramadan-timing && python3 run.py`
 
+### EXP-012: University Students Outreach
+
+- **Files:** `exp-012-student-interviews/` (Pattern C + transcription script)
+- **Experiment card:** `exp-012-student-interviews/exp-012-student-interviews.md`
+- **Status:** RUNNING — 60/30 interviews collected, mid-flight quality check done
+- **Hypothesis:** Structured interviews with university students identify motivations, concerns, and language that differentiate the student persona from order bookers
+- **Data:**
+  - `survey_responses.csv` — 60 form responses (32 columns)
+  - `analysis.md` — thematic analysis (sample, interest, pay, personas, quotes)
+  - `Voice recording of surveys/` — 13 .m4a voice recordings + .txt transcripts
+  - `transcripts.md` — combined transcripts (Whisper medium, `language="en"` for Roman Urdu + English)
+  - `transcribe.py` — batch Whisper transcription script
+- **HTML artifact:** `student_outreach_check.html` — mid-flight quality check card with Eric (experiment quality) + Nash (incentive design) analysis
+- **Key findings (preliminary):** 90% Medium+ interest, 3 sub-personas (Hustler 15-20%, Cautious Pragmatist 50-55%, Reluctant Observer 10-15%), optimal pay = base PKR 15-20K + per-merchant bonuses
+- **Critical flags:** 48% single-interviewer concentration (Ahmed Abdul Rauf, zero recordings), 82% friend/referral sampling bias, form-vs-recording data gaps, zero probing in all recordings
+- **Google Form:** `1FAIpQLSewfIKLAZ12cmxt5hrt-FbK3wnOuoR7p75W4yr2feJ6poqXxg`
+- **Google Sheet:** `1V8QbgRjG_GdW_C7Ko71NtGHrmQr0ATKTuExBvgcwb1E`
+- **Notion page (archive):** `312003b8300d81e48beed012da974177`
+- **Empirium ID:** EXP-016
+
 ### Notion-Only Experiments
 
 - EXP-005: Growth Partner Incentive Model
 - EXP-011: Growth Partner Referrals
-- EXP-012: University Students Outreach
 
 ## Shared SQL Library — `lib/sql.py`
 
@@ -351,13 +382,16 @@ Be concise. Prefer final data, clean numbers, and verdicts — not detailed temp
 
 **Warning — side effect on `experiments_update`:** Calling `experiments_update` with only `description` can silently overwrite the `hypothesis` field (Empirium appears to auto-generate it from the description). Always verify the `hypothesis` value after any update call, and restore it immediately if it changed.
 
+**No named individuals in Empirium content:** Never mention specific people's names (team leads, executives, stakeholders) in experiment descriptions, assumption evidence, or learnings. Use role/team language ("the ground force team", "the product team") — Empirium is an institutional record, not a meeting log.
+
 ### MCP Integrations
 
 Available MCP servers include Google Drive (via Rube), Notion, Slack, Linear, Figma, and others. Check available MCP tools before saying you can't access a service. Use `ToolSearch` if unsure what's available.
 
 ## Glossary
 
-**Nash**, **Terra**, and **Atlas** are agents in the Canon repository (`/Users/asharib/Documents/GitHub/canon/`):
+**Nash**, **Terra**, **Atlas**, and **Eric** are agents in the Canon repository (`/Users/asharib/Documents/GitHub/canon/`):
+- **Eric** — Empirium Architect. Structures Initiatives, Assumptions, and Experiments with falsifiable hypotheses, success criteria, and decision rules. First point of contact for Empirium work.
 - **Nash** — Game theory expert. Designs incentive systems where fraud is economically irrational using mechanism design, auction theory, and Nash equilibria. Stress-tests systems for exploits.
 - **Terra** — Field sales expert and Ground Force coach. Stress-tests ambassador training materials and pitch flows by simulating real merchant/ambassador personas before they ship.
 - **Atlas** — Data navigator. Writes SQL queries and retrieves insights from the ZAR database. Uses a Five Questions Framework (metric, entity scope, time, grouping, output format) before writing any query.

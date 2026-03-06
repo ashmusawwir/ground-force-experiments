@@ -1,5 +1,7 @@
 """All terminal printing — tables, insights, formatting helpers."""
 
+from datetime import date
+
 from config import EXPERIMENT_NAME
 from funnel import RetargetingMetrics, PeriodInfo, ambassador_breakdown
 
@@ -99,6 +101,30 @@ def print_conversion_comparison(metrics):
     print()
 
 
+def print_tier_comparison(metrics):
+    """Print conversion comparison by demo value tier ($5+ vs < $5)."""
+    if not metrics.tier_stats:
+        return
+
+    has_data = any(s["pool"] > 0 for s in metrics.tier_stats.values())
+    if not has_data:
+        return
+
+    print(f"  Conversion by Demo Value")
+    print()
+    print(f"| {'Demo Tier':<9} | {'Pool':>5} | {'Retgt':>5} | {'RT Conv':>8} | {'RT %':>6} | {'No-RT Conv':>10} | {'No-RT %':>7} |")
+    print(f"|{'-'*11}|{'-'*7}|{'-'*7}|{'-'*10}|{'-'*8}|{'-'*12}|{'-'*9}|")
+
+    for tier in ("$5+", "< $5"):
+        s = metrics.tier_stats.get(tier, {})
+        if not s.get("pool"):
+            continue
+        rt_str = f"{s['rt_converted']}/{s['retargeted']}" if s['retargeted'] else "\u2014"
+        nrt_str = f"{s['nrt_converted']}/{s['not_retargeted']}" if s['not_retargeted'] else "\u2014"
+        print(f"| {tier:<9} | {s['pool']:>5} | {s['retargeted']:>5} | {rt_str:>8} | {_fmt(s['rt_rate']):>6} | {nrt_str:>10} | {_fmt(s['nrt_rate']):>7} |")
+    print()
+
+
 def print_ambassador_breakdown(journeys):
     amb_data = ambassador_breakdown(journeys)
     if not amb_data:
@@ -129,4 +155,34 @@ def print_days_distribution(metrics):
         count = metrics.days_distribution.get(bucket, 0)
         if count:
             print(f"| {bucket:<16} | {count:>6} |")
+    print()
+
+
+def print_retarget_list(journeys):
+    """Print actionable list of unconverted retarget-pool merchants."""
+    today = date.today()
+    candidates = [
+        j for j in journeys
+        if j.in_retarget_pool and not j.ever_onboarded and j.phone
+    ]
+    candidates.sort(key=lambda j: (j.ambassador, j.first_date or today))
+
+    print(f"  Actionable Retarget List ({len(candidates)} merchants)")
+    print()
+
+    if not candidates:
+        print("  No unconverted retarget-pool merchants found.")
+        print()
+        return
+
+    print(f"| {'Ambassador':<16} | {'Phone':<14} | {'Shop Name':<24} | {'First Visit':<12} | {'Days':>5} | {'Lat':>10} | {'Lng':>10} |")
+    print(f"|{'-'*18}|{'-'*16}|{'-'*26}|{'-'*14}|{'-'*7}|{'-'*12}|{'-'*12}|")
+
+    for j in candidates:
+        days_since = (today - j.first_date).days if j.first_date else 0
+        fv = j.first_date.strftime("%Y-%m-%d") if j.first_date else "—"
+        shop = (j.shop_name[:22] + "..") if len(j.shop_name) > 24 else j.shop_name
+        lat = j.lat[:10] if j.lat else ""
+        lng = j.lng[:10] if j.lng else ""
+        print(f"| {j.ambassador:<16} | {j.phone:<14} | {shop:<24} | {fv:<12} | {days_since:>5} | {lat:>10} | {lng:>10} |")
     print()

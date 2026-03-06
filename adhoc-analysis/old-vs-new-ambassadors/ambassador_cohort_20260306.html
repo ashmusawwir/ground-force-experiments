@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EP-Referred vs Legacy Contractors — Funnel</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --zar-gold: #B8992E;
+    --zar-gold-light: #CBAF4A;
+    --zar-gold-dark: #9A7E24;
+    --background: #F5F0E8;
+    --card: #FFFFFF;
+    --border: #E8E3DB;
+    --text: #1A1A1A;
+    --text-secondary: #6B6B6B;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --warning: #f59e0b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--background);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px;
+    color: var(--text);
+  }
+  h1 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.8rem; font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 30px;
+  }
+  .data-card {
+    margin-top: 20px;
+    background: var(--card);
+    border-radius: 20px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border: 1px solid var(--border);
+    width: 100%;
+    max-width: 960px;
+  }
+  .data-card h2 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.1rem; font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .data-card h2 .num {
+    background: linear-gradient(135deg, var(--zar-gold), var(--zar-gold-light));
+    color: white;
+    width: 26px; height: 26px;
+    border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 600;
+  }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .stat-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .stat-grid-5 {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .stat-box {
+    background: var(--background);
+    padding: 1rem;
+    border-radius: 12px;
+    text-align: center;
+  }
+  .stat-value {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.8rem; font-weight: 700;
+    color: var(--zar-gold-dark);
+  }
+  .stat-value-sm {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.4rem; font-weight: 700;
+    color: var(--zar-gold-dark);
+  }
+  .cohort-col .stat-value-sm {
+    font-size: 1.1rem;
+    white-space: nowrap;
+    overflow: visible;
+  }
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+  }
+  .insight {
+    background: linear-gradient(135deg, rgba(184,153,46,0.08), rgba(184,153,46,0.02));
+    border-left: 3px solid var(--zar-gold);
+    padding: 1rem;
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    border-radius: 0 12px 12px 0;
+  }
+  .insight strong { color: var(--zar-gold-dark); }
+  .metric-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+  }
+  .metric-legend span { white-space: nowrap; }
+  .metric-legend strong { color: var(--text); font-weight: 600; }
+  /* Hero comparison */
+  .hero-comparison {
+    background: var(--background);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+    text-align: center;
+  }
+  .hero-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+  }
+  .hero-cols {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+  }
+  .hero-col { text-align: center; }
+  .hero-val {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  .hero-winner .hero-val { color: var(--zar-gold-dark); }
+  .hero-loser  .hero-val { color: #9CA3AF; }
+  .hero-name {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    margin-top: 0.3rem;
+  }
+  .hero-vs {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+  /* Cohort columns */
+  .cohort-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-top: 0.5rem;
+  }
+  .cohort-col {
+    background: var(--background);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+  }
+  .cohort-col h3 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem; font-weight: 600;
+    margin-bottom: 0.75rem;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .dot-new { width: 10px; height: 10px; border-radius: 50%; background: #16a34a; display: inline-block; }
+  .dot-old { width: 10px; height: 10px; border-radius: 50%; background: #dc2626; display: inline-block; }
+  .conv-list { font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.5rem; }
+  .conv-list span { font-family: 'DM Sans', sans-serif; font-weight: 600; color: var(--text); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th {
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    color: var(--text-secondary);
+    font-weight: 500; font-size: 0.75rem;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--border);
+  }
+  th.num-col { text-align: right; }
+  td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td.num-col { text-align: right; font-family: 'DM Sans', sans-serif; font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  tr.total-row td {
+    font-weight: 700;
+    background: rgba(184,153,46,0.08);
+    border-bottom: none;
+  }
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 100px;
+    font-size: 0.7rem; font-weight: 600;
+  }
+  .badge-success { background: rgba(22,163,74,0.15); color: #16a34a; }
+  .badge-warning { background: rgba(184,153,46,0.15); color: var(--zar-gold-dark); }
+  .badge-danger  { background: rgba(220,38,38,0.15); color: #dc2626; }
+  .badge-new { background: rgba(22,163,74,0.15); color: #16a34a;
+               padding: 0.15rem 0.5rem; border-radius: 100px; font-size: 0.7rem; font-weight: 600; }
+  .badge-old { background: rgba(220,38,38,0.15); color: #dc2626;
+               padding: 0.15rem 0.5rem; border-radius: 100px; font-size: 0.7rem; font-weight: 600; }
+  .badge-unk { background: rgba(107,107,107,0.15); color: var(--text-secondary);
+               padding: 0.15rem 0.5rem; border-radius: 100px; font-size: 0.7rem; font-weight: 600; }
+  .rate-bar {
+    display: inline-block; height: 8px; border-radius: 4px; vertical-align: middle;
+  }
+  footer { margin-top: 30px; font-size: 0.75rem; color: var(--text-secondary); }
+  @media (max-width: 640px) {
+    .stat-grid { grid-template-columns: repeat(3, 1fr); }
+    .cohort-grid { grid-template-columns: 1fr; }
+    .stat-grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .stat-grid-5 { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+<h1>EP-Referred vs Legacy Contractor Funnel</h1>
+<div class="subtitle">
+  Feb 23 – Mar 5 &nbsp;&middot;&nbsp;
+  EP-Referred = first visit &ge; 2026-02-23 or override &nbsp;&middot;&nbsp;
+  5 EP-Referred &nbsp;&middot;&nbsp; 6 Legacy
+</div>
+
+<div class="data-card">
+  <h2><span class="num">1</span> Overall Scorecard</h2>
+  <div class="metric-legend">
+    <span><strong>O/V</strong> &mdash; opener rate (% of visits where merchant engaged)</span>
+    <span><strong>D/O</strong> &mdash; demo rate (% of openers who received a demo)</span>
+    <span><strong>B/D</strong> &mdash; onboarding rate (% of demos that converted to onboarding)</span>
+    <span><strong>B/V</strong> &mdash; overall yield (onboardings per visit)</span>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-box"><div class="stat-value">373</div><div class="stat-label">Visits</div></div>
+    <div class="stat-box"><div class="stat-value">285</div><div class="stat-label">Openers</div></div>
+    <div class="stat-box"><div class="stat-value">160</div><div class="stat-label">Demos</div></div>
+    <div class="stat-box"><div class="stat-value">34</div><div class="stat-label">Onboardings</div></div>
+    <div class="stat-box"><div class="stat-value">3.1/day</div><div class="stat-label">Onboardings/day</div></div>
+  </div>
+  <div class="insight">O/V <strong>76%</strong> &nbsp;·&nbsp; D/O <strong>56%</strong> &nbsp;·&nbsp; B/D <strong>21%</strong> &nbsp;·&nbsp; B/V <strong>9%</strong></div>
+</div>
+
+<div class="data-card">
+  <h2><span class="num">2</span> Cohort Comparison</h2>
+  <div class="hero-comparison"><div class="hero-label">Onboardings / Day</div><div class="hero-cols"><div class="hero-col hero-winner"><div class="hero-val">2.7/day</div><div class="hero-name">EP-Referred</div></div><div class="hero-vs">vs</div><div class="hero-col hero-loser"><div class="hero-val">0.9/day</div><div class="hero-name">Legacy</div></div></div></div><div class="insight">EP-Referred contractors onboard at <strong>3&times; the rate</strong></div>
+  <div class="cohort-grid">
+    <div class="cohort-col"><h3><span class="dot-new"></span> EP-Referred Contractors (5)</h3><div class="stat-grid-2"><div class="stat-box"><div class="stat-value-sm">29</div><div class="stat-label">Visits</div></div><div class="stat-box"><div class="stat-value-sm">27</div><div class="stat-label">Demos</div></div><div class="stat-box"><div class="stat-value-sm">24</div><div class="stat-label">Onboardings</div></div><div class="stat-box"><div class="stat-value-sm">2.7/day</div><div class="stat-label">B/day</div></div></div><div class="conv-list">O/V <span>93%</span> &nbsp;·&nbsp; D/O <span>100%</span> &nbsp;·&nbsp; B/D <span>89%</span> &nbsp;·&nbsp; B/V <span>83%</span></div></div>
+    <div class="cohort-col"><h3><span class="dot-old"></span> Legacy Contractors (6)</h3><div class="stat-grid-2"><div class="stat-box"><div class="stat-value-sm">344</div><div class="stat-label">Visits</div></div><div class="stat-box"><div class="stat-value-sm">133</div><div class="stat-label">Demos</div></div><div class="stat-box"><div class="stat-value-sm">10</div><div class="stat-label">Onboardings</div></div><div class="stat-box"><div class="stat-value-sm">0.9/day</div><div class="stat-label">B/day</div></div></div><div class="conv-list">O/V <span>75%</span> &nbsp;·&nbsp; D/O <span>52%</span> &nbsp;·&nbsp; B/D <span>8%</span> &nbsp;·&nbsp; B/V <span>3%</span></div></div>
+  </div>
+</div>
+
+<div class="data-card"><h2><span class="num">3</span> Per-Contractor Breakdown</h2><table><thead><tr><th>Contractor</th><th>Cohort</th><th class="num-col">Visits</th><th class="num-col">Openers</th><th class="num-col">Demos</th><th class="num-col">Onboardings</th><th class="num-col">O/V</th><th class="num-col">D/O</th><th class="num-col">B/D</th><th class="num-col">B/day</th></tr></thead><tbody><tr><td>Junaid Ahmed</td><td><span class="badge-old">Legacy</span></td><td class="num-col">89</td><td class="num-col">53</td><td class="num-col">10</td><td class="num-col">4</td><td class="num-col">60%</td><td class="num-col">19%</td><td class="num-col">40%</td><td class="num-col">0.4/day</td></tr><tr><td>Sharoon Javed</td><td><span class="badge-old">Legacy</span></td><td class="num-col">86</td><td class="num-col">84</td><td class="num-col">68</td><td class="num-col">1</td><td class="num-col">98%</td><td class="num-col">81%</td><td class="num-col">1%</td><td class="num-col">0.1/day</td></tr><tr><td>Muhammad Irfan</td><td><span class="badge-old">Legacy</span></td><td class="num-col">66</td><td class="num-col">35</td><td class="num-col">10</td><td class="num-col">0</td><td class="num-col">53%</td><td class="num-col">29%</td><td class="num-col">0%</td><td class="num-col">0.0/day</td></tr><tr><td>Muhammad Zahid</td><td><span class="badge-old">Legacy</span></td><td class="num-col">49</td><td class="num-col">38</td><td class="num-col">31</td><td class="num-col">2</td><td class="num-col">78%</td><td class="num-col">82%</td><td class="num-col">6%</td><td class="num-col">0.2/day</td></tr><tr><td>Arslan Ansari</td><td><span class="badge-old">Legacy</span></td><td class="num-col">30</td><td class="num-col">28</td><td class="num-col">6</td><td class="num-col">3</td><td class="num-col">93%</td><td class="num-col">21%</td><td class="num-col">50%</td><td class="num-col">0.3/day</td></tr><tr><td>Afsar Khan</td><td><span class="badge-old">Legacy</span></td><td class="num-col">24</td><td class="num-col">20</td><td class="num-col">8</td><td class="num-col">0</td><td class="num-col">83%</td><td class="num-col">40%</td><td class="num-col">0%</td><td class="num-col">0.0/day</td></tr><tr><td>muneer ahmed</td><td><span class="badge-new">EP-Referred</span></td><td class="num-col">9</td><td class="num-col">9</td><td class="num-col">9</td><td class="num-col">9</td><td class="num-col">100%</td><td class="num-col">100%</td><td class="num-col">100%</td><td class="num-col">1.5/day</td></tr><tr><td>Umer Daniyal</td><td><span class="badge-new">EP-Referred</span></td><td class="num-col">8</td><td class="num-col">6</td><td class="num-col">6</td><td class="num-col">6</td><td class="num-col">75%</td><td class="num-col">100%</td><td class="num-col">100%</td><td class="num-col">0.8/day</td></tr><tr><td>shah comm</td><td><span class="badge-new">EP-Referred</span></td><td class="num-col">6</td><td class="num-col">6</td><td class="num-col">6</td><td class="num-col">4</td><td class="num-col">100%</td><td class="num-col">100%</td><td class="num-col">67%</td><td class="num-col">1.3/day</td></tr><tr><td>ali balouch</td><td><span class="badge-new">EP-Referred</span></td><td class="num-col">5</td><td class="num-col">5</td><td class="num-col">5</td><td class="num-col">4</td><td class="num-col">100%</td><td class="num-col">100%</td><td class="num-col">80%</td><td class="num-col">1.3/day</td></tr><tr><td>Ilyas Khan</td><td><span class="badge-new">EP-Referred</span></td><td class="num-col">1</td><td class="num-col">1</td><td class="num-col">1</td><td class="num-col">1</td><td class="num-col">100%</td><td class="num-col">100%</td><td class="num-col">100%</td><td class="num-col">1.0/day</td></tr><tr class="total-row"><td>TOTAL</td><td></td><td class="num-col">373</td><td class="num-col">285</td><td class="num-col">160</td><td class="num-col">34</td><td class="num-col">76%</td><td class="num-col">56%</td><td class="num-col">21%</td><td class="num-col">3.1/day</td></tr></tbody></table></div>
+
+<footer>Generated 2026-03-06 14:59 PKT</footer>
+</body>
+</html>

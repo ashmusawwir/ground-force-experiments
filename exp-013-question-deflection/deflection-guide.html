@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Deflection Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+
+  :root {
+    --zar-gold: #B8992E;
+    --zar-gold-light: #CBAF4A;
+    --zar-gold-dark: #9A7E24;
+    --background: #F5F0E8;
+    --card: #FFFFFF;
+    --border: #E8E3DB;
+    --text: #1A1A1A;
+    --text-secondary: #6B6B6B;
+    --green: #16a34a;
+    --green-bg: rgba(22,163,74,0.12);
+    --red: #dc2626;
+    --red-bg: rgba(220,38,38,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--background);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    background: linear-gradient(135deg, var(--zar-gold), var(--zar-gold-light));
+    padding: 20px 20px 16px;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(184,153,46,0.3);
+  }
+  .header h1 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.3px;
+  }
+  .header p {
+    font-size: 11px;
+    color: rgba(255,255,255,0.75);
+    margin-top: 2px;
+    font-weight: 500;
+  }
+
+  /* ===== CONTAINER ===== */
+  .container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 12px 12px 24px;
+  }
+
+  /* ===== HOW TO USE CARD ===== */
+  .how-card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .how-card h2 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--zar-gold-dark);
+    margin-bottom: 12px;
+  }
+  .how-steps {
+    display: flex;
+    gap: 10px;
+  }
+  .how-step {
+    flex: 1;
+    text-align: center;
+  }
+  .how-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--zar-gold), var(--zar-gold-light));
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 6px;
+  }
+  .how-text {
+    font-size: 11px;
+    line-height: 1.35;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  /* ===== DEFLECTION CARD ===== */
+  .deflect-card {
+    background: var(--card);
+    border-radius: 20px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: box-shadow 0.3s ease;
+  }
+  .deflect-card.active {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  }
+
+  .deflect-header {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s;
+    gap: 12px;
+  }
+  .deflect-header:active { background: #faf8f4; }
+
+  .cat-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--zar-gold), var(--zar-gold-light));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+  .deflect-card.active .cat-badge { transform: scale(1.08); }
+
+  .cat-info { flex: 1; min-width: 0; }
+  .cat-name {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .cat-trigger {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .chevron {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    transition: transform 0.3s ease;
+    opacity: 0.25;
+    color: var(--text);
+  }
+  .deflect-card.active .chevron {
+    transform: rotate(180deg);
+    opacity: 0.5;
+  }
+
+  /* ===== CARD BODY ===== */
+  .deflect-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  .deflect-card.active .deflect-body {
+    max-height: 800px;
+  }
+  .deflect-content {
+    padding: 0 16px 16px 16px;
+  }
+
+  /* Primary redirect phrase */
+  .redirect-box {
+    background: rgba(184,153,46,0.10);
+    border-left: 3px solid var(--zar-gold);
+    border-radius: 0 12px 12px 0;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+  }
+  .redirect-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--zar-gold-dark);
+    margin-bottom: 10px;
+  }
+  .redirect-ur {
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  .redirect-en {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Detail rows — text left, chip right */
+  .detail-row {
+    display: flex;
+    align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-text {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    flex: 1;
+    text-align: left;
+  }
+  .detail-text strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .detail-icon {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 3px 7px;
+    border-radius: 100px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    white-space: nowrap;
+  }
+  .icon-backup {
+    background: rgba(184,153,46,0.15);
+    color: var(--zar-gold-dark);
+  }
+  .icon-proof {
+    background: var(--green-bg);
+    color: var(--green);
+  }
+  .icon-hear {
+    background: rgba(0,0,0,0.06);
+    color: var(--text-secondary);
+  }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, var(--zar-gold), var(--zar-gold-light));
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    z-index: 100;
+    box-shadow: 0 -2px 10px rgba(184,153,46,0.3);
+  }
+  .footer-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.1s;
+  }
+  .footer-btn:active { transform: scale(0.97); }
+  .btn-primary { background: #fff; color: var(--zar-gold-dark); }
+  .btn-outline { background: transparent; color: #fff; border: 1.5px solid rgba(255,255,255,0.5); }
+
+  .bottom-spacer { height: 64px; }
+
+  /* ===== PRINT ===== */
+  @media print {
+    .header, .footer { display: none; }
+    body { background: white; }
+    .container { max-width: 100%; padding: 0; }
+    .deflect-card { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
+    .deflect-body { max-height: none !important; }
+    .bottom-spacer { height: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Deflection Guide</h1>
+  <p>Question → Demo &middot; EXP-013</p>
+</div>
+
+<div class="container">
+
+  <!-- How to Use -->
+  <div class="how-card">
+    <h2>How to Use</h2>
+    <div class="how-steps">
+      <div class="how-step">
+        <div class="how-num">1</div>
+        <div class="how-text">Merchant asks a question</div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">2</div>
+        <div class="how-text">Tap the matching category</div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">3</div>
+        <div class="how-text">Read the phrase, then demo</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 1. COMPANY INFO ===== -->
+  <div class="deflect-card" data-cat="1">
+    <div class="deflect-header" onclick="toggle(this)">
+      <div class="cat-badge">1</div>
+      <div class="cat-info">
+        <div class="cat-name">Company Info</div>
+        <div class="cat-trigger">"Ye company kya hai?" / "Who is ZAR?"</div>
+      </div>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="deflect-body">
+      <div class="deflect-content">
+        <div class="redirect-box">
+          <div class="redirect-label">Say this — then open the app</div>
+          <div class="redirect-ur">App pe dikha deta hoon — 30 second lagenge.</div>
+          <div class="redirect-en">"Let me show you on the app — 30 seconds."</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text">"It's a payment app. Here, look —"</div>
+          <div class="detail-icon icon-backup">Backup</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text"><strong>App home screen</strong> — show logo, balance, merchant features</div>
+          <div class="detail-icon icon-proof">Demo</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text">"Ye kya company hai?" / "Pehle kabhi nahi suna" / "Ye kya cheez hai?" / "New app hai, samjh nahi ata"</div>
+          <div class="detail-icon icon-hear">They say</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 2. HOW IT WORKS ===== -->
+  <div class="deflect-card" data-cat="2">
+    <div class="deflect-header" onclick="toggle(this)">
+      <div class="cat-badge">2</div>
+      <div class="cat-info">
+        <div class="cat-name">How It Works</div>
+        <div class="cat-trigger">"Ye kaise kaam karta hai?"</div>
+      </div>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="deflect-body">
+      <div class="deflect-content">
+        <div class="redirect-box">
+          <div class="redirect-label">Say this — then open the app</div>
+          <div class="redirect-ur">Batane se zyada dekhna asaan hai — ye dekhein.</div>
+          <div class="redirect-en">"Easier to show than explain — watch this."</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text">"You tap here, customer pays there. Let me show."</div>
+          <div class="detail-icon icon-backup">Backup</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text"><strong>Golden Flow demo</strong> — walk through a live send/receive</div>
+          <div class="detail-icon icon-proof">Demo</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text">"Samjh nahi aya" / "Dollar trading samjh nahi ati" / "Ye kaise chalega?"</div>
+          <div class="detail-icon icon-hear">They say</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 3. TRUST & SAFETY ===== -->
+  <div class="deflect-card" data-cat="3">
+    <div class="deflect-header" onclick="toggle(this)">
+      <div class="cat-badge">3</div>
+      <div class="cat-info">
+        <div class="cat-name">Trust &amp; Safety</div>
+        <div class="cat-trigger">"Bharosa nahi hai" / "Scam hai ye"</div>
+      </div>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="deflect-body">
+      <div class="deflect-content">
+        <div class="redirect-box">
+          <div class="redirect-label">Say this — then open the app</div>
+          <div class="redirect-ur">Bilkul sahi sawaal. Dekhein — aapka paisa, aapka control.</div>
+          <div class="redirect-en">"Fair question. Look — your money, your control."</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text">"I'll send you $1 right now. Watch it arrive."</div>
+          <div class="detail-icon icon-backup">Backup</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text"><strong>Send $1 live</strong> — they see it land in real time</div>
+          <div class="detail-icon icon-proof">Demo</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text">"Trust nahi hai" / "Pehle fraud ho chuka hai" / "Scam lagta hai" / "Bahir ki app pe bharosa nahi" / "Humare sath pehle bhi scam hua" / "JazzCash bhi band kar diya fraud ki waja se"</div>
+          <div class="detail-icon icon-hear">They say</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 4. LEGAL & FIA ===== -->
+  <div class="deflect-card" data-cat="4">
+    <div class="deflect-header" onclick="toggle(this)">
+      <div class="cat-badge">4</div>
+      <div class="cat-info">
+        <div class="cat-name">Legal &amp; FIA</div>
+        <div class="cat-trigger">"License hai?" / "Police pakad legi"</div>
+      </div>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="deflect-body">
+      <div class="deflect-content">
+        <div class="redirect-box">
+          <div class="redirect-label">Say this — then open the app</div>
+          <div class="redirect-ur">Puri tarah registered hai. Proof dikha deta hoon.</div>
+          <div class="redirect-en">"Fully registered. Let me show you the proof."</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text">"State Bank approved. Here, see the license."</div>
+          <div class="detail-icon icon-backup">Backup</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text"><strong>SBP registration screen</strong> — show compliance docs in app</div>
+          <div class="detail-icon icon-proof">Demo</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text">"License dikhao" / "Police pakar legi" / "Legal documents chahiye" / "Proper licence hota hai iske liye"</div>
+          <div class="detail-icon icon-hear">They say</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 5. WITHDRAWALS ===== -->
+  <div class="deflect-card" data-cat="5">
+    <div class="deflect-header" onclick="toggle(this)">
+      <div class="cat-badge">5</div>
+      <div class="cat-info">
+        <div class="cat-name">Withdrawals</div>
+        <div class="cat-trigger">"Paisa kaise nikalte hain?"</div>
+      </div>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="deflect-body">
+      <div class="deflect-content">
+        <div class="redirect-box">
+          <div class="redirect-label">Say this — then open the app</div>
+          <div class="redirect-ur">Kisi bhi waqt paisa nikal sakte hain. Process dikha deta hoon.</div>
+          <div class="redirect-en">"Cash out anytime. Let me show the process."</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text">"Bank transfer or cash at any ZAR merchant."</div>
+          <div class="detail-icon icon-backup">Backup</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text"><strong>Cash-out screen</strong> — show bank transfer and merchant withdrawal options</div>
+          <div class="detail-icon icon-proof">Demo</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text">"Paisa kaise nikalta hai?" / "Cash kaise milega?" / "Bank transfer hota hai?" / "Binance pe better rate milte hain"</div>
+          <div class="detail-icon icon-hear">They say</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 6. FEES & COMMISSION ===== -->
+  <div class="deflect-card" data-cat="6">
+    <div class="deflect-header" onclick="toggle(this)">
+      <div class="cat-badge">6</div>
+      <div class="cat-info">
+        <div class="cat-name">Fees &amp; Commission</div>
+        <div class="cat-trigger">"Kitna commission hai?" / "Kya charges hain?"</div>
+      </div>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="deflect-body">
+      <div class="deflect-content">
+        <div class="redirect-box">
+          <div class="redirect-label">Say this — then open the app</div>
+          <div class="redirect-ur">Koi chhupi fee nahi. Ek live transaction dikha deta hoon.</div>
+          <div class="redirect-en">"Zero hidden fees. Let me show you a live transaction."</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text">"You set your own rate. Here, let me show the merchant screen."</div>
+          <div class="detail-icon icon-backup">Backup</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text"><strong>Live transaction</strong> — show rate setting and zero platform fee on merchant side</div>
+          <div class="detail-icon icon-proof">Demo</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text">"Kya commission hai?" / "Kya charges hain?" / "Hidden fees to nahi?" / "Kitna kaatenge?"</div>
+          <div class="detail-icon icon-hear">They say</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 7. NO DEMAND HERE ===== -->
+  <div class="deflect-card" data-cat="7">
+    <div class="deflect-header" onclick="toggle(this)">
+      <div class="cat-badge">7</div>
+      <div class="cat-info">
+        <div class="cat-name">No Demand Here</div>
+        <div class="cat-trigger">"Yaha aisa customer nahi hai"</div>
+      </div>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="deflect-body">
+      <div class="deflect-content">
+        <div class="redirect-box">
+          <div class="redirect-label">Say this — then open the app</div>
+          <div class="redirect-ur">Aapke aas-paas ke log kama rahe hain. Dikha deta hoon.</div>
+          <div class="redirect-en">"Your neighbors are already earning. Let me show you."</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text">"Customers come through the app — you don't need to find them."</div>
+          <div class="detail-icon icon-backup">Backup</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text"><strong>Social proof map</strong> — show nearby active merchants and transaction volume</div>
+          <div class="detail-icon icon-proof">Demo</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text">"Yaha dollar ka customer nahi hai" / "Kon kharidega dollar?" / "Ye general store hai yaha mushkil hoga" / "Pharmacy shop pe koi kyn dollar lane aye ga"</div>
+          <div class="detail-icon icon-hear">They say</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 8. ALREADY HAVE A SOLUTION ===== -->
+  <div class="deflect-card" data-cat="8">
+    <div class="deflect-header" onclick="toggle(this)">
+      <div class="cat-badge">8</div>
+      <div class="cat-info">
+        <div class="cat-name">Already Have a Solution</div>
+        <div class="cat-trigger">"EasyPaisa / JazzCash use karte hain"</div>
+      </div>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="deflect-body">
+      <div class="deflect-content">
+        <div class="redirect-box">
+          <div class="redirect-label">Say this — then open the app</div>
+          <div class="redirect-ur">Ye JazzCash ke saath chalta hai — extra kamai, koi masla nahi.</div>
+          <div class="redirect-en">"This works alongside JazzCash — extra income, no conflict."</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text">"Different customers, different service. More options = more money."</div>
+          <div class="detail-icon icon-backup">Backup</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text"><strong>Merchant earnings view</strong> — show how ZAR adds a new income stream</div>
+          <div class="detail-icon icon-proof">Demo</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-text">"Hum EasyPaisa use karte hain" / "JazzCash se kaam chal raha hai" / "Already bahut apps hain" / "Easy paisa jazzcash or easy load bohat masroof"</div>
+          <div class="detail-icon icon-hear">They say</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-spacer"></div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <button class="footer-btn btn-outline" onclick="expandAll()">Expand All</button>
+  <button class="footer-btn btn-primary" onclick="collapseAll()">Collapse All</button>
+</div>
+
+<script>
+  function toggle(header) {
+    var card = header.closest('.deflect-card');
+    var wasActive = card.classList.contains('active');
+    document.querySelectorAll('.deflect-card').forEach(function(c) { c.classList.remove('active'); });
+    if (!wasActive) {
+      card.classList.add('active');
+      setTimeout(function() { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
+    }
+  }
+
+  function expandAll() {
+    document.querySelectorAll('.deflect-card').forEach(function(c) { c.classList.add('active'); });
+  }
+
+  function collapseAll() {
+    document.querySelectorAll('.deflect-card').forEach(function(c) { c.classList.remove('active'); });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>

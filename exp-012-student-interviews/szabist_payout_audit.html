@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Szabist Interviews — Payout Summary</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #B8992E;
+    --gold-light: #CBAF4A;
+    --gold-dark: #9A7E24;
+    --bg: #F5F0E8;
+    --card: #FFFFFF;
+    --border: #E8E3DB;
+    --text: #1A1A1A;
+    --muted: #6B6B6B;
+    --green: #16a34a;
+    --amber: #d97706;
+    --amber-bg: rgba(217,119,6,0.07);
+    --red: #dc2626;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 32px 20px; color: var(--text);
+  }
+  .page { width: 100%; max-width: 620px; }
+
+  .header { text-align: center; margin-bottom: 24px; }
+  .header h1 { font-family: 'DM Sans', sans-serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 5px; }
+  .header p { font-size: 0.82rem; color: var(--muted); }
+
+  .payout-box {
+    background: var(--card);
+    border: 2px solid var(--gold);
+    border-radius: 18px;
+    padding: 1.4rem 1.6rem;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 1.1rem;
+  }
+  .payout-circle {
+    width: 76px; height: 76px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--gold-dark), var(--gold-light));
+    display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;
+  }
+  .payout-circle .big { font-family: 'DM Sans', sans-serif; font-size: 1.55rem; font-weight: 700; line-height: 1; }
+  .payout-circle .sm { font-size: 0.56rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; opacity: 0.85; }
+  .payout-text h2 { font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 5px; }
+  .payout-text p { font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.2rem 1.4rem;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem; font-weight: 700; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .card-title .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+
+  .work-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+    font-size: 0.83rem; line-height: 1.5;
+  }
+  .work-item:last-child { border-bottom: none; }
+  .work-icon { font-size: 0.95rem; flex-shrink: 0; padding-top: 1px; }
+  .work-label { font-weight: 600; margin-bottom: 1px; }
+  .work-detail { color: var(--muted); font-size: 0.79rem; }
+
+  .tier-table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 0.8rem; }
+  .tier-table th {
+    text-align: left; font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--muted); padding: 5px 8px; border-bottom: 1px solid var(--border);
+  }
+  .tier-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.45; }
+  .tier-table tr:last-child td { border-bottom: none; }
+  .tier-badge {
+    display: inline-block; font-size: 0.66rem; font-weight: 700; padding: 1px 6px;
+    border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+  }
+  .tier-1 { background: #dcfce7; color: #15803d; }
+  .tier-2 { background: #dbeafe; color: #1d4ed8; }
+  .tier-3 { background: #f3f4f6; color: #374151; }
+  .tier-flag { background: #fef3c7; color: #92400e; }
+  .tier-oos { background: #f1f5f9; color: #64748b; }
+
+  .q-box {
+    background: var(--amber-bg);
+    border: 1px solid rgba(217,119,6,0.22);
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 10px;
+  }
+  .q-box:last-child { margin-bottom: 0; }
+  .q-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--amber); margin-bottom: 4px; }
+  .q-main { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; }
+  .q-context { font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-bottom: 8px; }
+  .q-result { font-size: 0.79rem; line-height: 1.6; }
+  .q-result .yes { color: var(--green); font-weight: 600; }
+  .q-result .no  { color: var(--red); font-weight: 600; }
+
+  .oos-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    font-size: 0.81rem; color: var(--muted); line-height: 1.5;
+  }
+  .oos-box strong { color: var(--text); }
+
+  .rule {
+    display: flex; gap: 9px; align-items: flex-start;
+    padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+    font-size: 0.83rem; line-height: 1.5;
+  }
+  .rule:last-child { border-bottom: none; }
+  .rule-num {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: white; width: 21px; height: 21px; border-radius: 5px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700; margin-top: 1px;
+  }
+  .rule strong { display: block; margin-bottom: 1px; }
+  .rule .detail { font-size: 0.78rem; color: var(--muted); }
+
+  footer { margin-top: 28px; font-size: 0.7rem; color: var(--muted); text-align: center; padding-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <h1>Szabist Interviews &mdash; Payout Summary</h1>
+    <p>Alveena &nbsp;&bull;&nbsp; 30 Szabist interviews conducted</p>
+  </div>
+
+  <div class="payout-box">
+    <div class="payout-circle">
+      <div class="big">70%</div>
+      <div class="sm">Sent now</div>
+    </div>
+    <div class="payout-text">
+      <h2>You&rsquo;re receiving 70% of your payment now</h2>
+      <p>We reviewed all 30 recordings and matched them to forms. 24 interviews are verified clean. We&rsquo;re holding 30% until you submit the remaining 6 forms &mdash; resolve the items listed below and we&rsquo;ll release the rest.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>What you did</div>
+
+    <div class="work-item">
+      <span class="work-icon">&#x2705;</span>
+      <div>
+        <div class="work-label">24 clean interviews with full question coverage</div>
+        <div class="work-detail">Every student was asked every question. No shortcuts detected in any of the 24 verified recordings.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x2705;</span>
+      <div>
+        <div class="work-label">3 standout interviews with genuine follow-up probing</div>
+        <div class="work-detail">Laiba Faheem, Iman Hyder, and Mahrukh &mdash; these three had real back-and-forth. The kind of depth that makes the data useful.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x26A0;&#xFE0F;</span>
+      <div>
+        <div class="work-label">5 interviews still have no form submission</div>
+        <div class="work-detail">Amna, Haassan, Muhammad Raza, Raffay, Siraj &mdash; recordings exist but no matching form. Their data can&rsquo;t be added to the dataset. If any of these students can still submit the form this week, we&rsquo;ll count them.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x26A0;&#xFE0F;</span>
+      <div>
+        <div class="work-label">Most interviews were script read-throughs without follow-ups</div>
+        <div class="work-detail">You asked the question and moved on after the first answer in the majority of recordings. This is fine for this round &mdash; we didn&rsquo;t specify a follow-up requirement upfront. Next round it&rsquo;s explicit.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Interview quality breakdown &mdash; all 30</div>
+
+    <table class="tier-table">
+      <thead>
+        <tr>
+          <th>Tier</th>
+          <th>Count</th>
+          <th>Names</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tier-badge tier-1">Strong</span></td>
+          <td>3</td>
+          <td>Laiba Faheem, Iman Hyder, Mahrukh</td>
+        </tr>
+        <tr>
+          <td><span class="tier-badge tier-2">Good</span></td>
+          <td>3</td>
+          <td>Bakhtawar, Renuka, Ghazi</td>
+        </tr>
+        <tr>
+          <td><span class="tier-badge tier-3">Acceptable</span></td>
+          <td>18</td>
+          <td>Saniya, Rehan, Hamza, Huzaifa, Fizza Qureshi, Mehdi, Talha, Mohib, Michael, Emaan, Areesa, Faiq, Yousuf, Mehek, Ibrahim, Gulfisha, Ali Jibran, Muhammad Raza</td>
+        </tr>
+        <tr>
+          <td><span class="tier-badge tier-flag">Flagged</span></td>
+          <td>3</td>
+          <td>Amna (delegated questions), Haassan (garbled audio), Raffay (Whisper corruption / audio gap)</td>
+        </tr>
+        <tr>
+          <td><span class="tier-badge tier-oos">Out of scope</span></td>
+          <td>1</td>
+          <td>Shahzaib &mdash; see note below</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="border-color: rgba(217,119,6,0.3);">
+    <div class="card-title"><span class="dot" style="background:var(--amber);"></span>Timing flags &mdash; for the research team, not a payout issue</div>
+    <p style="font-size:0.79rem;color:var(--muted);margin-bottom:12px;">These don&rsquo;t affect your payout. The research team should flag the rows below when analyzing data.</p>
+
+    <div class="work-item">
+      <span class="work-icon">&#x1F319;</span>
+      <div>
+        <div class="work-label">10 recordings made outside 9 AM&ndash;9 PM</div>
+        <div class="work-detail">Two overnight sessions: March 3/4 (Renuka 12:39 AM, Huzaifa 12:48 AM, Ali Jibran 1:23 AM, Talha 2:36 AM, Saniya 3:08 AM) and March 4/5 (Emaan 10:04 PM, Ghazi 10:14 PM, Areesa 1:07 AM, Mehek 1:16 AM, Haassan 2:36 AM). The interviews clearly happened &mdash; just noting the sessions ran very late.</div>
+      </div>
+    </div>
+
+    <div class="work-item" style="border-bottom:none;">
+      <span class="work-icon">&#x26A0;&#xFE0F;</span>
+      <div>
+        <div class="work-label">Bakhtawar &amp; Rehan: form pre-submitted hours before the recording</div>
+        <div class="work-detail">
+          Bakhtawar: form at 4:32 AM &rarr; recording at 1:28 PM (9-hour gap).<br>
+          Rehan: form at 3:10 AM &rarr; recording at 1:19 PM (10-hour gap).<br>
+          The form data for these two was filled in before the interview occurred. Their demographic answers cannot reliably reflect what was said in the interview. Research team should treat these rows as lower-confidence data points.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Four things to clear up &mdash; reply within 48 hours</div>
+
+    <div class="q-box">
+      <div class="q-label">Item 1 &mdash; Amna</div>
+      <div class="q-main">You handed Amna the question sheet and told her to read them herself.</div>
+      <div class="q-context">We can hear you say &ldquo;you can read them if you want&rdquo; on the recording. That&rsquo;s not a proper interview &mdash; the interviewer needs to ask the questions. This interview doesn&rsquo;t count as-is.</div>
+      <div class="q-result">
+        If you re-do the interview properly and share a new recording &rarr; <span class="yes">it counts and the held amount is released.</span><br>
+        If no redo &rarr; <span class="no">Amna&rsquo;s interview is not payable.</span>
+      </div>
+    </div>
+
+    <div class="q-box">
+      <div class="q-label">Item 2 &mdash; Haassan &amp; Raffay</div>
+      <div class="q-main">Both recordings have serious audio issues that make the transcripts unreliable.</div>
+      <div class="q-context">Haassan&rsquo;s recording is severely garbled. Raffay&rsquo;s transcript contains a section where the same phrase repeats 15+ times &mdash; a sign the audio is corrupted or there was a long gap. Play both back and confirm they&rsquo;re actually audible.</div>
+      <div class="q-result">
+        If both play clearly and you send a voice note confirming &rarr; <span class="yes">both count, held amount released.</span><br>
+        If audio is bad &rarr; <span class="no">Re-record or those two interviews are not payable.</span>
+      </div>
+    </div>
+
+    <div class="q-box">
+      <div class="q-label">Item 3 &mdash; Iqra</div>
+      <div class="q-main">A form was submitted for Iqra but we have no recording for her anywhere.</div>
+      <div class="q-context">The form looks real. But without audio we can&rsquo;t verify the interview happened.</div>
+      <div class="q-result">
+        If you share the Iqra audio file &rarr; <span class="yes">counts and held amount released.</span><br>
+        If there was no recording &rarr; <span class="no">Iqra&rsquo;s interview is not payable.</span>
+      </div>
+    </div>
+
+    <div class="q-box">
+      <div class="q-label">Item 4 &mdash; 5 missing forms</div>
+      <div class="q-main">5 students have recordings but no form submission.</div>
+      <div class="q-context">Amna, Haassan, Muhammad Raza, Raffay, Siraj &mdash; their recordings are real but without a form we can&rsquo;t add them to the dataset. If any of these students can still submit the Google Form this week, we&rsquo;ll count them.</div>
+      <div class="q-result">
+        Each form submitted this week &rarr; <span class="yes">counts toward your quality total, paid as additional.</span><br>
+        No form by end of week &rarr; <span class="no">those recordings stay outside the dataset.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>One student not counted &mdash; Shahzaib</div>
+    <div class="oos-box">
+      <strong>Shahzaib is a Sir Syed University student (Masters in Software Engineering) &mdash; not SZABIST.</strong> He mentioned his university clearly on the recording. This cohort is SZABIST-only, so his interview is out of scope and doesn&rsquo;t count toward your total. No issue with the interview itself &mdash; just wrong school.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>For the next round &mdash; four rules</div>
+    <p style="font-size:0.79rem;color:var(--muted);margin-bottom:11px;">Not a critique of this round &mdash; just how we&rsquo;ll run things going forward.</p>
+
+    <div class="rule">
+      <div class="rule-num">1</div>
+      <div>
+        <strong>Every interview needs a form &mdash; submitted the same day</strong>
+        <span class="detail">Record the interview, fill the form before you leave that session. 14 missing forms is too many to recover retroactively. Same-day is the rule from here.</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="rule-num">2</div>
+      <div>
+        <strong>Start every recording with: your name + date + student&rsquo;s first name</strong>
+        <span class="detail">First 10 seconds. You were already doing this on some recordings &mdash; make it consistent on every single one. It makes verification take seconds instead of minutes.</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="rule-num">3</div>
+      <div>
+        <strong>Ask at least one follow-up per section &mdash; this is now required, not a bonus</strong>
+        <span class="detail">When a student gives an answer, ask one &ldquo;why&rdquo; or &ldquo;can you tell me more&rdquo; before moving on. This is part of the job next round, not optional.</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="rule-num">4</div>
+      <div>
+        <strong>You ask the questions &mdash; the student doesn&rsquo;t read them</strong>
+        <span class="detail">The interviewer reads each question aloud, the student answers. You can show them the form to read along if it helps, but the interview is a conversation you lead.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="border-color: rgba(220,38,38,0.25);">
+    <div class="card-title"><span class="dot" style="background:var(--red);"></span>Form verification &mdash; checked 2026-03-05</div>
+    <p style="font-size:0.79rem;color:var(--muted);margin-bottom:12px;">Live sheet fetch (91 rows total, up from 60) confirmed the following on 2026-03-05. <strong>30% holdback is fully released.</strong></p>
+
+    <table class="tier-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Timestamp</th>
+          <th>Flag</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Siraj</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5/2026 16:13</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Alveena&rsquo;s email</td>
+        </tr>
+        <tr>
+          <td>Abdul Raffay</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5/2026 16:28</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Alveena&rsquo;s email</td>
+        </tr>
+        <tr>
+          <td>Amna Bhatti</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5/2026 16:33</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Alveena&rsquo;s email</td>
+        </tr>
+        <tr>
+          <td>Muhammad Raza</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5/2026 16:41</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Alveena&rsquo;s email</td>
+        </tr>
+        <tr>
+          <td>Haassan</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/4/2026 11:12</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Sir Syed student &mdash; Syed Naqi submitted independently</td>
+        </tr>
+        <tr>
+          <td>Iqra</td>
+          <td><span class="tier-badge tier-2">Already existed</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/3/2026 21:16</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Alveena&rsquo;s email &mdash; was present, not missing</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="work-item" style="margin-top:12px;border-top:1px solid var(--border);border-bottom:none;">
+      <span class="work-icon">&#x26A0;&#xFE0F;</span>
+      <div>
+        <div class="work-label">4 forms submitted from interviewer&rsquo;s own email within 28 minutes</div>
+        <div class="work-detail">Siraj, Raffay, Amna, and Raza were all submitted by Alveena between 16:13&ndash;16:41 on 3/5 &mdash; post-hoc, in rapid succession. Cross-check against recordings shows answers are broadly consistent (not fabricated), but the side hustle field is blank on all four, and one title mismatch: Siraj said &ldquo;Growth Partner&rdquo; on tape, form says &ldquo;Sales Rep.&rdquo; Treat these four rows as <strong>lower-confidence data</strong> in analysis. Side hustle responses should be marked missing/unreliable for these entries.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Szabist Karachi Cohort &nbsp;&bull;&nbsp; Issued 2026-03-05 &nbsp;&bull;&nbsp; Any questions? Just reply.
+  </footer>
+
+</div>
+</body>
+</html>

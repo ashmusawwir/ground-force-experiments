@@ -9,13 +9,13 @@ from lib.sql import EXCLUDED_IDS_SQL, ambassadors_cte
 def retargeting_status_query():
     """Per-phone demo and onboarding status with dates for retargeting analysis.
 
-    Demo check: any digital_cash_note from an ambassador (amount > 0).
-    Returns first_demo_date for timeline correlation with sheet visits.
+    Demo check: any claimed digital_cash_notes from ambassadors (> $0).
+    Returns demo_amount (atomic USDC) for tier analysis ($5+ vs < $5).
 
     Onboarding check: MOS (active/pending) UNION PE (state=2, merchant code).
     No date filter — checks all-time records.
 
-    Output: phone_number, got_demo, first_demo_date, is_onboarded, onboarding_date
+    Output: phone_number, got_demo, demo_amount, first_demo_date, is_onboarded, onboarding_date
     """
     return f"""
     with {ambassadors_cte()},
@@ -63,6 +63,7 @@ def retargeting_status_query():
     )
     select ap.phone_number,
            coalesce(dn.total_amount, 0) > 0 as got_demo,
+           dn.total_amount as demo_amount,
            dn.first_demo_date,
            o.phone_number is not null as is_onboarded,
            o.onboarding_date

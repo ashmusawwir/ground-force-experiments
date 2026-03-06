@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IBA Interviews — Payout Summary</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #B8992E;
+    --gold-light: #CBAF4A;
+    --gold-dark: #9A7E24;
+    --bg: #F5F0E8;
+    --card: #FFFFFF;
+    --border: #E8E3DB;
+    --text: #1A1A1A;
+    --muted: #6B6B6B;
+    --green: #16a34a;
+    --amber: #d97706;
+    --amber-bg: rgba(217,119,6,0.07);
+    --red: #dc2626;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 32px 20px; color: var(--text);
+  }
+  .page { width: 100%; max-width: 620px; }
+
+  .header { text-align: center; margin-bottom: 24px; }
+  .header h1 { font-family: 'DM Sans', sans-serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 5px; }
+  .header p { font-size: 0.82rem; color: var(--muted); }
+
+  /* Payout hero */
+  .payout-box {
+    background: var(--card);
+    border: 2px solid var(--gold);
+    border-radius: 18px;
+    padding: 1.4rem 1.6rem;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 1.1rem;
+  }
+  .payout-circle {
+    width: 76px; height: 76px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--gold-dark), var(--gold-light));
+    display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;
+  }
+  .payout-circle .big { font-family: 'DM Sans', sans-serif; font-size: 1.55rem; font-weight: 700; line-height: 1; }
+  .payout-circle .sm { font-size: 0.56rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; opacity: 0.85; }
+  .payout-text h2 { font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 5px; }
+  .payout-text p { font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.2rem 1.4rem;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem; font-weight: 700; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .card-title .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+
+  /* Work lines */
+  .work-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+    font-size: 0.83rem; line-height: 1.5;
+  }
+  .work-item:last-child { border-bottom: none; }
+  .work-icon { font-size: 0.95rem; flex-shrink: 0; padding-top: 1px; }
+  .work-label { font-weight: 600; margin-bottom: 1px; }
+  .work-detail { color: var(--muted); font-size: 0.79rem; }
+
+  /* Questions */
+  .q-box {
+    background: var(--amber-bg);
+    border: 1px solid rgba(217,119,6,0.22);
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 10px;
+  }
+  .q-box:last-child { margin-bottom: 0; }
+  .q-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--amber); margin-bottom: 4px; }
+  .q-main { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; }
+  .q-context { font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-bottom: 8px; }
+  .q-result { font-size: 0.79rem; line-height: 1.6; }
+  .q-result .yes { color: var(--green); font-weight: 600; }
+  .q-result .no  { color: var(--red); font-weight: 600; }
+
+  /* Rules */
+  .rule {
+    display: flex; gap: 9px; align-items: flex-start;
+    padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+    font-size: 0.83rem; line-height: 1.5;
+  }
+  .rule:last-child { border-bottom: none; }
+  .rule-num {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: white; width: 21px; height: 21px; border-radius: 5px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700; margin-top: 1px;
+  }
+  .rule strong { display: block; margin-bottom: 1px; }
+  .rule .detail { font-size: 0.78rem; color: var(--muted); }
+
+  footer { margin-top: 28px; font-size: 0.7rem; color: var(--muted); text-align: center; padding-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <h1>IBA Interviews &mdash; Payout Summary</h1>
+    <p>Ahmed Abdul Rauf &nbsp;&bull;&nbsp; 30 IBA Karachi student interviews</p>
+  </div>
+
+  <!-- Payout hero -->
+  <div class="payout-box">
+    <div class="payout-circle">
+      <div class="big">95%</div>
+      <div class="sm">Sent now</div>
+    </div>
+    <div class="payout-text">
+      <h2>You&rsquo;re receiving 95% of your payment now</h2>
+      <p>We listened to all 30 recordings and reviewed the forms. The work is solid and we&rsquo;re happy with it. We&rsquo;re holding 5% for 48 hours &mdash; just reply to the two questions below and we&rsquo;ll send the rest right away.</p>
+    </div>
+  </div>
+
+  <!-- What you did well -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>What you did</div>
+
+    <div class="work-item">
+      <span class="work-icon">✅</span>
+      <div>
+        <div class="work-label">All 30 interviews completed with all questions</div>
+        <div class="work-detail">Every student was asked every question. No shortcuts.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">✅</span>
+      <div>
+        <div class="work-label">Recordings and forms matched up</div>
+        <div class="work-detail">For almost every student, what was written on the form matches what we heard in the recording. Good data.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">✅</span>
+      <div>
+        <div class="work-label">Several interviews were excellent</div>
+        <div class="work-detail">A handful of conversations went deep &mdash; students opened up, you asked follow-ups, and we got real insights. AhmedHassaan, Muzammil, Prashant, and a few others were standout interviews.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">⚠️</span>
+      <div>
+        <div class="work-label">Most interviews stuck to the script</div>
+        <div class="work-detail">For about 22 of the 30, you asked the question, took the first answer, and moved on. That&rsquo;s fine for getting basic data, but we miss the &ldquo;why&rdquo; behind the answers. We&rsquo;ll be clearer about this next time &mdash; not docking you for it now.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Two questions -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Two things to clear up &mdash; reply within 48 hours</div>
+
+    <div class="q-box">
+      <div class="q-label">Question 1</div>
+      <div class="q-main">The student filed as &ldquo;RasoolUllah&rdquo; &mdash; his recording says he goes to Karachi University, but the form says IBA Karachi. Which one is correct?</div>
+      <div class="q-context">We can hear him say &ldquo;Karachi University&rdquo; clearly in the recording. The form says IBA. Could just be a typo &mdash; we just need to know.</div>
+      <div class="q-result">
+        If it was a typo when filling the form &rarr; <span class="yes">5% released right away.</span><br>
+        If he was actually a KU student (not IBA) &rarr; <span class="no">5% not paid out.</span>
+      </div>
+    </div>
+
+    <div class="q-box">
+      <div class="q-label">Question 2</div>
+      <div class="q-main">The student filed as &ldquo;Javeria&rdquo; &mdash; but in the recording she gives her name as &ldquo;Shreya Khan.&rdquo; Who is she?</div>
+      <div class="q-context">Everything else on the form matches the recording (age, degree, university, pay expectations). Just the name is different. Is Javeria a nickname? Was there a mix-up?</div>
+      <div class="q-result">
+        If you can explain the name difference &rarr; <span class="yes">5% released right away.</span><br>
+        If there&rsquo;s no explanation &rarr; <span class="no">5% not paid out.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Next time -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>For the next round &mdash; four small changes</div>
+    <p style="font-size:0.79rem;color:var(--muted);margin-bottom:11px;">Not feedback on what went wrong &mdash; just how we want to run things going forward so it&rsquo;s easier on everyone.</p>
+
+    <div class="rule">
+      <div class="rule-num">1</div>
+      <div>
+        <strong>Start each recording with a quick intro</strong>
+        <span class="detail">Say your name, today&rsquo;s date, and the student&rsquo;s name before you begin. Takes 10 seconds. Makes it easy to confirm who did what.</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="rule-num">2</div>
+      <div>
+        <strong>Have the student say their university out loud</strong>
+        <span class="detail">It&rsquo;s already the first question &mdash; just make sure they say it clearly on the recording, not just on the form. Avoids the KU/IBA issue.</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="rule-num">3</div>
+      <div>
+        <strong>Ask at least one &ldquo;why&rdquo; per interview</strong>
+        <span class="detail">When a student gives an interesting answer, ask one follow-up before moving on. This is the minimum we expect &mdash; not a bonus, just part of the job.</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="rule-num">4</div>
+      <div>
+        <strong>Everyone submits their own form</strong>
+        <span class="detail">If you do the interview, you fill in the form under your own name. If someone else does the interview, they fill in theirs. Keeps everything clean and avoids confusion.</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    IBA Karachi Cohort &nbsp;&bull;&nbsp; Issued 2026-03-04 &nbsp;&bull;&nbsp; Any questions? Just reply.
+  </footer>
+
+</div>
+</body>
+</html>

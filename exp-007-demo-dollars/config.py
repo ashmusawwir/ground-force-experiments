@@ -14,6 +14,9 @@ COL_GOLDEN_FLOW = "Golden Flow Amount"
 COL_QR_SETUP = "QR Setup Done"
 COL_AMBASSADOR = "Ambassador Name"
 COL_PHONE = "Merchant Phone"
+COL_SHOP_NAME = "Shop Name"
+COL_LAT = "Location Lat"
+COL_LNG = "Location Lng"
 
 QR_YES_VALUES = {"yes", "true", "done", "1"}
 

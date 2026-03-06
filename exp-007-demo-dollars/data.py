@@ -10,6 +10,7 @@ from config import (
     SHEET_ID, SHEET_TAB, EXPERIMENT_START,
     COL_TIMESTAMP, COL_VISIT_TYPE, COL_GOLDEN_FLOW, COL_QR_SETUP,
     COL_AMBASSADOR, COL_PHONE, COL_OPENER_OUTCOME,
+    COL_SHOP_NAME, COL_LAT, COL_LNG,
     QR_YES_VALUES, AMBASSADOR_NAMES,
 )
 
@@ -132,6 +133,26 @@ def db_onboard_date(row):
         if isinstance(d, date):
             return d
     return None
+
+
+def db_demo_amount(row):
+    """Total demo note amount (atomic USDC) from DB overlay, or None."""
+    phone = phone_number(row)
+    if _db_status and phone in _db_status:
+        return _db_status[phone].get("demo_amount")
+    return None
+
+
+def shop_name(row):
+    return row.get(COL_SHOP_NAME, "").strip()
+
+
+def location_lat(row):
+    return row.get(COL_LAT, "").strip()
+
+
+def location_lng(row):
+    return row.get(COL_LNG, "").strip()
 
 
 def ambassador_name(row):

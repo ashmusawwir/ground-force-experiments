@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ambassador Fraud Investigation — Summary 2026-03-05</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --zar-gold:#B8992E;--zar-gold-light:#CBAF4A;--zar-gold-dark:#9A7E24;
+    --bg:#F5F0E8;--card:#FFFFFF;--border:#E8E3DB;--text:#1A1A1A;--muted:#6B6B6B;
+    --green:#16a34a;--green-bg:rgba(22,163,74,0.08);
+    --amber:#d97706;--amber-bg:rgba(217,119,6,0.07);
+    --red:#dc2626;--red-bg:rgba(220,38,38,0.08);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);padding:32px 20px;line-height:1.5;display:flex;flex-direction:column;align-items:center}
+  .page{width:100%;max-width:860px}
+  .header{text-align:center;margin-bottom:28px}
+  .header h1{font-family:'DM Sans',sans-serif;font-size:1.75rem;font-weight:700;margin-bottom:6px}
+  .header p{font-size:0.82rem;color:var(--muted);font-family:monospace;letter-spacing:0.02em}
+  .verdict-badge{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:8px 20px;border-radius:999px;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#fff}
+  .verdict-green{background:var(--green);box-shadow:0 2px 12px rgba(22,163,74,0.25)}
+  .verdict-amber{background:var(--amber);box-shadow:0 2px 12px rgba(217,119,6,0.3)}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:1.4rem 1.6rem;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+  .card-title{font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .card-title .dot{width:8px;height:8px;border-radius:50%;background:var(--zar-gold);flex-shrink:0}
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .stat-box{background:var(--bg);border-radius:12px;padding:14px 12px;text-align:center}
+  .stat-value{font-family:'DM Sans',sans-serif;font-size:1.35rem;font-weight:700;color:var(--zar-gold-dark);line-height:1.2;margin-bottom:4px}
+  .stat-value.small{font-size:0.95rem}.stat-value.red{color:var(--red)}
+  .stat-label{font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:600}
+  .table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:0.82rem}
+  th{background:var(--bg);color:var(--muted);font-weight:600;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;padding:0.55rem 0.75rem;text-align:left;border-bottom:1px solid var(--border)}
+  td{padding:0.55rem 0.75rem;text-align:left;border-bottom:1px solid var(--border)}
+  tr:last-child td{border-bottom:none}
+  tr.sig-clear td:last-child{color:var(--green);font-weight:600}
+  tr.sig-watch td{background:var(--amber-bg)}
+  tr.sig-watch td:last-child{color:var(--amber);font-weight:600}
+  tr.suspect-row td{background:rgba(184,153,46,0.13);font-weight:600}
+  tr.suspect-row td:first-child::after{content:" ★";color:var(--zar-gold)}
+  .rank{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:linear-gradient(135deg,var(--zar-gold),var(--zar-gold-light));color:white;font-size:0.7rem;font-weight:700}
+  .insight{padding:0.9rem 1.1rem;border-radius:0 12px 12px 0;font-size:0.84rem;line-height:1.6;margin-bottom:0}
+  .insight-green{background:var(--green-bg);border-left:3px solid var(--green)}
+  .insight-green strong{color:var(--green)}
+  .insight-amber{background:var(--amber-bg);border-left:3px solid var(--amber)}
+  .insight-amber strong{color:var(--amber)}
+  .insight-gold{background:linear-gradient(135deg,rgba(184,153,46,0.08),rgba(184,153,46,0.02));border-left:3px solid var(--zar-gold)}
+  .insight-gold strong{color:var(--zar-gold-dark)}
+  footer{margin-top:28px;padding-bottom:12px;font-size:0.7rem;color:var(--muted);text-align:center}
+  @media(max-width:768px){.stat-grid{grid-template-columns:repeat(2,1fr)}.stat-value{font-size:1.1rem}table{font-size:0.74rem}th,td{padding:0.4rem 0.5rem}.card{padding:1rem 1.1rem}}
+  @media print{body{padding:0;background:#fff}.card{box-shadow:none;page-break-inside:avoid}}
+</style>
+<style>
+  .summary-table{width:100%;border-collapse:collapse;font-size:0.82rem}
+  .summary-table th{background:var(--bg);color:var(--muted);font-weight:600;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;padding:0.55rem 0.75rem;text-align:left;border-bottom:2px solid var(--border)}
+  .summary-table td{padding:0.55rem 0.75rem;border-bottom:1px solid var(--border);vertical-align:top}
+  .summary-table tr:last-child td{border-bottom:none}
+  .verdict-pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:0.72rem;font-weight:700;color:#fff;letter-spacing:0.04em;text-transform:uppercase}
+  .watch-count{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:0.75rem;font-weight:700}
+  a{color:var(--zar-gold-dark);text-decoration:none;font-weight:600}
+  a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <h1>Fraud Investigation — Master Summary</h1>
+    <p>7 active ambassadors &nbsp;&bull;&nbsp; Period 2026-02-26 to 2026-03-05 &nbsp;&bull;&nbsp; Generated 2026-03-05</p>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>All Ambassadors — Risk Overview</div>
+    <div class="table-wrap">
+      <table class="summary-table">
+        <thead><tr>
+          <th>Ambassador</th><th>Demos (7d / All)</th><th>Merchant Conv.</th>
+          <th>Money Loop</th><th>Self-Spend</th><th>Incoming DCNs</th>
+          <th>Watch Signals</th><th>Verdict</th><th>Report</th>
+        </tr></thead>
+        <tbody>
+          <tr style="background:rgba(217,119,6,0.05)">
+            <td><strong>+923132697794</strong><br><span style="color:var(--muted);font-size:0.75rem">user_1ef1d1ea</span></td>
+            <td>4 / 62</td>
+            <td>25 / 47</td>
+            <td>—</td>
+            <td>—</td>
+            <td>$100 (8 senders)</td>
+            <td><span class="watch-count" style="background:var(--amber);color:#fff">2</span><br><span style="font-size:0.72rem;color:var(--amber)">Burst, Unknown DCN</span></td>
+            <td><span class="verdict-pill" style="background:#16a34a">Low Fraud Risk</span></td>
+            <td><a href="ambassador-fraud-20260305-923132697794.html">View →</a></td>
+          </tr>
+          <tr style="background:rgba(217,119,6,0.05)">
+            <td><strong>(no phone)</strong><br><span style="color:var(--muted);font-size:0.75rem">owaisferoz1</span></td>
+            <td>2 / 28</td>
+            <td>20 / 24</td>
+            <td>$1.00</td>
+            <td>1 txn(s)</td>
+            <td>$90 (13 senders)</td>
+            <td><span class="watch-count" style="background:var(--amber);color:#fff">1</span><br><span style="font-size:0.72rem;color:var(--amber)">Self-Spend</span></td>
+            <td><span class="verdict-pill" style="background:#16a34a">Low Fraud Risk</span></td>
+            <td><a href="ambassador-fraud-20260305-019c22a107a67c67889e5c655fe8ae11.html">View →</a></td>
+          </tr>
+          <tr style="background:rgba(217,119,6,0.05)">
+            <td><strong>+923458781746</strong><br><span style="color:var(--muted);font-size:0.75rem">ilyas_khan</span></td>
+            <td>11 / 13</td>
+            <td>8 / 12</td>
+            <td>—</td>
+            <td>—</td>
+            <td>$45 (6 senders)</td>
+            <td><span class="watch-count" style="background:var(--amber);color:#fff">1</span><br><span style="font-size:0.72rem;color:var(--amber)">Burst</span></td>
+            <td><span class="verdict-pill" style="background:#16a34a">Low Fraud Risk</span></td>
+            <td><a href="ambassador-fraud-20260305-923458781746.html">View →</a></td>
+          </tr>
+          <tr style="background:rgba(22,163,74,0.04)">
+            <td><strong>+923018597735</strong><br><span style="color:var(--muted);font-size:0.75rem">happy_griffin_1631</span></td>
+            <td>5 / 9</td>
+            <td>9 / 9</td>
+            <td>—</td>
+            <td>—</td>
+            <td>$20 (1 senders)</td>
+            <td><span class="watch-count" style="background:var(--green);color:#fff">0</span></td>
+            <td><span class="verdict-pill" style="background:#16a34a">Low Fraud Risk</span></td>
+            <td><a href="ambassador-fraud-20260305-923018597735.html">View →</a></td>
+          </tr>
+          <tr style="background:rgba(22,163,74,0.04)">
+            <td><strong>+923051078922</strong><br><span style="color:var(--muted);font-size:0.75rem">umer2700</span></td>
+            <td>6 / 9</td>
+            <td>6 / 7</td>
+            <td>—</td>
+            <td>—</td>
+            <td>$30 (5 senders)</td>
+            <td><span class="watch-count" style="background:var(--green);color:#fff">0</span></td>
+            <td><span class="verdict-pill" style="background:#16a34a">Low Fraud Risk</span></td>
+            <td><a href="ambassador-fraud-20260305-923051078922.html">View →</a></td>
+          </tr>
+          <tr style="background:rgba(22,163,74,0.04)">
+            <td><strong>+923412900060</strong><br><span style="color:var(--muted);font-size:0.75rem">mighty_robin_3902</span></td>
+            <td>5 / 5</td>
+            <td>2 / 5</td>
+            <td>—</td>
+            <td>—</td>
+            <td>$25 (3 senders)</td>
+            <td><span class="watch-count" style="background:var(--green);color:#fff">0</span></td>
+            <td><span class="verdict-pill" style="background:#16a34a">Low Fraud Risk</span></td>
+            <td><a href="ambassador-fraud-20260305-923412900060.html">View →</a></td>
+          </tr>
+          <tr style="background:rgba(22,163,74,0.04)">
+            <td><strong>+923122320011</strong><br><span style="color:var(--muted);font-size:0.75rem">stormy_raccoon_4878</span></td>
+            <td>1 / 1</td>
+            <td>0 / 1</td>
+            <td>—</td>
+            <td>—</td>
+            <td>$5 (1 senders)</td>
+            <td><span class="watch-count" style="background:var(--green);color:#fff">0</span></td>
+            <td><span class="verdict-pill" style="background:#16a34a">Low Fraud Risk</span></td>
+            <td><a href="ambassador-fraud-20260305-923122320011.html">View →</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Key Findings</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="insight insight-amber"><strong>3 ambassador(s) have watch signals</strong> but remain Low Risk overall. Continue monitoring: +923132697794, (no phone), +923458781746</div>
+      <div class="insight insight-green"><strong>4 ambassador(s) are fully clear</strong> — no fraud signals detected.</div>
+    </div>
+  </div>
+
+  <footer>Generated 2026-03-05 &nbsp;&bull;&nbsp; ZAR Ground Force Intelligence</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>KU Interviews — Payout Summary</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #B8992E;
+    --gold-light: #CBAF4A;
+    --gold-dark: #9A7E24;
+    --bg: #F5F0E8;
+    --card: #FFFFFF;
+    --border: #E8E3DB;
+    --text: #1A1A1A;
+    --muted: #6B6B6B;
+    --green: #16a34a;
+    --amber: #d97706;
+    --amber-bg: rgba(217,119,6,0.07);
+    --red: #dc2626;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 32px 20px; color: var(--text);
+  }
+  .page { width: 100%; max-width: 620px; }
+
+  .header { text-align: center; margin-bottom: 24px; }
+  .header h1 { font-family: 'DM Sans', sans-serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 5px; }
+  .header p { font-size: 0.82rem; color: var(--muted); }
+
+  .payout-box {
+    background: var(--card);
+    border: 2px solid var(--gold);
+    border-radius: 18px;
+    padding: 1.4rem 1.6rem;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 1.1rem;
+  }
+  .payout-circle {
+    width: 76px; height: 76px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--gold-dark), var(--gold-light));
+    display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;
+  }
+  .payout-circle .big { font-family: 'DM Sans', sans-serif; font-size: 1.55rem; font-weight: 700; line-height: 1; }
+  .payout-circle .sm { font-size: 0.56rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; opacity: 0.85; }
+  .payout-text h2 { font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 5px; }
+  .payout-text p { font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.2rem 1.4rem;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem; font-weight: 700; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .card-title .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+
+  .work-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+    font-size: 0.83rem; line-height: 1.5;
+  }
+  .work-item:last-child { border-bottom: none; }
+  .work-icon { font-size: 0.95rem; flex-shrink: 0; padding-top: 1px; }
+  .work-label { font-weight: 600; margin-bottom: 1px; }
+  .work-detail { color: var(--muted); font-size: 0.79rem; }
+
+  .tier-table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 0.8rem; }
+  .tier-table th {
+    text-align: left; font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--muted); padding: 5px 8px; border-bottom: 1px solid var(--border);
+  }
+  .tier-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.45; }
+  .tier-table tr:last-child td { border-bottom: none; }
+  .tier-badge {
+    display: inline-block; font-size: 0.66rem; font-weight: 700; padding: 1px 6px;
+    border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+  }
+  .tier-1 { background: #dcfce7; color: #15803d; }
+  .tier-2 { background: #dbeafe; color: #1d4ed8; }
+  .tier-3 { background: #f3f4f6; color: #374151; }
+  .tier-flag { background: #fef3c7; color: #92400e; }
+  .tier-oos { background: #f1f5f9; color: #64748b; }
+
+  .q-box {
+    background: var(--amber-bg);
+    border: 1px solid rgba(217,119,6,0.22);
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 10px;
+  }
+  .q-box:last-child { margin-bottom: 0; }
+  .q-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--amber); margin-bottom: 4px; }
+  .q-main { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; }
+  .q-context { font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-bottom: 8px; }
+  .q-result { font-size: 0.79rem; line-height: 1.6; }
+  .q-result .yes { color: var(--green); font-weight: 600; }
+  .q-result .no  { color: var(--red); font-weight: 600; }
+
+  .rule {
+    display: flex; gap: 9px; align-items: flex-start;
+    padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+    font-size: 0.83rem; line-height: 1.5;
+  }
+  .rule:last-child { border-bottom: none; }
+  .rule-num {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: white; width: 21px; height: 21px; border-radius: 5px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700; margin-top: 1px;
+  }
+  .rule strong { display: block; margin-bottom: 1px; }
+  .rule .detail { font-size: 0.78rem; color: var(--muted); }
+
+  footer { margin-top: 28px; font-size: 0.7rem; color: var(--muted); text-align: center; padding-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <h1>KU Interviews &mdash; Payout Summary</h1>
+    <p>Laiba Faisal &nbsp;&bull;&nbsp; 31 KU recordings &nbsp;&bull;&nbsp; laibadpt.uok@gmail.com</p>
+  </div>
+
+  <div class="payout-box">
+    <div class="payout-circle">
+      <div class="big">100%</div>
+      <div class="sm">Full pay</div>
+    </div>
+    <div class="payout-text">
+      <h2>All 30 interviews are verified. Full payment released.</h2>
+      <p>The 30% holdback is released &mdash; bareera&rsquo;s recording was split across two files, not two people. One form covers both.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>What you did</div>
+
+    <div class="work-item">
+      <span class="work-icon">&#x2705;</span>
+      <div>
+        <div class="work-label">30 clean interviews with full question coverage</div>
+        <div class="work-detail">Every student was asked every question. No shortcuts detected in any of the 30 verified recordings. Clear audio across the board &mdash; no garbled files, no corrupted tracks.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x2705;</span>
+      <div>
+        <div class="work-label">2 standout interviews with genuine back-and-forth</div>
+        <div class="work-detail">Muzammil and Noor Saba &mdash; these two went beyond the script. Muzammil proposed his own commission structure (Rs.2,000/sign-up, &ldquo;60 shops in two weeks&rdquo;). Noor Saba gave unprompted market-segment analysis and cited burnout as a structured risk. The kind of depth that makes the data useful.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x2705;</span>
+      <div>
+        <div class="work-label">Best form coverage of any cohort &mdash; 30/30 matched (100%)</div>
+        <div class="work-detail">Full coverage. Answers vary meaningfully per student &mdash; different reactions, different pay figures, personal context (Syeda Nayab is a married housewife with a baby, Sumayya is building her own app). Form data reads as genuine, not fabricated in bulk.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x26A0;&#xFE0F;</span>
+      <div>
+        <div class="work-label">All 30 forms submitted from your email in overnight batches</div>
+        <div class="work-detail">Only Wanisa Khan (9:39 AM on 3/4) looks like a live-entry form. The other 29 were entered in three overnight batches from your account. The recordings prove the interviews happened. Form data filled from memory after the fact is slightly lower-confidence &mdash; flag these rows in analysis.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x26A0;&#xFE0F;</span>
+      <div>
+        <div class="work-label">Script read-throughs only &mdash; no follow-up probing in any recording</div>
+        <div class="work-detail">Every interview followed the same pattern: question asked, first answer accepted, move on. Same as Szabist. This round we didn&rsquo;t require follow-ups, so this isn&rsquo;t a deduction. Next round it will be.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Interview quality breakdown &mdash; all 31 recordings / 30 interviews</div>
+
+    <table class="tier-table">
+      <thead>
+        <tr>
+          <th>Tier</th>
+          <th>Count</th>
+          <th>Names</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tier-badge tier-1">Strong</span></td>
+          <td>2</td>
+          <td>Muzammil, Noor Saba (noor us saba)</td>
+        </tr>
+        <tr>
+          <td><span class="tier-badge tier-2">Good</span></td>
+          <td>7</td>
+          <td>Noor Fatima, Raveeha Rao, Hafsa Tariq, Ayesha Siddiqa, Fatima, Shaheera, Sumayya</td>
+        </tr>
+        <tr>
+          <td><span class="tier-badge tier-3">Acceptable</span></td>
+          <td>21</td>
+          <td>Wanisa Khan, Shifa Naz, Adeeba, Amna Jalal, Ayan, Ayesha Soomro, Bareera, Humaiza, Iman Aisha, Kainat, Kanzul, Manal, Mehreen, Minahil Nayab&sup1;, Muskan, Naveera, Saba, Sawera, Syeda Nayab, Wadiya, Zainab&sup2;</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p style="font-size:0.76rem;color:var(--muted);margin-top:10px;">
+      &sup1; Minahil Nayab: Whisper hallucination loop at end of recording (dead-air tail). Interview content is complete and coherent. &sup2; Zainab: phone call briefly interrupted mid-interview (&ldquo;Walekum Assalam&rdquo; audible). Interview continued normally before and after.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Form coverage &mdash; all 30 interviews</div>
+
+    <table class="tier-table">
+      <thead>
+        <tr>
+          <th>Recording</th>
+          <th>Form</th>
+          <th>Form Timestamp</th>
+          <th>Interest</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>WanisaKhanKU</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/4 9:39 AM</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Medium</td>
+        </tr>
+        <tr>
+          <td>NoorFatimaKU</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/4 10:31 PM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Medium</td>
+        </tr>
+        <tr>
+          <td>muzammil</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/4 10:53 PM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Low</td>
+        </tr>
+        <tr>
+          <td>naveera</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/4 11:05 PM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Low</td>
+        </tr>
+        <tr>
+          <td>syeda nayab</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/4 11:17 PM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Low</td>
+        </tr>
+        <tr>
+          <td>raveeha rao</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/4 11:25 PM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Medium</td>
+        </tr>
+        <tr>
+          <td>humaiza saghir</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 12:14 AM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Low</td>
+        </tr>
+        <tr>
+          <td>hafsa tariq</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 12:43 AM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Low</td>
+        </tr>
+        <tr>
+          <td>minahil nayab</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 12:49 AM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Low</td>
+        </tr>
+        <tr>
+          <td>zainab</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 12:54 AM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Medium</td>
+        </tr>
+        <tr>
+          <td>amna jalal</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 12:59 AM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Medium</td>
+        </tr>
+        <tr>
+          <td>muskan</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 1:05 AM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Medium</td>
+        </tr>
+        <tr>
+          <td>ShifaNazKU</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 1:58 AM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">High</td>
+        </tr>
+        <tr>
+          <td>ayesha soomro</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 2:05 AM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Medium</td>
+        </tr>
+        <tr>
+          <td>ayesha siddiqa</td>
+          <td><span class="tier-badge tier-2">Matched &ldquo;aisha&rdquo;</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 2:11 AM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Medium</td>
+        </tr>
+        <tr>
+          <td>ayan</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 9:01 PM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Medium</td>
+        </tr>
+        <tr>
+          <td>kainat</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 9:07 PM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Low</td>
+        </tr>
+        <tr>
+          <td>noor us saba</td>
+          <td><span class="tier-badge tier-2">Matched &ldquo;saba&rdquo;</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 9:16 PM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Medium</td>
+        </tr>
+        <tr>
+          <td>adeeba</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 9:23 PM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Medium</td>
+        </tr>
+        <tr>
+          <td>bareera</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 9:58 PM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">High</td>
+        </tr>
+        <tr>
+          <td>sawera</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 10:06 PM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Medium</td>
+        </tr>
+        <tr>
+          <td>wadiya</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 10:12 PM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Medium</td>
+        </tr>
+        <tr>
+          <td>shaheera</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 10:41 PM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">High</td>
+        </tr>
+        <tr>
+          <td>fatima</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 10:47 PM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Medium</td>
+        </tr>
+        <tr>
+          <td>saba</td>
+          <td><span class="tier-badge tier-2">Matched &ldquo;saba&rdquo;</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 11:00 PM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Medium</td>
+        </tr>
+        <tr>
+          <td>sumayya</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 11:20 PM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Medium</td>
+        </tr>
+        <tr>
+          <td>kanzul</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 11:45 PM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Low</td>
+        </tr>
+        <tr>
+          <td>iman aisha</td>
+          <td><span class="tier-badge tier-2">Matched &ldquo;iman&rdquo;</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 11:49 PM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Medium</td>
+        </tr>
+        <tr>
+          <td>manal</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/5 11:55 PM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Low</td>
+        </tr>
+        <tr>
+          <td>mehreen</td>
+          <td><span class="tier-badge tier-1">Found</span></td>
+          <td style="color:var(--muted);font-size:0.78rem;">3/6 12:08 AM &#x25B6;</td>
+          <td style="color:var(--muted);font-size:0.78rem;">Medium</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p style="font-size:0.76rem;color:var(--muted);margin-top:10px;">
+      &#x25B6; = submitted post-hoc from interviewer&rsquo;s email, not during the interview.<br>
+      <strong>Fuzzy matches:</strong> &ldquo;aisha&rdquo; form &rarr; recording <em>ayesha siddiqa</em> (confirmed on tape: &ldquo;Aisha Sadega&rdquo;). Two &ldquo;saba&rdquo; form entries match recordings <em>noor us saba</em> (Noor Saba Iqbal, Biotechnology, remote job, 40K/mo) and <em>saba</em> (Saba Iqbal, DPT 5th sem) &mdash; two distinct people; two form rows are correct.
+    </p>
+  </div>
+
+  <div class="card" style="border-color: rgba(217,119,6,0.3);">
+    <div class="card-title"><span class="dot" style="background:var(--amber);"></span>Timing flags &mdash; for the research team, not a payout issue</div>
+    <p style="font-size:0.79rem;color:var(--muted);margin-bottom:12px;">These don&rsquo;t affect your payout. Research team should flag these rows when analyzing data.</p>
+
+    <div class="work-item">
+      <span class="work-icon">&#x1F319;</span>
+      <div>
+        <div class="work-label">29 forms entered in overnight batches &mdash; all from interviewer&rsquo;s email</div>
+        <div class="work-detail">
+          <strong>Batch 1 &mdash; 3/4 night:</strong> Noor Fatima, Muzammil, Naveera, Syeda Nayab, Raveeha &mdash; 10:31&ndash;11:25 PM (5 forms in 54 min).<br>
+          <strong>Batch 2 &mdash; 3/5 early AM:</strong> Humaiza through Aisha &mdash; 12:14&ndash;2:11 AM (9 forms in 2 hours).<br>
+          <strong>Batch 3 &mdash; 3/5 evening:</strong> Ayan through Mehreen &mdash; 9:01 PM&ndash;12:08 AM next day (15 forms).<br>
+          Recordings confirm all interviews happened. Forms post-hoc from notes &mdash; not fabricated, but demographic field accuracy is slightly lower-confidence than live-entry data.
+        </div>
+      </div>
+    </div>
+
+    <div class="work-item">
+      <span class="work-icon">&#x1F6A8;</span>
+      <div>
+        <div class="work-label">5 female students cited gender safety barriers to shop visits</div>
+        <div class="work-detail">
+          Hafsa Tariq, Humaiza, Kainat, Manal, and Ayesha Soomro all cited going into shops as uncomfortable or infeasible due to societal or safety norms. Consistent across DPT students at KU specifically. Not a data quality issue &mdash; flag as a meaningful persona finding: the female KU student sub-group has structural barriers to field sales roles that don&rsquo;t appear as strongly in IBA or Szabist cohorts.
+        </div>
+      </div>
+    </div>
+
+    <div class="work-item" style="border-bottom:none;">
+      <span class="work-icon">&#x2139;&#xFE0F;</span>
+      <div>
+        <div class="work-label">IBA also has a &ldquo;Muzammil&rdquo; recording &mdash; different person, no conflict</div>
+        <div class="work-detail">
+          IBA folder has <em>Muzammil.m4a</em>. KU&rsquo;s <em>muzammil.m4a</em> is a different student &mdash; his form says Karachi University, physiotherapy, home-visit income. Separate students; no university mismatch.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>For the next round &mdash; four rules</div>
+    <p style="font-size:0.79rem;color:var(--muted);margin-bottom:11px;">Not a critique of this round &mdash; just how we&rsquo;ll run things going forward.</p>
+
+    <div class="rule">
+      <div class="rule-num">1</div>
+      <div>
+        <strong>Start every recording with: your name + date + student&rsquo;s first name</strong>
+        <span class="detail">First 10 seconds. Makes attribution and date verification instant. Several KU recordings already did this unprompted &mdash; make it every single one.</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="rule-num">2</div>
+      <div>
+        <strong>Two-tier payout &mdash; 70% base, 30% bonus for genuine follow-ups</strong>
+        <span class="detail">30% bonus unlocks if the recording has at least one unprompted follow-up per section &mdash; a &ldquo;why?&rdquo; or &ldquo;tell me more&rdquo; before moving on. Verifiable in under 2 minutes per recording.</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="rule-num">3</div>
+      <div>
+        <strong>Student states university verbally, on tape</strong>
+        <span class="detail">Several KU students already confirmed Karachi University on tape (Shaheera, Mehreen, Kainat, Raveeha Rao, Ayesha Siddiqa). Make it standard: they answer Question 1 verbally, not just written on the form. Prevents cross-cohort university misclassification.</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="rule-num">4</div>
+      <div>
+        <strong>Form submitted during or immediately after each interview</strong>
+        <span class="detail">Not batch-entry at midnight. Fill the form before you leave that session. Live entry gives reliable timestamps and demographic accuracy that memory-based retroactive entry can&rsquo;t match.</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    KU Cohort &nbsp;&bull;&nbsp; Issued 2026-03-06 &nbsp;&bull;&nbsp; Any questions? Just reply.
+  </footer>
+
+</div>
+</body>
+</html>
