@@ -87,6 +87,7 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 | EXP-011 | Notion-only | C | Growth Partner Referrals | — |
 | EXP-012 | `exp-012-student-interviews/` | C | University Students Outreach — structured interviews with student persona | EXP-016 |
 | EXP-013 | `exp-013-question-deflection/` | C | Scripted deflection tool for Q→Demo redirect (physical field guide) | — |
+| EXP-014 | `exp-014-ep-hook-vs-cta/` | A | EP CTA opener vs EP Hook — opener conversion rate and demo rate | — |
 | — | `deprecated/exp-009-directed-day/` | B | Structured daily task lists with geo-clustered visits *(deprecated, was EXP-009)* | — |
 | — | `deprecated/exp-018-direct-to-training/` | C | Direct-to-training hiring sprint *(deprecated)* | — |
 | — | `deprecated/exp-020-ramadan-timing/` | A | Ramadan visit timing: daytime vs post-Taraweeh nighttime *(deprecated)* | — |
@@ -220,6 +221,17 @@ Design doc / experiment brief living in a single `.md` file. No code, no generat
 - **Google Sheet:** `1V8QbgRjG_GdW_C7Ko71NtGHrmQr0ATKTuExBvgcwb1E`
 - **Notion page (archive):** `312003b8300d81e48beed012da974177`
 - **Empirium ID:** EXP-016
+
+### EXP-014: EP Hook vs CTA Opener A/B
+
+- **Files:** `exp-014-ep-hook-vs-cta/` (Pattern A standard files)
+- **Empirium ID:** — (pending)
+- **Status:** RUNNING — 53 CTA visits logged (target: 100)
+- **Hypothesis:** EP CTA opener outperforms EP hook on both opener conversion rate and demo rate
+- **Google Sheet:** `1bFf0NAQFFXIYYxMC1yJeqowRz6MwT_-xawZeg5H9wUQ` (tab: Form Responses 1; Tagging tab = ambassador name map)
+- **Run:** `cd exp-014-ep-hook-vs-cta && python3 run.py --from 2026-03-02`
+- **Output:** `opener_comparison.html`
+- **Decision criteria:** ADOPT if CTA opener rate ≥ Hook AND CTA demo rate ≥ Hook on both metrics
 
 ### Notion-Only Experiments
 

@@ -1,0 +1,27 @@
+Speaker: Merchant
+Language: ur (Urdu, auto-detected)
+File: merchant_feedback.opus
+Duration: ~52s
+============================================================
+
+URDU SCRIPT (Whisper medium output)
+------------------------------------
+اسلام علیکم ارفان بھائی کی حال ہے ارفان بھائی بہت سے میں نے آپ کو کہا ہے کہ آپ کو مسئلہ آ رہا ہے اس مسئلہ درست کروائیں میں آپ پھر کہیں گے کہ ہمارا کام نہیں کرتے ہم جب کام کر رہے ہیں تو آپ ہمارے ساتھ چلیں یہ زیادہ ہے آپ ہمارے لئے کچھ کرتے نہیں ہیں ہم بنا بنا کے طرلے کر رہے ہیں بھائی ہم ارباہ کی دلیلہ رہے ہیں بنا کو مطمئنہ کر رہے ہیں لوگ کشمن بنارہے ہیں تو پلیو بھی وہ نہیں محل کروائیں میں پہلے بھی کہہ چکو کہ میری ایب درست کروائیں باقی کوئی نہیں ہے نہیں ہے تو بھائی ہتم کروائیں میری ایب مسئلہ نہیں ہے الحمدللہ یہ میری ایب واضح نہیں ہے الحمدللہ میری بھائی بھائی شکر اللہ بھائی مرہ بہت سوچتا اگر آپ نے مجھے ایسے دلیل کرنا چاہتے ہیں تو میری ایب بھائی کروائیں
+
+ROMAN URDU
+------------------------------------
+Assalam Alaikum, Irfan bhai ki haal hai? Irfan bhai, bahut baar maine aap ko kaha hai ke aap ko masla aa raha hai — is masle ko durust karwain. Main [warna] aap phir kahenge ke hamara kaam nahin karte. Hum jab kaam kar rahe hain to aap hamare saath chalein — yeh zyada hai. Aap hamare liye kuch karte nahin hain. Hum bana bana ke tarle kar rahe hain bhai. Hum logon ko daleel de rahe hain, unko mutmain kar rahe hain, log customer bana rahe hain. To phir bhi woh nahin [hal] — hall karwain. Maine pehle bhi keh chuka ke meri app durust karwain. Baki koi nahin hai, nahin hai. To bhai hatam karwain meri app [ka masla]. Masla nahin hai Alhamdulillah — yeh meri app wazeh nahin hai [Alhamdulillah mera kaam to chal raha hai]. Bhai, shukar Allah bhai. Mujhe bahut sochna parta hai. Agar aap ne mujhe aise daleel dena chahte hain to meri app bhai karwain.
+
+ENGLISH
+------------------------------------
+Assalam Alaikum — how are you, Irfan bhai? Irfan bhai, I have told you many times that this problem is happening — get this problem fixed. [Otherwise] you'll say again that we don't do our work. When we ARE working, you should stand by us — this is too much. You don't do anything for us. We keep putting in effort after effort, bhai. We convince people, we make them satisfied, we convert them into customers. But still that [issue] isn't resolved — get it resolved. I've already told you before: get my app fixed. There's nothing else. Just finish [this issue] bhai, fix my app. The problem — Alhamdulillah — my business is fine, but my app is not clear/working. Alhamdulillah [my business runs], bhai. Thank God, bhai. I think about this a lot. If you want to keep making excuses to me like this, then just fix my app, bhai.
+
+NOTES
+------------------------------------
+- "ایب / app" = merchant ZAR app — the merchant's core complaint is a persistent technical bug
+- "واضح نہیں ہے" = "not clear / not displaying properly" — likely a UI rendering or login issue
+- "بنا بنا کے طرلے" = working hard repeatedly, going out of one's way (idiom)
+- "دلیل" = used here as "excuse" (secondary meaning in colloquial Urdu)
+- Tone: frustrated, assertive, repeatedly escalating — classic escalation message
+- The merchant has reported this multiple times; feels ignored and unsupported
+- Despite the complaint, business is running (Alhamdulillah) — merchant is engaged, not churned

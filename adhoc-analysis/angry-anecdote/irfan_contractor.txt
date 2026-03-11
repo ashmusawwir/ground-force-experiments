@@ -1,0 +1,26 @@
+Speaker: Irfan (Contractor)
+Language: ur (Urdu, auto-detected)
+File: irfan_contractor.opus
+Duration: ~43s
+============================================================
+
+URDU SCRIPT (Whisper medium output)
+------------------------------------
+بس یہ آپ کو پتہ ہے کہ اس کے کسٹمر اچھے لگ گئے ہیں ایک دو کسٹمر اور بھی اس کے لگ گئے ہیں ٹھیک ہے ریسنڈ لی بھی اس کے پانچ سو دولر کا تھا لینا تھا تو اس میں اس نے پہلے ہزار لیا تھا میرے گیر سے پنچ سو لیا تھا مجھے یاد نہیں ہے تو پانچ سو لینا تھا اس کے لی بھی کافی ڈلے ہو گیا تھا اسیو آ رہتے تھے تو وہ یہی لگا تھا کہتے کہ کسٹمر آنا شروع ہورہا ہے تو اس طرح کسٹمر فراب ہوتے ہیں تو اسیو آ رہے ہیں کیونکہ خریداری میں مسئلہ بنتا ہے تو اس طرح ہونا چاہیئے تو اس کے والے سے تھوڑا سا دیکھیں گا کیونکہ جب اٹھے لگانا ہوتا تو اسیو کوئی نہ کوئی آ جاتا ہے
+
+ROMAN URDU
+------------------------------------
+Bas yeh aap ko pata hai ke us ke customer ache lag gaye hain, ek do customer aur bhi us ke lag gaye hain. Theek hai, resend bhi us ke paanch sau dollar ka tha lena tha. To us mein us ne pehle hazaar liya tha, mere ghar se paanch sau liya tha, mujhe yaad nahin. To paanch sau lena tha. Us ke liye bhi kaafi delay ho gaya tha. Issues aa rehte the, to woh yahi lagta tha kehte ke customer aana shuru ho raha hai. To is tarah customer fareb hote hain, to issues aa rahe hain kyunke khareedari mein masla banta hai. To is tarah hona chahiye. To us ke wale se thora sa dekhenge, kyunke jab issue lagana hota to koi na koi issue aa jata hai.
+
+ENGLISH
+------------------------------------
+So you know that he's gotten some good customers — one or two more have joined him too. OK. Regarding the resend, he had $500 to receive. In that, he had first taken a thousand [units], and took 500 from mine — I don't remember exactly. So he still had 500 to receive. There's been quite a delay on that too. Errors/issues kept coming. It seemed like customers were starting to come, so customers get frustrated [when] issues come because there's a problem in the [purchase] transaction. That's how it should be [handled]. We'll look at it a bit from his side because whenever something needs to be set up, some error or another comes up.
+
+NOTES
+------------------------------------
+- Irfan appears to be briefing a supervisor/manager, NOT responding directly to the merchant
+- "ریسنڈ / resend" likely refers to a pending cash note or transaction that needed to be re-sent
+- "پانچ سو دولر / $500" = USDC amount in the ZAR system
+- "اسیو / issues" = app errors (English loanword)
+- "فراب" = fareb (fraud/deception) OR frustrated — context suggests customer frustration
+- Tone: explanatory, defensive, slightly casual — briefing upward

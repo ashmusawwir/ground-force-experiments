@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fake Merchant Detection — Full Investigation</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3347;
+    --text: #e2e4ed;
+    --muted: #8b90a7;
+    --accent: #5b8af0;
+    --green: #3ecf8e;
+    --yellow: #f5a623;
+    --red: #e05252;
+    --purple: #b06cf0;
+    --teal: #38bdf8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; font-size: 14px; line-height: 1.6; }
+  .page { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+
+  h1 { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  h2 { font-size: 16px; font-weight: 600; color: var(--accent); margin: 32px 0 12px; letter-spacing: 0.3px; }
+  h3 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin: 20px 0 8px; }
+  p { color: var(--text); margin-bottom: 10px; }
+  code { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; background: var(--surface2); padding: 1px 5px; border-radius: 3px; color: var(--teal); }
+
+  .meta { color: var(--muted); font-size: 12px; margin-bottom: 28px; }
+
+  .section { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; margin-bottom: 16px; }
+  .section-title { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+
+  .badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+  .badge-red { background: rgba(224,82,82,.18); color: var(--red); }
+  .badge-green { background: rgba(62,207,142,.15); color: var(--green); }
+  .badge-yellow { background: rgba(245,166,35,.15); color: var(--yellow); }
+  .badge-blue { background: rgba(91,138,240,.15); color: var(--accent); }
+  .badge-muted { background: var(--surface2); color: var(--muted); }
+  .badge-purple { background: rgba(176,108,240,.15); color: var(--purple); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { background: var(--surface2); color: var(--muted); text-align: left; padding: 6px 10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 6px 10px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.03); }
+  .highlight td { background: rgba(224,82,82,.07); }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  @media (max-width: 700px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+
+  .stat-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .stat-value { font-size: 22px; font-weight: 700; color: #fff; }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .verdict { border-left: 3px solid; padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 10px 0; font-size: 13px; }
+  .verdict-invalid { border-color: var(--red); background: rgba(224,82,82,.07); }
+  .verdict-weak { border-color: var(--yellow); background: rgba(245,166,35,.07); }
+  .verdict-valid { border-color: var(--green); background: rgba(62,207,142,.07); }
+  .verdict-note { border-color: var(--accent); background: rgba(91,138,240,.07); }
+
+  .phase-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; background: var(--surface2); color: var(--muted); }
+
+  .toc { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+  .toc a { font-size: 12px; padding: 4px 10px; border-radius: 5px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); text-decoration: none; }
+  .toc a:hover { color: var(--accent); border-color: var(--accent); }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  .note { font-size: 12px; color: var(--muted); font-style: italic; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Fake Merchant Detection — Full Investigation</h1>
+  <p class="meta">Ambassador: <code>ilyas_khan</code> &nbsp;|&nbsp; Period: 2026-02-01 to 2026-03-09 &nbsp;|&nbsp; Phases: EDA + PA1–PA7</p>
+
+  <div class="toc">
+    <a href="#ambassador">Ambassador Profile</a>
+    <a href="#signals">EDA Signals</a>
+    <a href="#scorecard">Scorecard</a>
+    <a href="#pa1">PA1 DCN Latency</a>
+    <a href="#pa2">PA2 Per-Merchant</a>
+    <a href="#pa3">PA3 Risk Summary</a>
+    <a href="#pa4">PA4 Amplitude + Visit Sheet</a>
+    <a href="#pa5">PA5 Bank Transfer</a>
+    <a href="#pa6">PA6 Timing + GPS</a>
+    <a href="#pa7">PA7 New Signals</a>
+    <a href="#cumulative">Cumulative Status</a>
+  </div>
+
+  <!-- AMBASSADOR PROFILE -->
+  <div id="ambassador" class="section">
+    <div class="section-title"><span class="phase-label">Profile</span> Ambassador Summary</div>
+    <div class="grid3" style="margin-bottom:16px">
+      <div class="stat-box">
+        <div class="stat-label">Username</div>
+        <div class="stat-value" style="font-size:18px">ilyas_khan</div>
+        <div class="stat-sub">No first/last name stored in DB</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">MOS submissions (Feb 1+)</div>
+        <div class="stat-value">14</div>
+        <div class="stat-sub">Feb 24 – Mar 7, 2026</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Peak day</div>
+        <div class="stat-value" style="color:var(--red)">6</div>
+        <div class="stat-sub">Feb 26 — fleet record</div>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>Confirmed fake merchant</th><th>DB name</th><th>Pathway</th><th>Form phone</th></tr></thead>
+      <tbody>
+        <tr class="highlight"><td>Hamza .Com</td><td>hamza dot com</td><td><code>PE</code></td><td>null in MOS</td></tr>
+        <tr class="highlight"><td>SR Communication</td><td>sr communication</td><td><code>PE</code></td><td>null in MOS</td></tr>
+        <tr class="highlight"><td>Hanif General Store</td><td>hanif genral store</td><td><code>PE</code></td><td>null in MOS</td></tr>
+        <tr class="highlight"><td>Gujjar Dot Com</td><td>gujjar dot com</td><td><code>MOS</code></td><td>+923192713284</td></tr>
+        <tr><td>New Pakhtoon General Store</td><td>New pakhton general store</td><td><code>MOS</code></td><td>null in MOS</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- EDA SIGNALS -->
+  <div id="signals" class="section">
+    <div class="section-title"><span class="phase-label">EDA</span> Confirmed Signals (Pre-Population Validation)</div>
+
+    <h3>1. Sub-minute DCN claim latency</h3>
+    <table>
+      <thead><tr><th>Fake merchant</th><th>Phone</th><th>Mins to claim</th><th>Secs</th></tr></thead>
+      <tbody>
+        <tr><td>sr communication</td><td>+923113263959</td><td>0.38</td><td>23 sec</td></tr>
+        <tr><td>hamza dot com</td><td>+923122388838</td><td>0.57</td><td>34 sec</td></tr>
+        <tr><td>gujjar dot com</td><td>+923192713284</td><td>1.19</td><td>71 sec</td></tr>
+        <tr><td>hanif genral store</td><td>+923090336070</td><td>1.46</td><td>88 sec</td></tr>
+      </tbody>
+    </table>
+    <div class="verdict verdict-invalid" style="margin-top:10px">Later invalidated in PA1: sub-2-min claims are the fleet norm (78% fleet-wide). Ambassador median is ~79%. Not a discriminating signal.</div>
+
+    <h3 style="margin-top:16px">2. Null form phone (85.7% of MOS submissions)</h3>
+    <p>12 of 14 submissions had null phone — breaks standard phone-based lookup. Still a valid MOS-specific signal but PE pathway has no phone field at all.</p>
+
+    <h3>3. Zero post-onboarding merchant activity</h3>
+    <p>All 4 confirmed fakes: only a DCN claim + BankTransfer, no CashExchange as merchant.</p>
+    <div class="verdict verdict-invalid">Later invalidated in PA2: 81% of all Feb 1+ PE merchants have zero 30-day CashExchange activity. Fleet-wide activation problem, not a fraud signal.</div>
+
+    <h3>4. Single-day burst volume (system record)</h3>
+    <p>6 submissions on Feb 26 — highest single-day count across all ambassadors. 5 of 6 had null form phone.</p>
+    <div class="verdict verdict-valid">Still valid as alert-level signal. Not invalidated by PA1–PA6.</div>
+
+    <h3>5. GPS hyperlocality (MOS submissions)</h3>
+    <p>All 14 MOS submissions within a 3 km bounding box centered on ~lat 24.940, lon 67.030 (Karachi). Within-day displacements 0–0.75 km.</p>
+    <div class="verdict verdict-weak">High false-positive risk in dense urban markets. Useful corroborating signal only.</div>
+  </div>
+
+  <!-- NON-FIRING SIGNALS -->
+  <div class="section">
+    <div class="section-title"><span class="phase-label">EDA</span> Non-Firing Signals</div>
+    <table>
+      <thead><tr><th>Signal</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Account age at onboarding</td><td>gujjar: 26 min (under_1hr — normal). Wide variation in legitimate population (13 min – 69,000 min). Not reliable.</td></tr>
+        <tr><td>Phone prefix clustering</td><td>Blocked by null phone pattern — 12/14 submissions have null phone.</td></tr>
+        <tr><td>GPS velocity (impossible travel)</td><td>Largest displacement 3.0 km. No physically impossible travel detected.</td></tr>
+        <tr><td>Inter-submission gap &lt;5 min</td><td>Shortest gap 12.3 min (Khyber medical → hanif). Signal did not fire at 5-min threshold.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SCORECARD -->
+  <div id="scorecard" class="section">
+    <div class="section-title"><span class="phase-label">EDA</span> Signal Scorecard</div>
+    <table>
+      <thead><tr><th>Signal</th><th>Fires on fakes?</th><th>FP Risk</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>DCN claim latency &lt;1 min</td><td>YES — all 4 fakes</td><td>Low (EDA)</td><td><span class="badge badge-red">Invalidated (PA1)</span></td></tr>
+        <tr><td>Null form phone rate &gt;50%</td><td>YES — 85.7%</td><td>Medium</td><td><span class="badge badge-yellow">Valid (MOS-specific)</span></td></tr>
+        <tr><td>Zero 30-day CashExchange</td><td>YES — 100% of fakes</td><td>Low (combined)</td><td><span class="badge badge-red">Invalidated (PA2)</span></td></tr>
+        <tr><td>Single-day burst ≥5</td><td>YES — fired Feb 26</td><td>Medium-low</td><td><span class="badge badge-green">Valid alert signal</span></td></tr>
+        <tr><td>GPS hyperlocality</td><td>Corroborating</td><td>High standalone</td><td><span class="badge badge-yellow">Corroborating only</span></td></tr>
+        <tr><td>Account age at onboarding</td><td>NO</td><td>High</td><td><span class="badge badge-muted">Not reliable</span></td></tr>
+        <tr><td>Phone prefix clustering</td><td>N/A</td><td>—</td><td><span class="badge badge-muted">Blocked by null phone</span></td></tr>
+        <tr><td>Inter-submission gap &lt;5 min</td><td>NO (12 min minimum)</td><td>Medium</td><td><span class="badge badge-muted">Did not fire</span></td></tr>
+        <tr><td>Immediate bank transfer ≤48h</td><td>Partial — 2/4 fakes</td><td>High</td><td><span class="badge badge-red">Invalidated (PA5)</span></td></tr>
+        <tr><td>PRE_STAGED enrollment</td><td>1/4 fakes</td><td>High</td><td><span class="badge badge-yellow">Weak, not unique (PA6)</span></td></tr>
+        <tr><td>GPS co-location with ambassador</td><td>YES — all 4 &lt;0.4 km</td><td>Medium (≠device control)</td><td><span class="badge badge-yellow">Consistent, not conclusive (PA6)</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="divider">
+  <h2>Population-Level Validation</h2>
+
+  <!-- PA1 -->
+  <div id="pa1" class="section">
+    <div class="section-title"><span class="phase-label">PA1</span> Fleet-wide DCN Claim Latency</div>
+    <p class="note" style="margin-bottom:12px">Population: 20 ambassadors, all Feb 1+ demo DCNs</p>
+    <table>
+      <thead><tr><th>Ambassador</th><th>Demos</th><th>Fastest (min)</th><th>Median (min)</th><th>Sub-1min</th><th>1–2min</th><th>2–5min</th><th>&gt;5min</th><th>% sub-2min</th></tr></thead>
+      <tbody>
+        <tr><td>stormy_raccoon_4878</td><td>1</td><td>1.25</td><td>1.25</td><td>0</td><td>1</td><td>0</td><td>0</td><td>100%</td></tr>
+        <tr><td>ashmusawwir</td><td>1</td><td>0.57</td><td>0.57</td><td>1</td><td>0</td><td>0</td><td>0</td><td>100%</td></tr>
+        <tr><td>fancy_granite_9573</td><td>1</td><td>0.25</td><td>0.25</td><td>1</td><td>0</td><td>0</td><td>0</td><td>100%</td></tr>
+        <tr><td>happy_griffin_1631</td><td>9</td><td>0.47</td><td>1.13</td><td>4</td><td>5</td><td>0</td><td>0</td><td>100%</td></tr>
+        <tr><td>user_3d31a3a4</td><td>1</td><td>0.56</td><td>0.56</td><td>1</td><td>0</td><td>0</td><td>0</td><td>100%</td></tr>
+        <tr><td>kindly_lynx_5179</td><td>1</td><td>0.57</td><td>0.57</td><td>1</td><td>0</td><td>0</td><td>0</td><td>100%</td></tr>
+        <tr><td>mighty_robin_3902</td><td>5</td><td>0.58</td><td>0.67</td><td>4</td><td>1</td><td>0</td><td>0</td><td>100%</td></tr>
+        <tr><td>samik</td><td>1</td><td>0.25</td><td>0.25</td><td>1</td><td>0</td><td>0</td><td>0</td><td>100%</td></tr>
+        <tr><td>owaisferoz1</td><td>28</td><td>0.19</td><td>0.46</td><td>22</td><td>4</td><td>2</td><td>0</td><td>92.9%</td></tr>
+        <tr class="highlight"><td><strong>ilyas_khan</strong></td><td>15</td><td>0.29</td><td>0.76</td><td>10</td><td>2</td><td>3</td><td>0</td><td><strong>80%</strong></td></tr>
+        <tr><td>sharoon1</td><td>38</td><td>0.35</td><td>0.94</td><td>20</td><td>10</td><td>7</td><td>1</td><td>78.9%</td></tr>
+        <tr><td>turab</td><td>14</td><td>0.22</td><td>0.59</td><td>11</td><td>0</td><td>1</td><td>2</td><td>78.6%</td></tr>
+        <tr><td>user_1ef1d1ea</td><td>59</td><td>0.26</td><td>0.97</td><td>30</td><td>14</td><td>8</td><td>7</td><td>74.6%</td></tr>
+        <tr><td>muhammadzahid</td><td>31</td><td>0.26</td><td>0.92</td><td>18</td><td>4</td><td>8</td><td>1</td><td>71%</td></tr>
+        <tr><td>afsarkhan</td><td>55</td><td>0.25</td><td>1.02</td><td>27</td><td>11</td><td>10</td><td>7</td><td>69.1%</td></tr>
+        <tr><td>junaid9778</td><td>33</td><td>0.19</td><td>1.37</td><td>13</td><td>7</td><td>3</td><td>10</td><td>60.6%</td></tr>
+        <tr><td>lashkarwala</td><td>73</td><td>0.29</td><td>2.00</td><td>25</td><td>12</td><td>14</td><td>22</td><td>50.7%</td></tr>
+        <tr><td>umer2700</td><td>12</td><td>0.21</td><td>2.79</td><td>4</td><td>1</td><td>4</td><td>3</td><td>41.7%</td></tr>
+        <tr><td>irfan1</td><td>25</td><td>0.51</td><td>6.09</td><td>6</td><td>1</td><td>4</td><td>14</td><td>28%</td></tr>
+        <tr><td>user_bd05725d</td><td>1</td><td>2.34</td><td>2.34</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0%</td></tr>
+      </tbody>
+    </table>
+    <div class="verdict verdict-invalid" style="margin-top:10px">Sub-2-min DCN claims are the fleet norm (17/20 ambassadors ≥40% sub-2-min). ilyas_khan at 80% is below the median. Signal reflects standard demo practice: ambassador on-site helps merchant claim immediately.</div>
+  </div>
+
+  <!-- PA2 -->
+  <div id="pa2" class="section">
+    <div class="section-title"><span class="phase-label">PA2</span> Per-Merchant Signal Profile (104 PE merchants)</div>
+    <div class="grid3" style="margin-bottom:16px">
+      <div class="stat-box">
+        <div class="stat-label">Zero 30-day CashExchange</div>
+        <div class="stat-value" style="color:var(--red)">81%</div>
+        <div class="stat-sub">84 of 104 PE merchants</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Sub-2-min DCN (where demo exists)</div>
+        <div class="stat-value" style="color:var(--red)">78%</div>
+        <div class="stat-sub">81 of 104 merchants</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Account age &lt;1hr at enrollment</div>
+        <div class="stat-value" style="color:var(--red)">79%</div>
+        <div class="stat-sub">82 of 104 merchants</div>
+      </div>
+    </div>
+    <h3>Composite fraud score distribution</h3>
+    <table>
+      <thead><tr><th>Score</th><th>Count</th><th>% of cohort</th></tr></thead>
+      <tbody>
+        <tr><td>3 (all signals)</td><td>51</td><td>49%</td></tr>
+        <tr><td>2</td><td>41</td><td>39%</td></tr>
+        <tr><td>1</td><td>12</td><td>12%</td></tr>
+        <tr><td>0</td><td>0</td><td>0%</td></tr>
+      </tbody>
+    </table>
+    <div class="verdict verdict-invalid" style="margin-top:10px">No merchant scores 0. 49% hit the maximum score of 3. The composite signal has near-100% false positive rate. All 3 signals describe normal PE-era onboarding behavior.</div>
+  </div>
+
+  <!-- PA3 -->
+  <div id="pa3" class="section">
+    <div class="section-title"><span class="phase-label">PA3</span> Ambassador-Level Risk Summary</div>
+    <table>
+      <thead><tr><th>Ambassador</th><th>Merchants</th><th>Sub-2min</th><th>Acct &lt;1hr</th><th>Zero-act</th><th>% sub-2min</th><th>% zero-act</th><th>Weighted score</th></tr></thead>
+      <tbody>
+        <tr><td>happy_griffin_1631</td><td>9</td><td>9</td><td>9</td><td>9</td><td>100%</td><td>100%</td><td>4.00</td></tr>
+        <tr><td>owaisferoz1</td><td>20</td><td>18</td><td>20</td><td>16</td><td>90%</td><td>80%</td><td>3.60</td></tr>
+        <tr><td>mighty_robin_3902</td><td>2</td><td>2</td><td>1</td><td>2</td><td>100%</td><td>100%</td><td>3.50</td></tr>
+        <tr class="highlight"><td><strong>ilyas_khan</strong></td><td>8</td><td>6</td><td>6</td><td>8</td><td>75%</td><td><strong>100%</strong></td><td><strong>3.25</strong></td></tr>
+        <tr><td>user_1ef1d1ea</td><td>23</td><td>19</td><td>15</td><td>21</td><td>83%</td><td>91%</td><td>3.22</td></tr>
+        <tr><td>junaid9778</td><td>13</td><td>11</td><td>10</td><td>7</td><td>85%</td><td>54%</td><td>3.00</td></tr>
+        <tr><td>muhammadzahid</td><td>4</td><td>4</td><td>1</td><td>3</td><td>100%</td><td>75%</td><td>3.00</td></tr>
+        <tr><td>sharoon1</td><td>8</td><td>5</td><td>8</td><td>6</td><td>63%</td><td>75%</td><td>3.00</td></tr>
+        <tr><td>afsarkhan</td><td>4</td><td>3</td><td>2</td><td>3</td><td>75%</td><td>75%</td><td>2.75</td></tr>
+        <tr><td>umer2700</td><td>8</td><td>2</td><td>7</td><td>6</td><td>25%</td><td>75%</td><td>2.13</td></tr>
+        <tr><td>irfan1</td><td>3</td><td>0</td><td>3</td><td>2</td><td>0%</td><td>67%</td><td>1.67</td></tr>
+      </tbody>
+    </table>
+    <div class="verdict verdict-invalid" style="margin-top:10px">ilyas_khan ranks 4th out of 11. Three ambassadors score higher. 100% zero-activity is shared by happy_griffin_1631 and mighty_robin_3902. No single ambassador is a clear outlier.</div>
+  </div>
+
+  <hr class="divider">
+  <h2>Amplitude + Visit Sheet Investigation</h2>
+
+  <!-- PA4 -->
+  <div id="pa4" class="section">
+    <div class="section-title"><span class="phase-label">PA4</span> Amplitude App-Open + Visit Sheet Cross-Reference</div>
+    <p class="note" style="margin-bottom:12px">Population: ilyas_khan's full PE cohort — 10 merchants (4 confirmed fakes, 6 unconfirmed)</p>
+
+    <h3>Per-merchant Amplitude profile</h3>
+    <table>
+      <thead><tr><th>Merchant</th><th>Fake?</th><th>In Amplitude?</th><th>First used</th><th>Last used</th><th>Sessions</th><th>Key behavior</th></tr></thead>
+      <tbody>
+        <tr class="highlight"><td>hanif genral store</td><td><span class="badge badge-red">FAKE</span></td><td>YES</td><td>2026-02-28</td><td>2026-03-01</td><td>2</td><td>DCN claim + <code>bank_transfer_succeeded</code> + stop</td></tr>
+        <tr class="highlight"><td>sr communication</td><td><span class="badge badge-red">FAKE</span></td><td>YES</td><td>2026-02-27</td><td>2026-03-05</td><td>3</td><td>Wallet browsing; no claim/transfer in sample</td></tr>
+        <tr class="highlight"><td>hamza dot com</td><td><span class="badge badge-red">FAKE</span></td><td>YES</td><td>2026-02-28</td><td>2026-03-01</td><td>2</td><td><code>cash_note_creation_initiated</code> + claimed (merchant created DCN)</td></tr>
+        <tr class="highlight"><td>gujjar dot com</td><td><span class="badge badge-red">FAKE</span></td><td>YES</td><td>2026-02-26</td><td>2026-02-26</td><td>3</td><td>Active enrollment day only; 8× <code>branch_sdk_error</code>; reclaim</td></tr>
+        <tr><td>unknown-1 (+923018826149)</td><td><span class="badge badge-muted">unk</span></td><td><span style="color:var(--red)">NO</span></td><td>—</td><td>—</td><td>—</td><td>Complete ghost — no visit, no Amplitude</td></tr>
+        <tr><td>unknown-2 (Khushi dot com)</td><td><span class="badge badge-muted">unk</span></td><td>YES</td><td>2026-02-24</td><td>2026-02-25</td><td>2</td><td>Active before enrollment; <code>qr_code_scanner_opened</code> (5×)</td></tr>
+        <tr><td>unknown-3 (+923453041506)</td><td><span class="badge badge-muted">unk</span></td><td>YES</td><td>2026-02-24</td><td>2026-02-27</td><td>8</td><td>8 sessions; <code>marker_tapped</code>; <code>cash_note_creation_initiated</code></td></tr>
+        <tr><td>unknown-4 (+923128870913)</td><td><span class="badge badge-muted">unk</span></td><td>YES</td><td>2026-02-25</td><td>2026-02-28</td><td>4</td><td><code>card_order_screen_viewed</code>; active on enrollment day only</td></tr>
+        <tr><td>unknown-5 (Shabir)</td><td><span class="badge badge-muted">unk</span></td><td><span style="color:var(--red)">NO</span></td><td>—</td><td>—</td><td>—</td><td>No Amplitude presence</td></tr>
+        <tr><td>unknown-6 (Kashif comm)</td><td><span class="badge badge-muted">unk</span></td><td><span style="color:var(--red)">NO</span></td><td>—</td><td>—</td><td>—</td><td>No Amplitude presence</td></tr>
+      </tbody>
+    </table>
+    <div class="verdict verdict-invalid" style="margin-top:10px">Binary "app opened?" signal invalidated. All 4 confirmed fakes opened the app — the ambassador operated the phone to claim the DCN, generating Amplitude events.</div>
+
+    <h3 style="margin-top:18px">Visit sheet cross-reference</h3>
+    <p>ilyas_khan logged <strong>1 of 10</strong> visits in the sheet (gujjar dot com, 1.8-min duration). 5 merchants were visited by <strong>shah comm</strong>, with ilyas_khan's DCNs covering the same merchants.</p>
+    <table style="margin-top:8px">
+      <thead><tr><th>Merchant</th><th>shah comm visit duration</th><th>Demo logged?</th><th>Enrollment timing anomaly</th></tr></thead>
+      <tbody>
+        <tr><td>unknown-2 (Khushi dot com)</td><td>22.5 min</td><td>YES</td><td>—</td></tr>
+        <tr class="highlight"><td>hamza dot com (FAKE)</td><td>4.9 min</td><td>YES</td><td><strong>Enrolled 18:07 — demo started 18:13 (6 min after enrollment)</strong></td></tr>
+        <tr class="highlight"><td>hanif genral store (FAKE)</td><td>36.0 min</td><td>YES</td><td>—</td></tr>
+        <tr><td>unknown-5 (Shabir)</td><td>33.2 min</td><td>YES</td><td>—</td></tr>
+        <tr><td>unknown-6 (Kashif comm)</td><td>6.9 min</td><td>YES</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <div class="verdict verdict-note" style="margin-top:10px"><strong>New pattern identified:</strong> Split-attribution — ilyas_khan sends DCNs (collects PE enrollment credit) for merchants that shah comm physically visited. 4 merchants appear in the sheet as ghost enrollments for ilyas_khan (no visit record from ilyas_khan).</div>
+  </div>
+
+  <hr class="divider">
+  <h2>Follow-Up Investigations</h2>
+
+  <!-- PA5 -->
+  <div id="pa5" class="section">
+    <div class="section-title"><span class="phase-label">PA5</span> Immediate Bank Transfer Signal — Fleet-wide</div>
+    <p class="note" style="margin-bottom:12px">Population: 109 PE merchants with ambassador demo DCNs (Feb 1+). Filter: BankTransfer within 48h of DCN claim, amount ±20%.</p>
+
+    <div class="grid2" style="margin-bottom:16px">
+      <div class="stat-box">
+        <div class="stat-label">Merchants with immediate cashout</div>
+        <div class="stat-value">29 / 109</div>
+        <div class="stat-sub">27% of demo cohort cashed out within 48h</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">ilyas_khan cashout rate</div>
+        <div class="stat-value" style="color:var(--muted)">20%</div>
+        <div class="stat-sub">2/10 merchants — below median</div>
+      </div>
+    </div>
+
+    <h3>Ambassador cashout rate rollup</h3>
+    <table>
+      <thead><tr><th>Ambassador</th><th>Demo merchants</th><th>Cashout ≤48h</th><th>% cashout</th><th>Avg hrs</th></tr></thead>
+      <tbody>
+        <tr><td>irfan1</td><td>3</td><td>2</td><td>67%</td><td>20.8</td></tr>
+        <tr><td>mighty_robin_3902</td><td>2</td><td>1</td><td>50%</td><td>17.5</td></tr>
+        <tr><td>owaisferoz1</td><td>20</td><td>9</td><td>45%</td><td>0.6</td></tr>
+        <tr><td>sharoon1</td><td>8</td><td>3</td><td>38%</td><td>0.3</td></tr>
+        <tr><td>user_1ef1d1ea</td><td>23</td><td>7</td><td>30%</td><td>0.7</td></tr>
+        <tr><td>muhammadzahid</td><td>4</td><td>1</td><td>25%</td><td>0.8</td></tr>
+        <tr><td>umer2700</td><td>9</td><td>2</td><td>22%</td><td>10.0</td></tr>
+        <tr><td>happy_griffin_1631</td><td>9</td><td>2</td><td>22%</td><td>8.9</td></tr>
+        <tr class="highlight"><td><strong>ilyas_khan</strong></td><td>10</td><td>2</td><td><strong>20%</strong></td><td>0.4</td></tr>
+        <tr><td>junaid9778</td><td>13</td><td>0</td><td>0%</td><td>—</td></tr>
+        <tr><td>afsarkhan</td><td>4</td><td>0</td><td>0%</td><td>—</td></tr>
+        <tr><td>turab</td><td>2</td><td>0</td><td>0%</td><td>—</td></tr>
+        <tr><td>lashkarwala</td><td>1</td><td>0</td><td>0%</td><td>—</td></tr>
+        <tr><td>raa1997</td><td>1</td><td>0</td><td>0%</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <div class="verdict verdict-invalid" style="margin-top:10px">ilyas_khan at 20% is the lowest among cashout-positive ambassadors and well below the median. Signal has no discriminating power. Reflects a fleet-wide pattern of merchants immediately withdrawing demo funds (an activation problem, not a fraud signal).</div>
+    <p class="note" style="margin-top:8px">Note: Only 2 of 4 confirmed fakes appear in the 48h window (gujjar: 0.1h, sr_comm: 0.7h). hanif and hamza are outside the window — reducing signal completeness even on known fakes.</p>
+  </div>
+
+  <!-- PA6 -->
+  <div id="pa6" class="section">
+    <div class="section-title"><span class="phase-label">PA6</span> Enrollment Timing + GPS Geolocation</div>
+
+    <h3>PA6-A — Hamza dot com: DCN vs enrollment sequence (Q-X1)</h3>
+    <table>
+      <thead><tr><th>Timestamp</th><th>Event</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td>18:01:37 PKT</td><td>ilyas_khan sends DCN to hamza</td><td>DB (digital_cash_notes)</td></tr>
+        <tr><td>18:02:11 PKT</td><td>DCN claimed by hamza</td><td>DB</td></tr>
+        <tr><td>18:07:10 PKT</td><td>PE enrollment created (+5.55 min after DCN sent)</td><td>DB (product_enrollments)</td></tr>
+        <tr class="highlight"><td>18:13 PKT</td><td>shah comm demo start logged</td><td>Visit sheet</td></tr>
+      </tbody>
+    </table>
+    <div class="verdict verdict-note" style="margin-top:10px">DCN sequence is NORMAL (+5.55 min, enrollment after DCN sent). The anomaly is the visit-sheet inversion: ilyas_khan's DCN and the PE enrollment both completed before shah comm began the physical demo. Pre-staging confirmed via timing, not via DCN inversion.</div>
+
+    <h3 style="margin-top:18px">PA6-B — Fleet-wide enrollment-vs-DCN sequence (Q-X2, 109 merchants)</h3>
+    <div class="grid3" style="margin-bottom:14px">
+      <div class="stat-box">
+        <div class="stat-label">NORMAL</div>
+        <div class="stat-value" style="color:var(--green)">104</div>
+        <div class="stat-sub">95.4% of merchants</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">PRE_STAGED</div>
+        <div class="stat-value" style="color:var(--yellow)">5</div>
+        <div class="stat-sub">4.6% — enrollment before DCN sent</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Between send and claim</div>
+        <div class="stat-value" style="color:var(--muted)">0</div>
+        <div class="stat-sub">0%</div>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>Phone</th><th>Ambassador</th><th>Mins before DCN</th></tr></thead>
+      <tbody>
+        <tr><td>+923462889293</td><td>owaisferoz1</td><td>−27.1 min</td></tr>
+        <tr><td>+923442335586</td><td>owaisferoz1</td><td>−23.7 min</td></tr>
+        <tr><td>+923463013005</td><td>user_1ef1d1ea</td><td>−10.0 min</td></tr>
+        <tr class="highlight"><td><strong>+923192713284 (gujjar)</strong></td><td><strong>ilyas_khan</strong></td><td><strong>−8.3 min</strong></td></tr>
+        <tr><td>+923331000914</td><td>turab</td><td>−5.0 min</td></tr>
+      </tbody>
+    </table>
+    <div class="verdict verdict-weak" style="margin-top:10px">PRE_STAGED rate per ambassador: turab 50% (1/2), owaisferoz1 10% (2/20), ilyas_khan 10% (1/10), user_1ef1d1ea 4% (1/23). NOT unique to ilyas_khan — distributed across 4 ambassadors. Weak signal, not discriminating.</div>
+
+    <h3 style="margin-top:18px">PA6-C — GPS geolocation (Amplitude <code>location_lat/location_lng</code>)</h3>
+    <p class="note" style="margin-bottom:10px">ilyas_khan known GPS: lat 24.940746, lon 67.0302794 (from visit sheet + MOS cluster)</p>
+    <table>
+      <thead><tr><th>Merchant</th><th>Status</th><th>Session date</th><th>GPS (lat, lon)</th><th>Distance to ilyas_khan</th></tr></thead>
+      <tbody>
+        <tr class="highlight"><td>gujjar dot com</td><td><span class="badge badge-red">FAKE</span></td><td>2026-02-26 15:42</td><td>(24.9408035, 67.0302419)</td><td><strong style="color:var(--red)">0.007 km (~7 m)</strong></td></tr>
+        <tr class="highlight"><td>hamza dot com</td><td><span class="badge badge-red">FAKE</span></td><td>2026-02-28 13:19</td><td>(24.941669, 67.0301736)</td><td><strong style="color:var(--yellow)">0.103 km</strong></td></tr>
+        <tr class="highlight"><td>hanif genral store</td><td><span class="badge badge-red">FAKE</span></td><td>2026-03-01 11:12*</td><td>(24.9380506, 67.0278197)</td><td>0.389 km</td></tr>
+        <tr class="highlight"><td>sr communication</td><td><span class="badge badge-red">FAKE</span></td><td>2026-02-27 13:07†</td><td>(24.9380316, 67.0277532)</td><td>0.395 km</td></tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top:6px">* Earliest available event; enrollment-date GPS not in top 100 events. † Earlier in the day than DCN claim (17:25); different session.</p>
+    <p class="note">‡ sr_comm shows later GPS (2026-03-05, 3.71 km away) — consistent with phone returning to its real owner after the initial staged interaction.</p>
+    <div class="verdict verdict-weak" style="margin-top:10px"><strong>GPS confirms co-location, not device control.</strong> All 4 confirmed fakes were within 0.4 km of ilyas_khan's known location during enrollment-date sessions. gujjar at 0.007 km is essentially the same device. This is consistent with the ambassador operating the phones on-site, but cannot conclusively prove it. Useful corroborating evidence, not a standalone signal.</div>
+  </div>
+
+  <hr class="divider">
+  <h2>Next-Generation Signals — PA7</h2>
+
+  <!-- PA7 CORE INSIGHT -->
+  <div class="section" style="border-left: 3px solid var(--purple); background: rgba(176,108,240,.05);">
+    <div class="section-title"><span class="phase-label" style="color:var(--purple); background:rgba(176,108,240,.15)">Core Insight</span> The Signal Pivot</div>
+    <p>Every signal tested in PA1–PA6 measured <em>merchant behavior</em>. The fraud is <strong>ambassador-side</strong>. New signals must measure <strong>ambassador behavioral anomalies across their portfolio</strong>, not any individual merchant's profile.</p>
+    <p style="margin-top:8px">The merchant in a fraud scenario is a ghost, a complicit shell, or an unwitting participant — all three look identical in the merchant's DB record. The signal is in the ambassador's pattern across their portfolio.</p>
+    <p class="note" style="margin-top:8px">Sources: Terra (field ops), Nash (game theory), FIELD_FRAUD researcher, WEB_RESEARCH (GSMA 2024, MicroSave, Featurespace/Feedzai, Finextra, VARInsights)</p>
+  </div>
+
+  <!-- PA7 SIGNALS -->
+  <div id="pa7" class="section">
+    <div class="section-title"><span class="phase-label">PA7</span> New Signal Design — Ambassador Behavioral Anomalies</div>
+
+    <h3>Tier 1 — Near-Definitive if They Fire</h3>
+    <table>
+      <thead><tr><th>Signal</th><th>Query / Method</th><th>Flag Rule</th><th>Est. FP Rate</th><th>Sources</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>PA7-A: Device fingerprint dedup</strong><br><span class="note">2+ merchants share same Amplitude <code>last_device_id</code> → enrolled from one phone</span></td>
+          <td>Amplitude workbench: <code>AMPLITUDE_FIND_USER</code> for all 10 PE merchants. 7/10 found in Amplitude (unknown-1, Shabir, Kashif: not in Amplitude). All 7 have distinct device IDs.</td>
+          <td>Any 2 merchants sharing same device_id</td>
+          <td>&lt;5%</td>
+          <td>GSMA 2024, M-Pesa Kenya, Terra</td>
+          <td><span class="badge badge-red">Does not fire — all 7 unique</span></td>
+        </tr>
+        <tr>
+          <td><strong>PA7-B: DCN temporal clustering</strong><br><span class="note">3+ DCNs in 20 min = sender never moved; desk-based not field work</span></td>
+          <td><code>dcn_burst_pattern_query()</code> via Metabase. ilyas_khan: max 2 DCNs in 20 min (normal). Fleet outlier: lashkarwala (max 6 on one day).</td>
+          <td><code>max_dcns_in_20min ≥ 3</code> on any day</td>
+          <td>&lt;10%</td>
+          <td>Nash</td>
+          <td><span class="badge badge-red">Does not fire on ilyas_khan (fleet alert: lashkarwala)</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:18px">Tier 2 — Strong Structural Signals (DB + Sheet)</h3>
+    <table>
+      <thead><tr><th>Signal</th><th>Query / Method</th><th>Flag Rule</th><th>Sources</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>PA7-C/D: Cross-attribution + VER</strong><br><span class="note">Visit sheet joined with PE data via email → username mapping. ilyas_khan: <strong>0 visits logged / 9 PE enrollments → VER = 0</strong>. Fleet range VER 0.33–24. Cross-attribution: 0/18 overlapping merchants (all same-ambassador). Visit sheet covers 8 ambassadors only; shah comm absent.</span></td>
+          <td>Google Sheets (email col) → DB email-to-username join → PE join on merchant phone. 17 phone overlaps found.</td>
+          <td>Cross-attribution &gt;20%; VER &gt;1.5 or &lt;0.2</td>
+          <td>Nash, Terra</td>
+          <td><span class="badge badge-green">FIRES — ilyas_khan VER=0, most extreme in fleet</span></td>
+        </tr>
+        <tr>
+          <td><strong>PA7-E: Enrollment timing variance (CV)</strong><br><span class="note">Low CV = mechanical clockwork batch, not organic field visits. CV&lt;0.3 = automation signal. ilyas_khan never had ≥3 PE enrollments in a single day — falls below threshold entirely.</span></td>
+          <td><code>enrollment_timing_variance_query()</code> via Metabase. 3 qualifying ambassador-days: owaisferoz1 CV=1.245, happy_griffin_1631 CV=1.362, user_1ef1d1ea CV=2.0. All human-like.</td>
+          <td>CV &lt;0.3 with ≥3 enrollments/day</td>
+          <td>Terra, FIELD_FRAUD</td>
+          <td><span class="badge badge-red">Does not fire — ilyas_khan below daily threshold</span></td>
+        </tr>
+        <tr>
+          <td><strong>PA7-F: Off-hours enrollments</strong><br><span class="note">Before 09:00 or after 19:00 PKT = outside legitimate field hours. ilyas_khan: <strong>70% off-hours</strong> (7/9 enrollments 3am–9am or after 7pm). Fleet top 3: happy_griffin_1631 100%, junaid9778 85.7%, ilyas_khan 70%.</span></td>
+          <td><code>off_hours_enrollment_query()</code> via Metabase. Threshold 30%. ilyas_khan hours range: 3am–9pm PKT.</td>
+          <td>&gt;30% off-hours, ≥3 enrollments</td>
+          <td>FIELD_FRAUD, Finextra</td>
+          <td><span class="badge badge-green">FIRES — 70% off-hours (threshold 30%)</span></td>
+        </tr>
+        <tr>
+          <td><strong>PA7-G: Repeat GPS coordinate clustering</strong><br><span class="note">Identical lat/lon to 4dp = standing still registering multiple merchants</span></td>
+          <td>From existing Q7 GPS data — check MOS submissions for exact coordinate reuse</td>
+          <td>Any 2+ MOS submissions at same coordinate to 4dp</td>
+          <td>WEB_RESEARCH (Databricks GEOSCAN)</td>
+          <td><span class="badge badge-yellow">From existing Q7 data</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:18px">Tier 3 — Directional Signals</h3>
+    <table>
+      <thead><tr><th>Signal</th><th>Query</th><th>Flag Rule</th><th>Sources</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>PA7-H: Leaf node analysis</strong><br><span class="note">Zero non-ambassador connections = ghost merchant. All 4 confirmed fakes show non-ambassador bank-transfer connections — the demo funds were swept out, creating a transaction edge that breaks the leaf-node classification.</span></td>
+          <td><code>leaf_node_analysis_query()</code> via Metabase. Result: all 4 confirmed fakes classified as "CONNECTED", not LEAF_NODE.</td>
+          <td><code>node_type = 'LEAF_NODE'</code></td>
+          <td>FIELD_FRAUD, Cambridge Intelligence</td>
+          <td><span class="badge badge-yellow">Does not fire — needs refinement (exclude same-day demo-amount bank transfers)</span></td>
+        </tr>
+        <tr>
+          <td><strong>PA7-I: Demo note amount distribution</strong><br><span class="note">ilyas_khan: 100% exactly $5, stddev=0. But same result for mighty_robin_3902 and happy_griffin_1631 — fleet-normal behaviour at this scale.</span></td>
+          <td><code>demo_note_amount_distribution_query()</code> via Metabase.</td>
+          <td>100% pct_exactly_5, stddev ≈ 0</td>
+          <td>VARInsights incentive fraud (WEB_RESEARCH)</td>
+          <td><span class="badge badge-red">Fleet-normal — not discriminating for ilyas_khan</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:18px">Operational Recommendations (Non-DB — Process Changes)</h3>
+    <table>
+      <thead><tr><th>Recommendation</th><th>Mechanism</th><th>ROI</th><th>Sources</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Day 3 merchant callback</strong><br><span class="note">IVR/WhatsApp: "Did someone from ZAR demonstrate the app to you?"</span></td>
+          <td>Non-response within 5 days = flag. Requires ops process only, no app change. At ZAR's volume: trivial cost.</td>
+          <td><span class="badge badge-green">Highest ROI</span></td>
+          <td>Paytm (12–18% ghost rate), MicroSave, CMS 2024</td>
+        </tr>
+        <tr>
+          <td><strong>Payout split gate (no-payout-until-first-transaction)</strong><br><span class="note">50% on enrollment, 50% at day-30 IF merchant completes ≥1 real CashExchange</span></td>
+          <td>Structurally eliminates ghost merchant incentive before fakes are created. Makes ghost enrollment economically worthless. Same model M-Pesa used to kill ghost agents in East Africa.</td>
+          <td><span class="badge badge-green">Structural fix</span></td>
+          <td>Nash, M-Pesa float activation</td>
+        </tr>
+        <tr>
+          <td><strong>GPS at DCN send time</strong><br><span class="note">Ambassador GPS at send must be ≤500m from merchant's enrolled GPS</span></td>
+          <td>Flag: ambassador sending DCN from different location than the merchant. Would have caught ilyas_khan/shah comm split immediately (different physical locations).</td>
+          <td><span class="badge badge-yellow">High</span></td>
+          <td>Terra</td>
+        </tr>
+        <tr>
+          <td><strong>Shop photo at enrollment</strong><br><span class="note">Camera-capture only (not gallery), GPS-tagged, timestamp-embedded at enrollment</span></td>
+          <td>Ghost merchants cannot produce a real shop front photo. Single highest-signal physical verification step for merchant existence.</td>
+          <td><span class="badge badge-yellow">High</span></td>
+          <td>Terra, M-Pesa Kenya 2015</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="divider">
+
+  <!-- CUMULATIVE STATUS -->
+  <div id="cumulative" class="section">
+    <div class="section-title">Cumulative Signal Status — PA1 through PA6</div>
+    <table>
+      <thead><tr><th>Signal</th><th>Phase tested</th><th>Result</th><th>Verdict</th></tr></thead>
+      <tbody>
+        <tr><td>DCN claim latency &lt;2 min</td><td>EDA → PA1</td><td>78% fleet-wide; standard demo practice</td><td><span class="badge badge-red">Invalidated</span></td></tr>
+        <tr><td>Zero 30-day CashExchange activity</td><td>EDA → PA2</td><td>81% fleet-wide; merchant activation problem</td><td><span class="badge badge-red">Invalidated</span></td></tr>
+        <tr><td>Account age &lt;1hr at enrollment</td><td>EDA → PA2</td><td>79% fleet-wide; standard PE workflow</td><td><span class="badge badge-red">Invalidated</span></td></tr>
+        <tr><td>Binary app-open (Amplitude)</td><td>PA4</td><td>All 4 fakes opened the app (ambassador operated phones)</td><td><span class="badge badge-red">Invalidated</span></td></tr>
+        <tr><td>Immediate bank transfer ≤48h</td><td>PA5</td><td>27% fleet-wide; ilyas_khan 20% (below median)</td><td><span class="badge badge-red">Invalidated</span></td></tr>
+        <tr><td>PRE_STAGED enrollment (before DCN)</td><td>PA6</td><td>4.6% fleet-wide; 4 ambassadors affected, ilyas_khan rate matches owaisferoz1</td><td><span class="badge badge-yellow">Weak / not unique</span></td></tr>
+        <tr><td>GPS co-location (&lt;0.4 km)</td><td>PA6</td><td>All 4 fakes within 0.4 km; gujjar at 0.007 km</td><td><span class="badge badge-yellow">Consistent / not conclusive</span></td></tr>
+        <tr><td>No Amplitude presence at all</td><td>PA4</td><td>3/10 merchants never opened app; misses confirmed fakes</td><td><span class="badge badge-yellow">Useful but incomplete</span></td></tr>
+        <tr><td>Single-day burst ≥5 MOS submissions</td><td>EDA</td><td>Feb 26 burst: fleet record of 6</td><td><span class="badge badge-green">Valid alert signal</span></td></tr>
+        <tr><td>Null form phone rate &gt;50%</td><td>EDA</td><td>85.7% null vs ~0% for peers</td><td><span class="badge badge-green">Valid (MOS-specific)</span></td></tr>
+        <tr><td>Enrollment before physical demo visit</td><td>PA4 + PA6-A</td><td>Confirmed for hamza: enrolled 18:07, demo 18:13. Requires visit sheet + DB join.</td><td><span class="badge badge-purple">New signal — needs fleet-level test</span></td></tr>
+        <tr><td>Split-attribution (different ambassador demos vs DCN sender)</td><td>PA4</td><td>5 merchants visited by shah comm, DCNs from ilyas_khan. Inflates enrollment count.</td><td><span class="badge badge-purple">New pattern — needs manual follow-up</span></td></tr>
+        <tr><td>PA7-A: Device fingerprint dedup (Amplitude)</td><td>PA7</td><td>7/10 merchants in Amplitude — all 7 have distinct device IDs. 3 not in Amplitude (unknown-1, Shabir, Kashif).</td><td><span class="badge badge-red">Does not fire</span></td></tr>
+        <tr><td>PA7-B: DCN temporal clustering (3+ in 20 min)</td><td>PA7</td><td>ilyas_khan max 2 DCNs in 20 min (normal). Fleet outlier: lashkarwala (max 6). Signal does not flag ilyas_khan.</td><td><span class="badge badge-red">Does not fire on ilyas_khan (fleet alert: lashkarwala)</span></td></tr>
+        <tr><td>PA7-C/D: Cross-attribution fleet map + VER</td><td>PA7</td><td>ilyas_khan: 0 visits logged / 9 PE enrollments → VER = 0. Most extreme outlier in fleet. Cross-attribution: 0/18 trackable phones. Visit sheet covers 8 ambassadors; shah comm absent.</td><td><span class="badge badge-green">FIRES — VER=0 (most extreme)</span></td></tr>
+        <tr><td>PA7-E: Enrollment timing variance (CV)</td><td>PA7</td><td>ilyas_khan below threshold (never ≥3 enrollments/day). Qualifying days: all CVs &gt;1 (human-like). No automation signal.</td><td><span class="badge badge-red">Does not fire — below daily threshold</span></td></tr>
+        <tr><td>PA7-F: Off-hours enrollments (&gt;30% outside 9am–7pm PKT)</td><td>PA7</td><td>ilyas_khan: 70% off-hours (7/9 enrollments 3am–9am or after 7pm). 3rd highest fleet (happy_griffin_1631 100%, junaid9778 85.7%).</td><td><span class="badge badge-green">FIRES — 70% (threshold 30%)</span></td></tr>
+        <tr><td>PA7-H: Leaf node analysis</td><td>PA7</td><td>All 4 confirmed fakes classified CONNECTED (not LEAF_NODE) — bank transfer of demo funds creates non-ambassador edge. Signal needs refinement.</td><td><span class="badge badge-yellow">Does not fire cleanly — needs refinement</span></td></tr>
+        <tr><td>PA7-I: Demo note amount distribution</td><td>PA7</td><td>ilyas_khan 100% exactly $5, stddev=0 — same as mighty_robin_3902 and happy_griffin_1631. Fleet-normal at this scale.</td><td><span class="badge badge-red">Fleet-normal — not discriminating</span></td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:18px">What survives as operationally meaningful</h3>
+    <div class="verdict verdict-note">
+      <strong>1. Cross-ambassador split-attribution:</strong> ilyas_khan receives PE enrollment credit for merchants physically visited by shah comm. Whether this is collusion or coincidence requires checking if the two ambassadors are co-located or share a team.
+    </div>
+    <div class="verdict verdict-note" style="margin-top:8px">
+      <strong>2. Enrollment-before-physical-demo timing:</strong> Confirmed for hamza (enrolled 6 min before demo visit). Fully DB+visit-sheet queryable. Needs fleet-wide check across all ambassadors.
+    </div>
+    <div class="verdict verdict-note" style="margin-top:8px">
+      <strong>3. Amplitude absence (3/10 merchants):</strong> Cleanest Amplitude signal available. Misses confirmed fakes because the ambassador operated their phones. Useful for detecting a different type of fake (zero device interaction), not the ambassador-operated variety.
+    </div>
+    <div class="verdict verdict-note" style="margin-top:8px">
+      <strong>4. GPS co-location at enrollment:</strong> gujjar at 0.007 km and hamza at 0.103 km corroborate ambassador device operation. Strengthen the case when combined with other signals; not standalone.
+    </div>
+    <div class="verdict verdict-note" style="margin-top:8px">
+      <strong>5. PA7-F — Off-hours enrollments (FIRES):</strong> ilyas_khan enrolled 70% of merchants outside legitimate field hours (3am–9am or after 7pm PKT). Third highest in fleet behind happy_griffin_1631 (100%) and junaid9778 (85.7%). Threshold: 30%. Signal fires clearly and is fleet-scalable via <code>off_hours_enrollment_query()</code>.
+    </div>
+    <div class="verdict verdict-note" style="margin-top:8px">
+      <strong>6. PA7-C/D — Visit-to-Enrollment Ratio (FIRES):</strong> ilyas_khan has zero visits logged in the formal ambassador tracking system against 9 PE enrollments — VER = 0. Every other ambassador in the fleet has at least some logged visits. This is the most extreme VER in the dataset. The formal visit tracking sheet (499 rows, 8 ambassadors via email match) confirms ilyas_khan never submitted a single visit log, while actively accruing enrollment credits.
+    </div>
+    <div class="verdict verdict-weak" style="margin-top:8px">
+      <strong>PA7 signals that did not fire:</strong> Device fingerprint dedup (PA7-A — all 7 unique), DCN burst pattern (PA7-B — max 2, normal), enrollment timing variance (PA7-E — below daily threshold), demo note distribution (PA7-I — fleet-normal). PA7-H (leaf node) needs refinement to exclude same-day demo-fund bank transfers before it can fire.
+    </div>
+  </div>
+
+  <p class="meta" style="margin-top:28px; text-align:center;">Updated 2026-03-09 (PA7 complete) &nbsp;|&nbsp; findings.md is the authoritative narrative record</p>
+</div>
+</body>
+</html>

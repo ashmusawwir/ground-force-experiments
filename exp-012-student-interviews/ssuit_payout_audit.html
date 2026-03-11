@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SSUIT Interviews &mdash; Payout Summary</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #B8992E;
+    --gold-light: #CBAF4A;
+    --gold-dark: #9A7E24;
+    --bg: #F5F0E8;
+    --card: #FFFFFF;
+    --border: #E8E3DB;
+    --text: #1A1A1A;
+    --muted: #6B6B6B;
+    --green: #16a34a;
+    --amber: #d97706;
+    --amber-bg: rgba(217,119,6,0.07);
+    --red: #dc2626;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 32px 20px; color: var(--text);
+  }
+  .page { width: 100%; max-width: 620px; }
+
+  .header { text-align: center; margin-bottom: 24px; }
+  .header h1 { font-family: 'DM Sans', sans-serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 5px; }
+  .header p { font-size: 0.82rem; color: var(--muted); }
+
+  .payout-box {
+    background: var(--card);
+    border: 2px solid var(--gold);
+    border-radius: 18px;
+    padding: 1.4rem 1.6rem;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 1.1rem;
+  }
+  .payout-circle {
+    width: 76px; height: 76px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--gold-dark), var(--gold-light));
+    display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;
+  }
+  .payout-circle .big { font-family: 'DM Sans', sans-serif; font-size: 1.55rem; font-weight: 700; line-height: 1; }
+  .payout-circle .sm { font-size: 0.56rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; opacity: 0.85; }
+  .payout-text h2 { font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 5px; }
+  .payout-text p { font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.2rem 1.4rem;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem; font-weight: 700; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .card-title .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+
+  .work-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+    font-size: 0.83rem; line-height: 1.5;
+  }
+  .work-item:last-child { border-bottom: none; }
+  .work-icon { font-size: 0.95rem; flex-shrink: 0; padding-top: 1px; }
+  .work-label { font-weight: 600; margin-bottom: 1px; }
+  .work-detail { color: var(--muted); font-size: 0.79rem; }
+
+  .tier-table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 0.8rem; }
+  .tier-table th {
+    text-align: left; font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--muted); padding: 5px 8px; border-bottom: 1px solid var(--border);
+  }
+  .tier-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.45; }
+  .tier-table tr:last-child td { border-bottom: none; }
+  .tier-badge {
+    display: inline-block; font-size: 0.66rem; font-weight: 700; padding: 1px 6px;
+    border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+  }
+  .tier-1 { background: #dcfce7; color: #15803d; }
+  .tier-2 { background: #dbeafe; color: #1d4ed8; }
+  .tier-3 { background: #f3f4f6; color: #374151; }
+  .tier-flag { background: #fef3c7; color: #92400e; }
+  .tier-oos { background: #f1f5f9; color: #64748b; }
+  .tier-pending { background: #f5f3ff; color: #6d28d9; }
+
+  .q-box {
+    background: var(--amber-bg);
+    border: 1px solid rgba(217,119,6,0.22);
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 10px;
+  }
+  .q-box:last-child { margin-bottom: 0; }
+  .q-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--amber); margin-bottom: 4px; }
+  .q-main { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; }
+  .q-context { font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-bottom: 8px; }
+  .q-result { font-size: 0.79rem; line-height: 1.6; }
+  .q-result .yes { color: var(--green); font-weight: 600; }
+  .q-result .no  { color: var(--red); font-weight: 600; }
+
+  .oos-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    font-size: 0.81rem; color: var(--muted); line-height: 1.5;
+  }
+  .oos-box strong { color: var(--text); }
+
+  .rule {
+    display: flex; gap: 9px; align-items: flex-start;
+    padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+    font-size: 0.83rem; line-height: 1.5;
+  }
+  .rule:last-child { border-bottom: none; }
+  .rule-num {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: white; width: 21px; height: 21px; border-radius: 5px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700; margin-top: 1px;
+  }
+  .rule strong { display: block; margin-bottom: 1px; }
+  .rule .detail { font-size: 0.78rem; color: var(--muted); }
+
+  footer { margin-top: 28px; font-size: 0.7rem; color: var(--muted); text-align: center; padding-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <h1>SSUIT Interviews &mdash; Payout Summary</h1>
+    <p>Hasnain, Syed Naqi &nbsp;&bull;&nbsp; 28 verified unique interviews</p>
+  </div>
+
+  <div class="payout-box">
+    <div class="payout-circle">
+      <div class="big">70%</div>
+      <div class="sm">Sent now</div>
+    </div>
+    <div class="payout-text">
+      <h2>You&rsquo;re receiving 70% now &mdash; 30% held pending resolution</h2>
+      <p>28 verified unique interviews from 31 recordings + 31 form rows. Three issues reduce the count from 31: Syed Naqi&rsquo;s self-submission, a HasanSSUIT/NafeahSSUIT duplicate recording, and 1 recording (Mohammad Taqi) with no form. We&rsquo;re holding 30% until these are clarified.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>What you did</div>
+
+    <div class="work-item">
+      <span class="work-icon">&#x2705;</span>
+      <div>
+        <div class="work-label">20 interviews by Hasnain &mdash; all verified</div>
+        <div class="work-detail">19 standard interviews + Parshant (form submitted under Hasnain&rsquo;s email; recording confirms a real interview was conducted). Sufyan was split across two recordings (Part 1 + Part 2) and counts as one interview. Hasnain&rsquo;s cohort is the strongest in the batch &mdash; 13 of 20 rate Strong by transcript length.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x2705;</span>
+      <div>
+        <div class="work-label">8 interviews by Syed Naqi &mdash; verified</div>
+        <div class="work-detail">Huzaifa, Shaheer, Sheikh Farjad, Zeeshan, Bilal Ahmed, Faraz, Yazir Hussain, and Hassan (counting Hassan, not Nafeah &mdash; see duplicate flag below). Yazir Hussain&rsquo;s recording filed as &ldquo;YazarHussainSSUIT&rdquo; &mdash; confirmed match.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x274C;</span>
+      <div>
+        <div class="work-label">HasanSSUIT = NafeahSSUIT &mdash; exact duplicate recording</div>
+        <div class="work-detail">Transcript analysis confirmed byte-for-byte identical content between these two files. Both were submitted by Syed Naqi as separate interviewees. Only one of them is a real interview. One row is excluded; net Naqi count drops by 1.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x274C;</span>
+      <div>
+        <div class="work-label">Syed Naqi self-submission &mdash; excluded</div>
+        <div class="work-detail">Naqi submitted a form listing himself as the interviewee (interviewer = Syed Naqi, interviewee = Syed Naqi). No recording of Naqi as an interviewee exists. This row is excluded from the dataset and payout.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x26A0;&#xFE0F;</span>
+      <div>
+        <div class="work-label">Parshant &mdash; recording exists, form anomaly noted</div>
+        <div class="work-detail">A recording of Parshant being interviewed exists and confirms a real interview (5,558 chars, Strong tier). The form was submitted under Hasnain&rsquo;s email but lists &ldquo;Parshant&rdquo; as interviewer &mdash; likely a data-entry error. Attributed to Hasnain&rsquo;s account and counted.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x26A0;&#xFE0F;</span>
+      <div>
+        <div class="work-label">1 recording with no form &mdash; Mohammad Taqi</div>
+        <div class="work-detail">MohommadTaqiSSUIT recording exists but no matching form was found in the full 186-row dataset. Cannot enter the dataset without a form.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Payable interview count by interviewer</div>
+
+    <table class="tier-table">
+      <thead>
+        <tr>
+          <th>Interviewer</th>
+          <th>Submitted</th>
+          <th>Payable</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Hasnain</td>
+          <td>20</td>
+          <td><strong>20</strong></td>
+          <td style="color:var(--muted);">19 clean + Parshant (form under Hasnain&rsquo;s email, recording confirmed)</td>
+        </tr>
+        <tr>
+          <td>Syed Naqi</td>
+          <td>8</td>
+          <td><strong>8</strong></td>
+          <td style="color:var(--muted);">10 submitted &minus; 1 self &minus; 1 Hasan/Nafeah duplicate</td>
+        </tr>
+        <tr>
+          <td>Syed Naqi (self)</td>
+          <td>1</td>
+          <td><strong style="color:var(--red);">0</strong></td>
+          <td style="color:var(--muted);">Self-submitted &mdash; excluded</td>
+        </tr>
+        <tr>
+          <td>Nafeah (duplicate)</td>
+          <td>1</td>
+          <td><strong style="color:var(--red);">0</strong></td>
+          <td style="color:var(--muted);">Identical transcript to HasanSSUIT &mdash; bogus</td>
+        </tr>
+        <tr>
+          <td>Mohammad Taqi</td>
+          <td>0</td>
+          <td><strong style="color:var(--amber);">?</strong></td>
+          <td style="color:var(--muted);">Recording exists, no form &mdash; pending</td>
+        </tr>
+        <tr>
+          <td style="font-weight:600;">Total</td>
+          <td style="font-weight:600;">31</td>
+          <td style="font-weight:600;">28</td>
+          <td style="color:var(--muted);">+ 1 pending (Mohammad Taqi)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Interview quality breakdown &mdash; 28 payable</div>
+    <p style="font-size:0.79rem;color:var(--muted);margin-bottom:10px;">Tier based on transcript length (Whisper medium, language=en). Strong = richest depth. Good = complete coverage. Acceptable = on-script, thinner responses. Hasnain&rsquo;s cohort is notably stronger &mdash; 13 of his 20 interviews are Strong tier.</p>
+
+    <table class="tier-table">
+      <thead>
+        <tr>
+          <th>Tier</th>
+          <th>Count</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tier-badge tier-1">Strong</span></td>
+          <td>13</td>
+          <td>All Hasnain&rsquo;s: Sohaib (8K), Afzal (7.4K), Munawwar (7.4K), Mukhtiar (7K), Nadeem (5.9K), Parshant (5.6K), Nivyan (5.5K), Abdul Hadi (5.5K), Yasir Khan (5K), Furqan (4.6K), Sameen (4.4K), Jai Dev (4.2K), Munesh (4.1K)</td>
+        </tr>
+        <tr>
+          <td><span class="tier-badge tier-2">Good</span></td>
+          <td>7</td>
+          <td>Hasnain: Kayhan, Ismail, Ali, Sufiyan (parts 1+2 combined, 3.3K) &mdash; Naqi: Zeeshan, Hassan, Yazir Hussain</td>
+        </tr>
+        <tr>
+          <td><span class="tier-badge tier-3">Acceptable</span></td>
+          <td>6</td>
+          <td>Hasnain: Huzaifa Ahmad, Ahmad &mdash; Naqi: Huzaifa, Shaheer, Bilal Ahmed, Faraz</td>
+        </tr>
+        <tr>
+          <td><span class="tier-badge tier-flag">Flagged</span></td>
+          <td>2</td>
+          <td>Hasnain: Hashim (2,067 chars) &mdash; Naqi: Sheikh Farjad (1,456 chars, very short)</td>
+        </tr>
+        <tr>
+          <td><span class="tier-badge tier-oos">Out of Scope</span></td>
+          <td>3</td>
+          <td>Nafeah (duplicate of Hassan), Syed Naqi (self-submission), Mohammad Taqi (no form)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Four things to clear up &mdash; reply within 48 hours</div>
+
+    <div class="q-box">
+      <div class="q-label">Item 1 &mdash; HasanSSUIT = NafeahSSUIT (duplicate recording)</div>
+      <div class="q-main">Two form rows, one real interview &mdash; which one is Hassan and which is Nafeah?</div>
+      <div class="q-context">Transcript analysis found that HasanSSUIT and NafeahSSUIT are byte-for-byte identical files. Both were submitted by Syed Naqi as separate interviewees (Hassan and Nafeah). Only one real interview exists. We are counting Hassan as the valid one and Nafeah as the duplicate, but confirm: was only one of these students actually interviewed, and which name is correct?</div>
+      <div class="q-result">
+        If only one was interviewed &rarr; <span class="yes">confirm the name, duplicate row removed, count stands at 8.</span><br>
+        If both were genuinely interviewed &rarr; <span class="yes">share the two separate recordings; both will count and holdback partially released.</span>
+      </div>
+    </div>
+
+    <div class="q-box">
+      <div class="q-label">Item 2 &mdash; Syed Naqi self-submission</div>
+      <div class="q-main">Naqi submitted a form listing himself as the interviewee.</div>
+      <div class="q-context">The form row (skonline2005@gmail.com) has interviewer = Syed Naqi and interviewee = Syed Naqi. No recording of Naqi being interviewed by someone else exists. This row is excluded from the dataset.</div>
+      <div class="q-result">
+        <span class="no">Excluded from dataset and payout. Self-reporting is not an interview.</span>
+      </div>
+    </div>
+
+    <div class="q-box">
+      <div class="q-label">Item 3 &mdash; Mohammad Taqi</div>
+      <div class="q-main">Recording exists but no form submission found in the full dataset.</div>
+      <div class="q-context">MohommadTaqiSSUIT recording is in your folder. We searched all 186 form rows and found no match. Either the form was never submitted or was submitted under a different name.</div>
+      <div class="q-result">
+        If Mohammad Taqi submits the form this week &rarr; <span class="yes">counts, adds 1 to payable total, portion of holdback released.</span><br>
+        If no form by end of week &rarr; <span class="no">recording stays outside the dataset.</span>
+      </div>
+    </div>
+
+    <div class="q-box">
+      <div class="q-label">Item 4 &mdash; HASSAAN (form by Alveena, data goes to SSUIT)</div>
+      <div class="q-main">HASSAAN is a SSUIT student, interviewed cross-cohort by Alveena (Szabist interviewer).</div>
+      <div class="q-context">The form correctly lists Sir Syed University. The interview was conducted by Alveena during the Szabist cohort collection period. His recording exists in the Szabist folder and was reviewed in the Szabist audit. His form row belongs in the SSUIT dataset. This interview is Alveena&rsquo;s work, not Hasnain&rsquo;s or Naqi&rsquo;s.</div>
+      <div class="q-result">
+        HASSAAN&rsquo;s form row is in the SSUIT dataset. <span class="no">Not payable to SSUIT interviewers &mdash; credited to Szabist cohort.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="border-color: rgba(220,38,38,0.25);">
+    <div class="card-title"><span class="dot" style="background:var(--red);"></span>Data quality flags &mdash; for the research team</div>
+    <p style="font-size:0.79rem;color:var(--muted);margin-bottom:12px;">These don&rsquo;t affect interviewer payout but must be resolved before analysis.</p>
+
+    <div class="work-item">
+      <span class="work-icon">&#x26A0;&#xFE0F;</span>
+      <div>
+        <div class="work-label">Syed Naqi appears as both interviewer (10 forms) and self-submitted interviewee (1 form)</div>
+        <div class="work-detail">His 8 payable interviews are valid dataset entries. His self-submitted interviewee row must be dropped from analysis.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x26A0;&#xFE0F;</span>
+      <div>
+        <div class="work-label">HasanSSUIT and NafeahSSUIT are identical transcripts &mdash; one row is bogus</div>
+        <div class="work-detail">Same audio file submitted under two interviewee names. Drop the duplicate from analysis (pending Naqi confirmation of which name is correct).</div>
+      </div>
+    </div>
+    <div class="work-item" style="border-bottom:none;">
+      <span class="work-icon">&#x26A0;&#xFE0F;</span>
+      <div>
+        <div class="work-label">Parshant form submitted under Hasnain&rsquo;s email with &ldquo;Parshant&rdquo; as interviewer</div>
+        <div class="work-detail">Recording confirms interview happened. Likely a data-entry error in the interviewer name field. Count the interview; correct the interviewer attribution to Hasnain before analysis.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>For the next round &mdash; four rules</div>
+    <p style="font-size:0.79rem;color:var(--muted);margin-bottom:11px;">Not a critique of this round &mdash; just how we&rsquo;ll run things going forward.</p>
+
+    <div class="rule">
+      <div class="rule-num">1</div>
+      <div>
+        <strong>Audio timestamp in first 10 seconds &mdash; every recording</strong>
+        <span class="detail">State your name + date + interviewee&rsquo;s first name at the start. Makes verification instant and eliminates name-matching ambiguity (e.g., Yazar vs Yazir, Hasan vs Hassan).</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="rule-num">2</div>
+      <div>
+        <strong>The interviewer submits under their own account &mdash; not the interviewee&rsquo;s</strong>
+        <span class="detail">Only the person conducting the interview submits the form. The interviewee does not self-submit. If a student submits their own form, it cannot be verified against a recording and is excluded.</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="rule-num">3</div>
+      <div>
+        <strong>Two-tier payout from next round &mdash; 70% base, 30% quality bonus</strong>
+        <span class="detail">70% on delivery of recording + form. 30% bonus unlocked if the recording contains at least one unprompted follow-up per section. Verifiable in a &lt;2 min spot-check.</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="rule-num">4</div>
+      <div>
+        <strong>Interviewee states their university on tape</strong>
+        <span class="detail">Student mentions their university verbally in the recording. Prevents cross-university attribution errors (e.g., HASSAAN listed as SSUIT on one form, Szabist on the recording).</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    SSUIT Cohort &nbsp;&bull;&nbsp; Updated 2026-03-09 &nbsp;&bull;&nbsp; Transcription complete &mdash; 31 recordings reviewed, 28 verified pairs.
+  </footer>
+
+</div>
+</body>
+</html>

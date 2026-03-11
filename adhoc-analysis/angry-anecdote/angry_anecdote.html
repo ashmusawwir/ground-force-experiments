@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>High-Value Merchant Stayed. The App Didn't. · 2026-03-09</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --zar-gold: #B8992E;
+    --zar-gold-light: #CBAF4A;
+    --zar-gold-dark: #9A7E24;
+    --background: #F5F0E8;
+    --card: #FFFFFF;
+    --border: #E8E3DB;
+    --text: #1A1A1A;
+    --text-secondary: #6B6B6B;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --warning: #f59e0b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--background);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px;
+    color: var(--text);
+  }
+  h1 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+  .status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.85rem;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, var(--zar-gold), var(--zar-gold-light));
+    color: #fff;
+    margin-bottom: 24px;
+  }
+  .data-card {
+    margin-top: 20px;
+    background: var(--card);
+    border-radius: 20px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border: 1px solid var(--border);
+    width: 100%;
+    max-width: 960px;
+  }
+  .data-card h2 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .data-card h2 .num {
+    background: linear-gradient(135deg, var(--zar-gold), var(--zar-gold-light));
+    color: white;
+    width: 26px; height: 26px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 1rem; }
+  th {
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--border);
+  }
+  td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .stat-box {
+    background: var(--background);
+    padding: 1rem;
+    border-radius: 12px;
+    text-align: center;
+  }
+  .stat-value {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.8rem; font-weight: 700;
+    color: var(--zar-gold-dark);
+  }
+  .stat-value.success { color: var(--success); }
+  .stat-value.danger  { color: var(--danger); }
+  .stat-value.warning { color: var(--warning); }
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+  }
+  .insight {
+    background: linear-gradient(135deg, rgba(184,153,46,0.08), rgba(184,153,46,0.02));
+    border-left: 3px solid var(--zar-gold);
+    padding: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    border-radius: 0 12px 12px 0;
+    line-height: 1.5;
+  }
+  .insight strong { color: var(--zar-gold-dark); }
+  .flag {
+    background: linear-gradient(135deg, rgba(220,38,38,0.06), rgba(220,38,38,0.02));
+    border-left: 3px solid var(--danger);
+    padding: 1rem;
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    border-radius: 0 12px 12px 0;
+    line-height: 1.5;
+  }
+  .flag strong { color: var(--danger); }
+  .corrective {
+    background: linear-gradient(135deg, rgba(22,163,74,0.06), rgba(22,163,74,0.02));
+    border-left: 3px solid var(--success);
+    padding: 1rem;
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    border-radius: 0 12px 12px 0;
+    line-height: 1.5;
+  }
+  .corrective strong { color: var(--success); }
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 100px;
+    font-size: 0.7rem; font-weight: 600;
+  }
+  .badge-success { background: rgba(22,163,74,0.15); color: #16a34a; }
+  .badge-warning { background: rgba(184,153,46,0.15); color: var(--zar-gold-dark); }
+  .badge-danger  { background: rgba(220,38,38,0.15); color: #dc2626; }
+  .section-header {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 1.25rem 0 0.5rem 0;
+    color: var(--text);
+  }
+  blockquote {
+    border-left: 3px solid var(--border);
+    padding: 0.75rem 1rem;
+    margin: 0.5rem 0;
+    font-size: 0.88rem;
+    line-height: 1.65;
+    color: var(--text);
+    background: var(--background);
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+  }
+  .lang-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-secondary);
+    margin-top: 1rem;
+    margin-bottom: 0.25rem;
+  }
+  .lang-label:first-of-type { margin-top: 0; }
+  /* Fix table */
+  .fix-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+  }
+  .fix-table th {
+    padding: 0.5rem 0.75rem 0.5rem 1rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    border-bottom: 2px solid var(--border);
+    color: var(--text-secondary);
+  }
+  .fix-table th.col-problem { color: var(--danger); }
+  .fix-table th.col-fix { color: var(--success); }
+  .fix-table td {
+    padding: 0.85rem 0.75rem 0.85rem 1rem;
+    vertical-align: top;
+    border-bottom: 1px solid var(--border);
+    width: 50%;
+    line-height: 1.55;
+  }
+  .fix-table tr:last-child td { border-bottom: none; }
+  .fix-table td.problem {
+    border-left: 3px solid var(--danger);
+    background: linear-gradient(135deg, rgba(220,38,38,0.04), rgba(220,38,38,0.01));
+  }
+  .fix-table td.problem strong { color: var(--danger); }
+  .fix-table td.solution {
+    border-left: 3px solid var(--success);
+    background: linear-gradient(135deg, rgba(22,163,74,0.04), rgba(22,163,74,0.01));
+  }
+  .fix-table td.solution strong { color: var(--success); }
+</style>
+</head>
+<body>
+
+<h1>High-Value Merchant Stayed. The App Didn't.</h1>
+<p class="subtitle">Merchant complaint captured 2026-03-09 · Lahore · Malik Wajid Mobile</p>
+<span class="status-badge">App Completely Down · Churn Risk · Unresolved</span>
+
+<!-- SECTION 1: CONTEXT -->
+<div class="data-card">
+  <h2><span class="num">1</span> What Happened</h2>
+  <p class="card-desc">The sequence of events that led to this complaint</p>
+
+  <p style="font-size: 0.88rem; line-height: 1.7; margin-bottom: 0.75rem;">
+    A merchant in Lahore found that his ZAR app was completely non-functional — not a specific feature, but the app itself. He could not access it at all. A customer wanted to buy <strong>$1,400</strong> from him. With the app down, there was no in-app path to complete the transaction.
+  </p>
+  <p style="font-size: 0.88rem; line-height: 1.7;">
+    The contractor (Irfan) escalated to a ZAR team member (Turab) and they had to <strong>facilitate a manual, out-of-app purchase</strong> on the merchant's behalf — a workaround that required approximately <strong>50 WhatsApp messages and 2 phone calls</strong> at 11:30 PM. The Trade flow itself was operational on the backend; the problem was that the merchant's app would not open at all.
+  </p>
+
+  <div class="flag">
+    <strong>Root cause:</strong> The merchant's app was entirely broken — not a specific flow failure. The merchant had raised this issue multiple times prior to this incident. No alert fired, no ticket was created, and the team only found out because the merchant escalated through a contractor.
+  </div>
+  <div class="insight">
+    <strong>Workaround completed:</strong> The immediate $1,400 transaction was resolved manually. The merchant's frustration was compounded by the effort required — and by the fact that this was not the first time he had raised the app problem.
+  </div>
+</div>
+
+<!-- SECTION 2: MERCHANT PROFILE -->
+<div class="data-card">
+  <h2><span class="num">2</span> Who Is This Merchant</h2>
+  <p class="card-desc">Malik Kamran · Malik Wajid Mobile · Lahore · Active since Sep 2025</p>
+
+  <div class="stat-grid">
+    <div class="stat-box">
+      <div class="stat-value">61</div>
+      <div class="stat-label">Total transactions</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">$37,902</div>
+      <div class="stat-label">$ sold (all-time)</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value success">29</div>
+      <div class="stat-label">New users onboarded</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">31</div>
+      <div class="stat-label">Unique customers served</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Business name</td><td><strong>Malik Wajid Mobile</strong></td></tr>
+      <tr><td>Phone</td><td>+92 348 4852785</td></tr>
+      <tr><td>City</td><td>Lahore</td></tr>
+      <tr><td>DB status</td><td><span class="badge badge-success">active</span></td></tr>
+      <tr><td>Onboarded</td><td>Sep 24, 2025</td></tr>
+      <tr><td>Last transaction</td><td>Mar 8, 2026</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-header">Earnings at stake</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Calculation</th>
+        <th>Value</th>
+        <th>PKR</th>
+        <th>USD (~280 PKR/$)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Blocked $1,400 transaction · 3 PKR/$</td><td>1,400 × 3</td><td>4,200 PKR</td><td><strong>~$15</strong></td></tr>
+      <tr><td>Lifetime earnings · $37,902 sold · 3 PKR/$</td><td>37,902 × 3</td><td>113,706 PKR</td><td><strong>~$406</strong></td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight">
+    <strong>This is an active, high-value merchant.</strong> $37,902 sold through 59 cash note transactions. 29 new ZAR users onboarded — nearly one new user per transaction. Last active yesterday. The blocked $1,400 transaction cost him ~$15 in earnings on that single trade alone. This is not a dormant complaint from a lapsed merchant; it is a commercially productive merchant who ran into a platform failure.
+  </div>
+</div>
+
+<!-- SECTION 3: MERCHANT VOICE NOTE -->
+<div class="data-card">
+  <h2><span class="num">3</span> Merchant Voice Note (~52s)</h2>
+  <p class="card-desc">Urdu · auto-transcribed with Whisper medium · 2026-03-09 12:28 AM</p>
+
+  <div class="lang-label">Roman Urdu</div>
+  <blockquote>
+    "Assalam Alaikum, Irfan bhai ki haal hai? Irfan bhai, bahut baar maine aap ko kaha hai ke aap ko masla aa raha hai — is masle ko durust karwain. Hum jab kaam kar rahe hain to aap hamare saath chalein — yeh zyada hai. Aap hamare liye kuch karte nahin hain. Hum bana bana ke tarle kar rahe hain bhai. Hum logon ko daleel de rahe hain, unko mutmain kar rahe hain, log customer bana rahe hain. To phir bhi woh nahin hal — hall karwain. Maine pehle bhi keh chuka ke meri app durust karwain. Baki koi nahin hai. To bhai hatam karwain meri app ka masla. Masla nahin hai Alhamdulillah — yeh meri app wazeh nahin hai. Agar aap ne mujhe aise daleel dena chahte hain to meri app bhai karwain. <strong>Mere paas aur bhi zariye hain — agar aap ne mujhe aise azaab dena hai to meri app band kar dain.</strong>"
+  </blockquote>
+
+  <div class="lang-label">English</div>
+  <blockquote>
+    "Assalam Alaikum — how are you, Irfan bhai? I've told you many times that this problem is happening — get it fixed. When we ARE working, you should stand by us — this is too much. You don't do anything for us. We keep putting in effort after effort, bhai. We convince people, make them satisfied, convert them into customers. But still the issue isn't resolved — get it resolved. I've already told you before: fix my app. There's nothing else. Just fix my app, bhai. The business is fine, Alhamdulillah — but my app is not working properly. If you want to keep making excuses to me, then just fix my app, bhai. <strong>I have other sources of income — if you're going to torture me like this, just close my app.</strong>"
+  </blockquote>
+
+  <div class="flag">
+    <strong>Churn threat — explicit:</strong> "Mere paas aur bhi zariye hain — agar aap ne mujhe aise azaab dena hai to meri app band kar dain." The merchant has stated he has alternatives and will leave if the app issue is not resolved. This is not venting — it is a conditional exit statement from a merchant who has done 61 transactions and onboarded 29 users.
+  </div>
+
+  <div class="flag">
+    <strong>Repeated escalation:</strong> "Bahut baar kaha" (told you many times) signals this is at least the 3rd+ escalation, not a first report. The broken app was the final trigger on top of an already-accumulated grievance.
+  </div>
+
+  <div class="section-header">Emotion read</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Dimension</th>
+        <th>Assessment</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Primary emotion</td><td>Frustration + Betrayal + Conditional Exit</td></tr>
+      <tr><td>Intensity</td><td>5 / 5</td></tr>
+      <tr><td>Tone</td><td>Assertive, escalating, repetitive — classic ignored-escalation pattern culminating in an ultimatum</td></tr>
+      <tr><td>Key markers</td><td>"Bahut baar kaha" (told you many times) · "Aap hamare liye kuch karte nahin" (you do nothing for us) · "Azaab dena" (torturing me) · "Meri app band kar dain" (close my app)</td></tr>
+      <tr><td>Churn signal</td><td><span class="badge badge-danger">Explicit threat</span> — stated alternatives exist; conditional on platform failing to act</td></tr>
+    </tbody>
+  </table>
+
+  <div class="corrective">
+    <strong>This merchant is still retainable — but the window is closing.</strong> The Alhamdulillah framing earlier in the note signals he values the business. The closing line is an ultimatum, not a goodbye. Required: direct outreach (phone call, not voice note), explicit acknowledgement of the repeated escalations, and a committed resolution timeline — within 24h, not the usual async chain.
+  </div>
+</div>
+
+<!-- SECTION 4: SYSTEMIC FIX -->
+<div class="data-card">
+  <h2><span class="num">4</span> Systemic Fix</h2>
+  <p class="card-desc">What needs to change to prevent this class of incident from recurring</p>
+
+  <table class="fix-table">
+    <thead>
+      <tr>
+        <th class="col-problem">Problem</th>
+        <th class="col-fix">Fix</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="problem"><strong>Detection gap — no alerting when a merchant's app breaks.</strong> ZAR only finds out when the merchant escalates through a contractor. There is no passive signal (session heartbeat, last-seen timestamp, app error report) that surfaces a stuck or broken merchant app. By the time the team hears about it, the merchant has already lost a transaction and started composing a voice note.</td>
+        <td class="solution"><strong>Automated health monitoring</strong> for active merchants — last app open, last successful transaction, error rate. Flag any active merchant who has not opened their app in 72h+ or who has had a failed transaction attempt. Reactive complaint → proactive outreach.</td>
+      </tr>
+      <tr>
+        <td class="problem"><strong>Escalation path missing — contractors have no structured way to report a broken merchant app.</strong> The only option was an informal WhatsApp message, relayed through a 4-hop chain (merchant → ambassador → ground force → devs) that destroys diagnostic context at every step. No ticket was created, no SLA was set, and the issue was still unresolved 13 hours later.</td>
+        <td class="solution"><strong>One-tap "merchant app broken" report</strong> from the contractor-facing tool → auto-creates a support ticket with merchant ID, timestamp, and contractor info pre-filled → merchant receives an acknowledgment within 1 hour. No relayed WhatsApp chain, no context loss.</td>
+      </tr>
+      <tr>
+        <td class="problem"><strong>Manual workaround is not a solution.</strong> Facilitating an out-of-app $1,400 trade via 50 WhatsApp messages and 2 phone calls at 11:30 PM is a people-powered patch. It is not repeatable, not documentable, and creates dependency on specific individuals being reachable at night.</td>
+        <td class="solution"><strong>Document the fallback procedure</strong> for app-down scenarios (who to call, what to communicate to the merchant). Hard limit: if manual workaround is used more than once for the same merchant in a 30-day window, the app issue is force-escalated to P1.</td>
+      </tr>
+      <tr>
+        <td class="problem"><strong>No priority support tier for high-value merchants.</strong> A merchant with 61 transactions, $37,902 sold, and 29 users onboarded is in the top tier of the network. Their app breaking should not enter the same queue as a day-1 onboarding issue.</td>
+        <td class="solution"><strong>Define an "Active Merchant" SLA tier</strong> (≥20 transactions OR ≥$10K sold OR ≥10 users onboarded). Any app issue from this tier is auto-tagged P1 with a 4h resolution target and a direct phone acknowledgment within 1h.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 24px; text-align: center;">
+  Generated 2026-03-09 · Whisper medium · Metabase DB · Mattermost thread akgdm76acif49qknoboweedt5h
+</p>
+
+</body>
+</html>

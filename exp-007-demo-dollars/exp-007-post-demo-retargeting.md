@@ -1,6 +1,6 @@
 # EXP-007: Post-Demo Retargeting
 
-**STATUS:** ANALYZING
+**STATUS:** COMPLETE
 
 ## Scorecard
 Metrics TBD — pending first code run.

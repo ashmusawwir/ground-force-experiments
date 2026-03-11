@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Merchant Fraud Investigation</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold:       #B8992E;
+    --gold-light: #CBAF4A;
+    --gold-dark:  #9A7E24;
+    --bg:         #0D0D0D;
+    --card:       #1A1A1A;
+    --card-alt:   #222222;
+    --border:     #2E2E2E;
+    --text:       #EFEBE0;
+    --muted:      #8A8680;
+    --accent:     #DFD6C1;
+    --green:      #16a34a;
+    --green-bg:   rgba(22,163,74,0.12);
+    --green-border:rgba(22,163,74,0.35);
+    --red:        #dc2626;
+    --red-bg:     rgba(220,38,38,0.10);
+    --red-border: rgba(220,38,38,0.35);
+    --amber:      #B8992E;
+    --amber-bg:   rgba(184,153,46,0.12);
+    --amber-border:rgba(184,153,46,0.35);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* ── Animations ─────────────────────────── */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position:  200% center; }
+  }
+
+  /* ── Nav ────────────────────────────────── */
+  .gf-nav {
+    position: sticky; top: 0; z-index: 100;
+    width: 100%; background: #0D0D0D;
+    border-bottom: 1px solid #2E2E2E;
+    display: flex; align-items: center;
+    padding: 0.65rem 1.5rem; gap: 0.75rem;
+  }
+  .gf-logo {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem; font-weight: 700;
+    color: var(--gold-light); letter-spacing: 0.06em;
+    flex-shrink: 0;
+  }
+  .gf-nav-divider { color: var(--border); font-size: 1.1rem; flex-shrink: 0; }
+  .gf-nav-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem; font-weight: 600; color: var(--accent);
+    flex: 1;
+  }
+  .gf-nav-date { font-size: 0.78rem; color: var(--muted); flex-shrink: 0; }
+
+  /* ── Page ───────────────────────────────── */
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg); color: var(--text);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 0 20px 56px;
+  }
+
+  /* ── Cards ──────────────────────────────── */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 1.5rem 2rem;
+    width: 100%; max-width: 980px; margin-top: 20px;
+    animation: fadeInUp 0.65s cubic-bezier(0.20, 0.00, 0.15, 1.00) both;
+    animation-delay: var(--delay, 0s);
+  }
+  .card-h {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem; font-weight: 600; color: var(--accent);
+    margin-bottom: 1.1rem; display: flex; align-items: center; gap: 0.5rem;
+  }
+  .sec-label {
+    font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--muted);
+    background: var(--card-alt); border: 1px solid var(--border);
+    padding: 0.18rem 0.55rem; border-radius: 5px; flex-shrink: 0;
+  }
+
+  /* ── Verdict hero ───────────────────────── */
+  .hero-card {
+    border-left: 4px solid var(--red);
+    background: linear-gradient(135deg, #1A0A0A 0%, #1A1A1A 100%);
+  }
+  .stat-row {
+    display: flex; gap: 1.25rem; margin-bottom: 1.4rem; flex-wrap: wrap;
+  }
+  .stat-chip {
+    background: var(--card-alt); border: 1px solid var(--border);
+    border-radius: 10px; padding: 0.6rem 1rem;
+    display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 120px;
+  }
+  .stat-chip-val {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.5rem; font-weight: 700; color: var(--accent);
+  }
+  .stat-chip-label { font-size: 0.72rem; color: var(--muted); }
+  .verdict-text {
+    font-size: 1.05rem; font-weight: 600; color: var(--text);
+    line-height: 1.5; margin-bottom: 0.75rem;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .context-line {
+    font-size: 0.84rem; color: var(--muted); line-height: 1.6;
+    border-left: 2px solid var(--border); padding-left: 0.85rem;
+  }
+
+  /* ── Tables ─────────────────────────────── */
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th {
+    background: var(--card-alt); color: var(--muted);
+    text-align: left; padding: 0.5rem 0.75rem;
+    font-weight: 600; font-size: 0.7rem; text-transform: uppercase;
+    letter-spacing: 0.05em; white-space: nowrap;
+  }
+  th:first-child { border-radius: 8px 0 0 8px; }
+  th:last-child  { border-radius: 0 8px 8px 0; }
+  td { padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* ── Status pill (exp-014 style) ───────────── */
+  .status-pill {
+    display: inline-block; font-size: 0.65rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    padding: 0.2rem 0.65rem; border-radius: 100px;
+  }
+  .pill-concluded {
+    background: rgba(184,153,46,0.2); color: var(--gold-light);
+    border: 1px solid rgba(184,153,46,0.4);
+  }
+
+  /* ── Signal cards ───────────────────────── */
+  .signal-list { display: flex; flex-direction: column; gap: 14px; }
+  .signal-row {
+    display: flex; align-items: flex-start; gap: 1rem;
+    background: var(--card-alt); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.1rem 1.25rem;
+  }
+  .signal-row:hover { border-color: #3A3A3A; }
+  .pill {
+    flex-shrink: 0; font-size: 0.6rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    padding: 0.28rem 0.85rem; border-radius: 100px;
+    margin-top: 2px; white-space: nowrap;
+    min-width: 108px; text-align: center;
+  }
+  .pill-reject {
+    background: var(--red-bg); color: #f87171;
+    border: 1px solid var(--red-border);
+  }
+  .pill-adopt {
+    background: var(--green-bg); color: #4ade80;
+    border: 1px solid var(--green-border);
+  }
+  .pill-ambig {
+    background: var(--amber-bg); color: var(--gold-light);
+    border: 1px solid var(--amber-border);
+  }
+  .signal-body { flex: 1; min-width: 0; }
+  .signal-title {
+    font-size: 0.85rem; font-weight: 600; color: var(--accent);
+    margin-bottom: 0.45rem; line-height: 1.4;
+  }
+  .signal-result { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+  .signal-result strong { color: var(--text); }
+  .src-pill {
+    flex-shrink: 0; font-size: 0.62rem; font-weight: 600;
+    color: var(--muted); background: var(--card);
+    border: 1px solid var(--border); border-radius: 100px;
+    padding: 0.18rem 0.55rem; align-self: flex-start; margin-top: 3px;
+    white-space: nowrap; margin-left: auto;
+  }
+
+  /* ── Recommendation card ────────────────── */
+  .rec-card {
+    border: 1px solid var(--green-border);
+    background: linear-gradient(135deg, #0A1A0E 0%, #1A1A1A 100%);
+  }
+  .rec-text {
+    font-size: 0.88rem; color: var(--text); line-height: 1.75;
+  }
+  .rec-text p { margin-bottom: 0.75rem; }
+  .rec-text p:last-child { margin-bottom: 0; }
+
+  /* ── Section headings ───────────────────── */
+  .page-section-head {
+    width: 100%; max-width: 980px;
+    margin-top: 32px; margin-bottom: 0;
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .page-section-head h2 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--muted);
+  }
+  .section-rule { flex: 1; height: 1px; background: var(--border); }
+
+  /* ── Shimmer badge ──────────────────────── */
+  .shimmer-badge {
+    background: linear-gradient(90deg, var(--gold) 25%, var(--gold-light) 50%, var(--gold) 75%);
+    background-size: 200% auto;
+    animation: shimmer 2.5s linear infinite;
+    color: #0D0D0D; padding: 0.15rem 0.55rem; border-radius: 6px;
+    font-size: 0.7rem; font-weight: 700;
+  }
+
+  /* ── Misc ───────────────────────────────── */
+  .mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 0.78em; }
+  .red   { color: #f87171; }
+  .green { color: #4ade80; }
+  .gold  { color: var(--gold-light); }
+  .dim   { color: var(--muted); }
+
+  @media (max-width: 640px) {
+    .stat-row { flex-direction: column; }
+    .signal-row { flex-wrap: wrap; }
+    .src-pill { align-self: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Nav ─────────────────────────────────────────────────────── -->
+<nav class="gf-nav">
+  <span class="gf-logo">ZAR</span>
+  <span class="gf-nav-divider">|</span>
+  <span class="gf-nav-title">Merchant Fraud Investigation</span>
+  <span class="status-pill pill-concluded">Completed</span>
+  <span class="gf-nav-date">March 2026</span>
+</nav>
+
+<!-- ── Confirmed fakes ───────────────────────────────────────────── -->
+<div class="page-section-head" style="animation: fadeInUp 0.65s cubic-bezier(0.20,0,0.15,1) 0.05s both; margin-top:28px;">
+  <h2>Confirmed Fake Merchants</h2>
+  <div class="section-rule"></div>
+</div>
+
+<div class="card" style="--delay:0.05s;">
+  <div class="card-h">
+    <span class="sec-label">Detail</span>
+    4 shops confirmed by verification team
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Shop name</th>
+        <th>Enrolled (PKT)</th>
+        <th>Demo cash</th>
+        <th>Bank transfers after enrollment</th>
+        <th>App sessions (Amplitude)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>gujjar dot com</strong></td>
+        <td>Feb 26, 2026 &nbsp;20:24</td>
+        <td>$5</td>
+        <td><span class="red">6 transfers — $30 total</span></td>
+        <td>3 sessions, enrollment day only</td>
+      </tr>
+      <tr>
+        <td><strong>sr communication</strong></td>
+        <td>Feb 27, 2026 &nbsp;17:28</td>
+        <td>$5</td>
+        <td><span class="red">3 transfers — $15 total</span></td>
+        <td>3 sessions (Feb 27–Mar 5)</td>
+      </tr>
+      <tr>
+        <td><strong>hamza dot com</strong></td>
+        <td>Feb 28, 2026 &nbsp;18:07</td>
+        <td>$5</td>
+        <td>0 transfers</td>
+        <td>2 sessions (Feb 28–Mar 1)</td>
+      </tr>
+      <tr>
+        <td><strong>hanif genral store</strong></td>
+        <td>Feb 28, 2026 &nbsp;21:20</td>
+        <td>$5</td>
+        <td>0 transfers</td>
+        <td>2 sessions (Feb 28–Mar 1)</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="font-size:0.75rem; color:var(--muted); margin-top:0.85rem; line-height:1.5;">
+    App sessions include enrollment-day activity generated during the demo cash claim process; session presence does not confirm a real merchant.
+  </p>
+</div>
+
+<!-- ── Verdict hero ─────────────────────────────────────────────── -->
+<div class="card hero-card" style="--delay:0.10s; margin-top:20px;">
+  <div class="card-h">
+    <span class="sec-label">Verdict</span>
+    Finding
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-chip">
+      <span class="stat-chip-val">10</span>
+      <span class="stat-chip-label">Detection checks run</span>
+    </div>
+    <div class="stat-chip">
+      <span class="stat-chip-val red">2</span>
+      <span class="stat-chip-label">Checks that fired anomalously</span>
+    </div>
+    <div class="stat-chip">
+      <span class="stat-chip-val dim">0</span>
+      <span class="stat-chip-label">Auto-detectable at scale</span>
+    </div>
+    <div class="stat-chip">
+      <span class="stat-chip-val">104</span>
+      <span class="stat-chip-label">Merchants in scope (Feb 1+)</span>
+    </div>
+  </div>
+
+  <p class="verdict-text">
+    We cannot reliably detect fake merchant enrollments with data alone. Most fraud signals that appear suspicious turn out to describe normal fleet behavior.
+  </p>
+  <p class="context-line">
+    One field ambassador enrolled 10 merchants across a 12-day period, submitted the majority outside standard field hours (before 9 am or after 7 pm PKT), and logged 11 field visits — converting 10 of 11 visits into enrollments (91% rate vs ~9% fleet average). Four of those merchants were confirmed fake by the verification team.
+  </p>
+</div>
+
+<!-- ── Signal checks ─────────────────────────────────────────────── -->
+<div class="page-section-head" style="animation: fadeInUp 0.65s cubic-bezier(0.20,0,0.15,1) 0.18s both;">
+  <h2>Detection Signal Results</h2>
+  <div class="section-rule"></div>
+  <span class="shimmer-badge">10 checks</span>
+</div>
+
+<div class="card" style="--delay:0.22s;">
+  <div class="card-h">
+    <span class="sec-label">Signals</span>
+    104 merchants with user accounts (MOS + PE) since Feb 1, 2026
+  </div>
+
+  <div class="signal-list">
+
+    <!-- 1 -->
+    <div class="signal-row">
+      <span class="pill pill-reject">Invalidated</span>
+      <div class="signal-body">
+        <div class="signal-title">1 — Did merchants ever transact after setup?</div>
+        <div class="signal-result"><strong>96% of 104 merchants (100/104) never made a single CashExchange transaction.</strong> Only 4 merchants in the fleet ever transacted as a merchant. Non-transacting is the fleet norm — fake merchants are indistinguishable from the vast majority of legitimate ones.</div>
+      </div>
+      <span class="src-pill">Metabase</span>
+    </div>
+
+    <!-- 2 -->
+    <div class="signal-row">
+      <span class="pill pill-ambig">Ambiguous</span>
+      <div class="signal-body">
+        <div class="signal-title">2 — Did merchants open the app more than 6 hrs after enrollment?</div>
+        <div class="signal-result">86 of 104 merchants matched in Amplitude. Sessions concentrated on enrollment day across the full fleet — consistent with the demo cash claim flow rather than genuine merchant use. Cannot distinguish operator-assisted sessions from independent use without a return-visit threshold.</div>
+      </div>
+      <span class="src-pill">Amplitude</span>
+    </div>
+
+    <!-- 3 — new -->
+    <div class="signal-row">
+      <span class="pill pill-ambig">Ambiguous</span>
+      <div class="signal-body">
+        <div class="signal-title">3 — Did merchants return to the app after 24 hrs?</div>
+        <div class="signal-result"><strong>0 of 86 Amplitude-matched merchants (0%) had any app session more than 24 hrs after enrollment.</strong> Zero day-2+ activity holds across all matched merchants — real and confirmed-fake alike. Day-1-only use is the fleet norm, making the &gt;24h threshold unable to distinguish genuine merchants from fake ones.</div>
+      </div>
+      <span class="src-pill">Amplitude</span>
+    </div>
+
+    <!-- 4 (was 3) -->
+    <div class="signal-row">
+      <span class="pill pill-reject">Invalidated</span>
+      <div class="signal-body">
+        <div class="signal-title">4 — Was demo cash transferred out within 48 hrs?</div>
+        <div class="signal-result"><strong>39% of 104 demo-receiving merchants cashed out within 48 hrs</strong> — a fleet-wide pattern. The flagged ambassador's merchants transferred below this fleet rate. Two of the four confirmed fakes cashed out within hours; the other two had zero transfers. The early cashout pattern fires fleet-wide.</div>
+      </div>
+      <span class="src-pill">Metabase</span>
+    </div>
+
+    <!-- 5 (was 4) -->
+    <div class="signal-row">
+      <span class="pill pill-reject">Invalidated</span>
+      <div class="signal-body">
+        <div class="signal-title">5 — Were merchants GPS-clustered near each other?</div>
+        <div class="signal-result"><strong>Yes — but so is every ambassador's portfolio.</strong> Across the full fleet, all merchant clusters map to their ambassador's local area — expected for dense urban field work in Karachi. This fires on every ambassador and is unusable as a standalone fraud signal.</div>
+      </div>
+      <span class="src-pill">Metabase</span>
+    </div>
+
+    <!-- 6 (was 5) -->
+    <div class="signal-row">
+      <span class="pill pill-reject">Does not fire</span>
+      <div class="signal-body">
+        <div class="signal-title">6 — Were multiple merchants enrolled from the same device?</div>
+        <div class="signal-result"><strong>Zero device collisions fleet-wide: 86 Amplitude-matched merchants across 40 ambassadors — no ambassador has two merchants enrolled from the same device.</strong> Same-device enrollment would be near-definitive fraud evidence. It is absent across the entire fleet.</div>
+      </div>
+      <span class="src-pill">Amplitude</span>
+    </div>
+
+    <!-- 7 (was 6) -->
+    <div class="signal-row">
+      <span class="pill pill-reject">Does not fire</span>
+      <div class="signal-body">
+        <div class="signal-title">7 — Was demo cash sent to multiple merchants very quickly?</div>
+        <div class="signal-result">Fleet-wide max DCNs in any 20-min window (424 ambassadors checked): most field ambassadors peak at 1–3. Two non-field accounts reach 48 and 23. <strong>The flagged ambassador peaked at 2</strong> — well within normal range. Burst volume is not a reliable fraud signal.</div>
+      </div>
+      <span class="src-pill">Metabase</span>
+    </div>
+
+    <!-- 8 (was 7) -->
+    <div class="signal-row">
+      <span class="pill pill-adopt">Anomalous</span>
+      <div class="signal-body">
+        <div class="signal-title">8 — Were enrollments submitted outside standard field hours (9 am–7 pm PKT)?</div>
+        <div class="signal-result">Fleet spread (ambassadors with ≥3 PE enrollments, high to low): <strong>100%, 85%, 70%, 64%, 46%, 41%, 40%, 17%, and 0%</strong> for three ambassadors. The flagged ambassador (70%) ranks third-highest. Off-hours enrollment is anomalous but not unique to this ambassador.</div>
+      </div>
+      <span class="src-pill">Metabase</span>
+    </div>
+
+    <!-- 9 (was 8) -->
+    <div class="signal-row">
+      <span class="pill pill-adopt">Fires — strongest</span>
+      <div class="signal-body">
+        <div class="signal-title">9 — Were any field visits logged?</div>
+        <div class="signal-result"><strong>Fleet PE enrollments (Feb 1+): 34, 24, 13, 11, 10, 9, 9, 6, 5… across 40 ambassadors.</strong> The flagged ambassador: 10 enrollments, 11 field visits logged — a 91% visit-to-enrollment conversion rate. Fleet top ambassadors log 200–360 visits to achieve similar enrollment counts (~9% conversion). Three of the 11 visits correspond to confirmed-fake merchants. An anomalously high rate is inconsistent with genuine cold-approach field sales and is the strongest outlier in the fleet.</div>
+      </div>
+      <span class="src-pill">Visit Sheet + Metabase</span>
+    </div>
+
+    <!-- 10 (was 9) -->
+    <div class="signal-row">
+      <span class="pill pill-ambig">Ambiguous</span>
+      <div class="signal-body">
+        <div class="signal-title">10 — Did any merchant have a card created?</div>
+        <div class="signal-result"><strong>Fleet-wide: 79% of 115 merchants (91/115) have a linked card.</strong> Among the 4 confirmed fakes: two show post-enrollment bank transfers indicating account linkage; two have zero post-enrollment activity. Card presence is fleet-normal and does not distinguish real from fake.</div>
+      </div>
+      <span class="src-pill">Metabase</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Recommendation ─────────────────────────────────────────────── -->
+<div class="page-section-head" style="animation: fadeInUp 0.65s cubic-bezier(0.20,0,0.15,1) 0.30s both;">
+  <h2>What Actually Stops This</h2>
+  <div class="section-rule"></div>
+</div>
+
+<div class="card rec-card" style="--delay:0.35s;">
+  <div class="card-h">
+    <span class="sec-label" style="color:#4ade80; border-color:var(--green-border); background:var(--green-bg);">Recommendation</span>
+    Verification-gated incentives
+  </div>
+
+  <div class="rec-text">
+    <p>
+      Call or WhatsApp every newly enrolled merchant within 3 days: <em>"Did a ZAR ambassador demonstrate the app to you?"</em> This single step is the verification gate.
+    </p>
+    <p>
+      Make part of the ambassador's commission conditional on that verification passing. The exact split depends on the ghost rate — if the ghost rate is low, an immediate partial payment is fine; if it's high, hold the full payment until verified. Either way, a fake merchant can never confirm a real visit. The incentive to create fake enrollments disappears.
+    </p>
+    <p style="color:var(--muted); font-size:0.82rem;">
+      Supporting evidence: day-3 merchant callback programs have been used to surface 12–18% ghost-enrollment rates in comparable field-agent programs. At ZAR's current volume, the ops cost of calling ~50–100 new merchants per week is trivial relative to the fraud exposure. No app changes required — phone and WhatsApp only.
+    </p>
+  </div>
+</div>
+
+<!-- ── Footer ────────────────────────────────────────────────────── -->
+<div style="max-width:980px; width:100%; margin-top:40px; padding-top:20px;
+  border-top:1px solid var(--border); display:flex; justify-content:space-between;
+  align-items:center; animation: fadeInUp 0.65s cubic-bezier(0.20,0,0.15,1) 0.40s both;">
+  <span style="font-size:0.72rem; color:var(--muted);">ZAR Ground Force — Merchant Fraud Investigation</span>
+  <span style="font-size:0.72rem; color:var(--muted);">March 2026 &nbsp;|&nbsp; Full investigation: <span class="mono">investigation.html</span></span>
+</div>
+
+</body>
+</html>

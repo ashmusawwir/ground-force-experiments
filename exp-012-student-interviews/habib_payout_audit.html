@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Habib University Interviews &mdash; Payout Summary</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #B8992E;
+    --gold-light: #CBAF4A;
+    --gold-dark: #9A7E24;
+    --bg: #F5F0E8;
+    --card: #FFFFFF;
+    --border: #E8E3DB;
+    --text: #1A1A1A;
+    --muted: #6B6B6B;
+    --green: #16a34a;
+    --amber: #d97706;
+    --amber-bg: rgba(217,119,6,0.07);
+    --red: #dc2626;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 32px 20px; color: var(--text);
+  }
+  .page { width: 100%; max-width: 620px; }
+
+  .header { text-align: center; margin-bottom: 24px; }
+  .header h1 { font-family: 'DM Sans', sans-serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 5px; }
+  .header p { font-size: 0.82rem; color: var(--muted); }
+
+  .payout-box {
+    background: var(--card);
+    border: 2px solid var(--gold);
+    border-radius: 18px;
+    padding: 1.4rem 1.6rem;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 1.1rem;
+  }
+  .payout-circle {
+    width: 76px; height: 76px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--gold-dark), var(--gold-light));
+    display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;
+  }
+  .payout-circle .big { font-family: 'DM Sans', sans-serif; font-size: 1.55rem; font-weight: 700; line-height: 1; }
+  .payout-circle .sm { font-size: 0.56rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; opacity: 0.85; }
+  .payout-text h2 { font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 5px; }
+  .payout-text p { font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.2rem 1.4rem;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem; font-weight: 700; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .card-title .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+
+  .work-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+    font-size: 0.83rem; line-height: 1.5;
+  }
+  .work-item:last-child { border-bottom: none; }
+  .work-icon { font-size: 0.95rem; flex-shrink: 0; padding-top: 1px; }
+  .work-label { font-weight: 600; margin-bottom: 1px; }
+  .work-detail { color: var(--muted); font-size: 0.79rem; }
+
+  .tier-table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 0.8rem; }
+  .tier-table th {
+    text-align: left; font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--muted); padding: 5px 8px; border-bottom: 1px solid var(--border);
+  }
+  .tier-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.45; }
+  .tier-table tr:last-child td { border-bottom: none; }
+  .tier-badge {
+    display: inline-block; font-size: 0.66rem; font-weight: 700; padding: 1px 6px;
+    border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+  }
+  .tier-1 { background: #dcfce7; color: #15803d; }
+  .tier-2 { background: #dbeafe; color: #1d4ed8; }
+  .tier-3 { background: #f3f4f6; color: #374151; }
+  .tier-flag { background: #fef3c7; color: #92400e; }
+  .tier-oos { background: #f1f5f9; color: #64748b; }
+
+  .q-box {
+    background: var(--amber-bg);
+    border: 1px solid rgba(217,119,6,0.22);
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 10px;
+  }
+  .q-box:last-child { margin-bottom: 0; }
+  .q-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--amber); margin-bottom: 4px; }
+  .q-main { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; }
+  .q-context { font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-bottom: 8px; }
+  .q-result { font-size: 0.79rem; line-height: 1.6; }
+  .q-result .yes { color: var(--green); font-weight: 600; }
+  .q-result .no  { color: var(--red); font-weight: 600; }
+
+  .oos-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    font-size: 0.81rem; color: var(--muted); line-height: 1.5;
+  }
+  .oos-box strong { color: var(--text); }
+
+  .rule {
+    display: flex; gap: 9px; align-items: flex-start;
+    padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+    font-size: 0.83rem; line-height: 1.5;
+  }
+  .rule:last-child { border-bottom: none; }
+  .rule-num {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: white; width: 21px; height: 21px; border-radius: 5px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700; margin-top: 1px;
+  }
+  .rule strong { display: block; margin-bottom: 1px; }
+  .rule .detail { font-size: 0.78rem; color: var(--muted); }
+
+  footer { margin-top: 28px; font-size: 0.7rem; color: var(--muted); text-align: center; padding-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <h1>Habib University &mdash; Payout Summary</h1>
+    <p>Hamza Kamran, Bushra Farooq, Wazima Fatima &nbsp;&bull;&nbsp; 29 unique interviews (see breakdown)</p>
+  </div>
+
+  <div class="payout-box">
+    <div class="payout-circle">
+      <div class="big">70%</div>
+      <div class="sm">Sent now</div>
+    </div>
+    <div class="payout-text">
+      <h2>You&rsquo;re receiving 70% now &mdash; 30% held pending clarification</h2>
+      <p>31 recordings submitted. After removing 1 duplicate (Zayan Khan = Mohsin re-saved) and treating Aizaz&rsquo;s two-part recording as one interview: 29 unique students. 4 recordings are mislabeled &mdash; we can verify the interviews are real but the data team needs the naming sorted out before analysis.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>What you did</div>
+
+    <div class="work-item">
+      <span class="work-icon">&#x2705;</span>
+      <div>
+        <div class="work-label">25 interviews verified clean &mdash; recording + form + correct name on tape</div>
+        <div class="work-detail">The interviewer greets the student by name at the start of the recording. These 25 interviews can be matched to their form row with confidence.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x2705;</span>
+      <div>
+        <div class="work-label">4 interviews are real but filed under the wrong filename</div>
+        <div class="work-detail">Transcript analysis reveals a 4-way mislabeling chain. All four students were actually interviewed &mdash; the audio files were just saved under each other&rsquo;s names. See &ldquo;Mislabeling Chain&rdquo; below for the full breakdown.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x274C;</span>
+      <div>
+        <div class="work-label">1 duplicate recording &mdash; Zayan Khan = Mohsin</div>
+        <div class="work-detail">The Zayan Khan.aac file is byte-for-byte identical to Mohsin HU. The same recording was saved under two different filenames. Zayan Khan either doesn&rsquo;t have his own interview, or his file was accidentally overwritten. 1 additional interview + form is still needed for Zayan Khan.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x26A0;&#xFE0F;</span>
+      <div>
+        <div class="work-label">Wazima&rsquo;s 3 students have no recordings (Sidra Faheem, Asra, Areeba)</div>
+        <div class="work-detail">Wazima submitted 3 forms on 3/4&ndash;3/5 but no audio files for Sidra or Asra were found. The only Areeba recording (AreebaHU) belongs to Bushra&rsquo;s Areeba (different student, different form submitted 3/6). If Wazima made recordings under different filenames, share them.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x26A0;&#xFE0F;</span>
+      <div>
+        <div class="work-label">Asad &amp; Shareefullah (Hamza&rsquo;s) have no recordings</div>
+        <div class="work-detail">Note: &ldquo;Asad&rdquo; may be resolved by the mislabeling chain &mdash; see below. Shareefullah still has no audio found.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x26A0;&#xFE0F;</span>
+      <div>
+        <div class="work-label">Noman submitted twice by Hamza (same email, 4hr gap)</div>
+        <div class="work-detail">&ldquo;Noman&rdquo; (3/7 20:51) and &ldquo;Noman Burki&rdquo; (3/8 0:39) &mdash; same email, one recording (NomanHU). Likely the same student. Confirm if these are one person or two; if two, the second recording is missing.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="border-color: rgba(220,38,38,0.25);">
+    <div class="card-title"><span class="dot" style="background:var(--red);"></span>Mislabeling chain &mdash; 4 recordings, wrong filenames</div>
+    <p style="font-size:0.79rem;color:var(--muted);margin-bottom:12px;">Transcript text reveals each file&rsquo;s actual interviewee. The interviews happened &mdash; the audio files were just saved in the wrong order.</p>
+
+    <table class="tier-table">
+      <thead>
+        <tr>
+          <th>Filename</th>
+          <th>Says on tape</th>
+          <th>Form match</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="font-family:monospace;font-size:0.78rem;">Alisha.aac</td>
+          <td>&ldquo;Hello Asad&rdquo;</td>
+          <td style="color:var(--green);font-size:0.78rem;">Asad &mdash; Hamza&rsquo;s form ✓</td>
+        </tr>
+        <tr>
+          <td style="font-family:monospace;font-size:0.78rem;">Mudasir.aac</td>
+          <td>&ldquo;Hello Alicia&rdquo; (= Alisha)</td>
+          <td style="color:var(--green);font-size:0.78rem;">Alisha &mdash; Hamza&rsquo;s form ✓</td>
+        </tr>
+        <tr>
+          <td style="font-family:monospace;font-size:0.78rem;">Hussain.aac</td>
+          <td>&ldquo;Hello Mudasir&rdquo;</td>
+          <td style="color:var(--green);font-size:0.78rem;">Mudasir &mdash; Hamza&rsquo;s form ✓</td>
+        </tr>
+        <tr>
+          <td style="font-family:monospace;font-size:0.78rem;">HasnainHU</td>
+          <td>&ldquo;Hello Hussain&rdquo;</td>
+          <td style="color:var(--amber);font-size:0.78rem;">Hussain &mdash; no Habib form found</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="font-size:0.78rem;color:var(--muted);margin-top:10px;">Asad, Alisha, and Mudasir each have a real interview and a form &mdash; just mismatched filenames. Hussain has an interview (in HasnainHU file) but no Habib form. Hasnain has a form from Hamza but no recording containing his name.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Interview quality breakdown &mdash; 29 unique interviews</div>
+
+    <table class="tier-table">
+      <thead>
+        <tr>
+          <th>Tier</th>
+          <th>Count</th>
+          <th>Names (by interviewee, not filename)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tier-badge tier-1">Strong</span></td>
+          <td>4</td>
+          <td>Qasim (6.2K chars, richest), Radhika (5.4K, follow-up on side hustles), Mudasir (5.1K, in Hussain.aac), Rayyan (4.9K, photographer, probing)</td>
+        </tr>
+        <tr>
+          <td><span class="tier-badge tier-2">Good</span></td>
+          <td>13</td>
+          <td>Aalyan, Athar, Aizaz (2-part), Sibghat, Noman, Hussain (in HasnainHU), Momina, Mary, Ehitsham, Asad (in Alisha.aac), Mohsin, Fahim, Yasir</td>
+        </tr>
+        <tr>
+          <td><span class="tier-badge tier-3">Acceptable</span></td>
+          <td>11</td>
+          <td>Bais, Muqaddas, Farheen, Fiza, Nayab, Areeba, Qaiser, Amna, Alisha (in Mudasir.aac), Saddiqa, Tanisha</td>
+        </tr>
+        <tr>
+          <td><span class="tier-badge tier-flag">Flagged</span></td>
+          <td>1</td>
+          <td>Rukhsana &mdash; very short answers throughout (&ldquo;Okay&rdquo;, &ldquo;Yes&rdquo;), minimal depth, 1.7K chars</td>
+        </tr>
+        <tr>
+          <td><span class="tier-badge tier-oos">Duplicate</span></td>
+          <td>1</td>
+          <td>Zayan Khan.aac = byte-for-byte copy of Mohsin HU &mdash; not a separate interview</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Five things to clear up &mdash; reply within 48 hours</div>
+
+    <div class="q-box">
+      <div class="q-label">Item 1 &mdash; Mislabeling chain</div>
+      <div class="q-main">4 audio files were saved under wrong names. The interviews are real but the filenames don&rsquo;t match the students.</div>
+      <div class="q-context">Alisha.aac = Asad&rsquo;s interview. Mudasir.aac = Alisha&rsquo;s interview. Hussain.aac = Mudasir&rsquo;s interview. HasnainHU = Hussain&rsquo;s interview. These appear to have been named after the previous student in the session. Confirm which audio belongs to which student so the data team can match them correctly to their form rows.</div>
+      <div class="q-result">
+        If confirmed &rarr; <span class="yes">all 4 interviews count. Held amount released for this item.</span>
+      </div>
+    </div>
+
+    <div class="q-box">
+      <div class="q-label">Item 2 &mdash; Zayan Khan</div>
+      <div class="q-main">Zayan Khan.aac is an exact duplicate of Mohsin HU &mdash; same recording, two filenames.</div>
+      <div class="q-context">The file contains Mohsin&rsquo;s interview. There is no separate interview of Zayan Khan. Either the recording was accidentally duplicated and Zayan Khan was never actually interviewed, or his audio is lost.</div>
+      <div class="q-result">
+        If Zayan Khan submits the form and you share his actual recording &rarr; <span class="yes">counts.</span><br>
+        If no separate Zayan Khan recording exists &rarr; <span class="no">not payable as a separate interview.</span>
+      </div>
+    </div>
+
+    <div class="q-box">
+      <div class="q-label">Item 3 &mdash; Hasnain (Hamza&rsquo;s form, no matching recording)</div>
+      <div class="q-main">A form was submitted for Hasnain but no recording says &ldquo;Hello Hasnain.&rdquo; HasnainHU contains Hussain&rsquo;s interview, not Hasnain&rsquo;s.</div>
+      <div class="q-context">If Hasnain and Hussain are different people, Hasnain&rsquo;s interview was never recorded or the file is missing. If &ldquo;Hasnain&rdquo; is an alternate name for the same person as Hussain, clarify that and the form will be matched to HasnainHU.</div>
+      <div class="q-result">
+        If same person (Hasnain = Hussain) &rarr; <span class="yes">counts, matched to HasnainHU.</span><br>
+        If different people &rarr; <span class="no">Hasnain&rsquo;s recording is missing, his form is not payable without audio.</span>
+      </div>
+    </div>
+
+    <div class="q-box">
+      <div class="q-label">Item 4 &mdash; Wazima&rsquo;s students (Sidra Faheem, Asra, Wazima&rsquo;s Areeba)</div>
+      <div class="q-main">3 form submissions by Wazima Fatima with no audio found.</div>
+      <div class="q-context">No recordings named Sidra, Asra, or a second Areeba were found in the folder. The only Areeba recording belongs to Bushra&rsquo;s student. If Wazima made recordings and saved them under different filenames, share them now and we&rsquo;ll match them.</div>
+      <div class="q-result">
+        If recordings are shared &rarr; <span class="yes">all 3 count.</span><br>
+        If no recordings exist &rarr; <span class="no">Wazima&rsquo;s 3 forms are not payable.</span>
+      </div>
+    </div>
+
+    <div class="q-box">
+      <div class="q-label">Item 5 &mdash; Shareefullah &amp; Noman duplicate</div>
+      <div class="q-main">Shareefullah has a form but no recording. Noman was submitted twice (same email, 4hr gap).</div>
+      <div class="q-context">Shareefullah: no audio file found at all. Noman / Noman Burki: one recording (NomanHU), two forms from hamzakamran8118@gmail.com &mdash; likely the same student submitted twice. Confirm whether Noman and Noman Burki are the same person or two different students.</div>
+      <div class="q-result">
+        Noman if same person &rarr; <span class="yes">one interview is payable, duplicate form dropped.</span><br>
+        Shareefullah without audio &rarr; <span class="no">not payable.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>For the next round &mdash; four rules</div>
+    <p style="font-size:0.79rem;color:var(--muted);margin-bottom:11px;">Not a critique of this round &mdash; just how we&rsquo;ll run things going forward.</p>
+
+    <div class="rule">
+      <div class="rule-num">1</div>
+      <div>
+        <strong>Audio timestamp in first 10 seconds &mdash; every recording</strong>
+        <span class="detail">State your name + date + interviewee&rsquo;s first name at the start. This eliminates all filename mislabeling issues &mdash; the recording is self-identifying regardless of what it&rsquo;s named.</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="rule-num">2</div>
+      <div>
+        <strong>Submit the form before you leave the session</strong>
+        <span class="detail">Record the interview, fill the form on the spot. Retrospective form submissions are lower-confidence data. Same-day, same-session is the rule from here.</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="rule-num">3</div>
+      <div>
+        <strong>Two-tier payout from next round &mdash; 70% base, 30% quality bonus</strong>
+        <span class="detail">70% released on delivery of recording + form. 30% bonus unlocked if the recording contains at least one unprompted follow-up per section. This is verifiable in a &lt;2 min spot-check.</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="rule-num">4</div>
+      <div>
+        <strong>Interviewee states their university on tape</strong>
+        <span class="detail">Student mentions their university verbally in the recording. Prevents cross-university confusion and confirms the interview is in scope for this cohort.</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Habib University Cohort &nbsp;&bull;&nbsp; Issued 2026-03-09 &nbsp;&bull;&nbsp; Transcript analysis complete.
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ilma University Interviews &mdash; Payout Summary</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #B8992E;
+    --gold-light: #CBAF4A;
+    --gold-dark: #9A7E24;
+    --bg: #F5F0E8;
+    --card: #FFFFFF;
+    --border: #E8E3DB;
+    --text: #1A1A1A;
+    --muted: #6B6B6B;
+    --green: #16a34a;
+    --amber: #d97706;
+    --amber-bg: rgba(217,119,6,0.07);
+    --red: #dc2626;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 32px 20px; color: var(--text);
+  }
+  .page { width: 100%; max-width: 620px; }
+
+  .header { text-align: center; margin-bottom: 24px; }
+  .header h1 { font-family: 'DM Sans', sans-serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 5px; }
+  .header p { font-size: 0.82rem; color: var(--muted); }
+
+  .payout-box {
+    background: var(--card);
+    border: 2px solid var(--gold);
+    border-radius: 18px;
+    padding: 1.4rem 1.6rem;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 1.1rem;
+  }
+  .payout-circle {
+    width: 76px; height: 76px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--gold-dark), var(--gold-light));
+    display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;
+  }
+  .payout-circle .big { font-family: 'DM Sans', sans-serif; font-size: 1.55rem; font-weight: 700; line-height: 1; }
+  .payout-circle .sm { font-size: 0.56rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; opacity: 0.85; }
+  .payout-text h2 { font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 5px; }
+  .payout-text p { font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.2rem 1.4rem;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem; font-weight: 700; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .card-title .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+
+  .work-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+    font-size: 0.83rem; line-height: 1.5;
+  }
+  .work-item:last-child { border-bottom: none; }
+  .work-icon { font-size: 0.95rem; flex-shrink: 0; padding-top: 1px; }
+  .work-label { font-weight: 600; margin-bottom: 1px; }
+  .work-detail { color: var(--muted); font-size: 0.79rem; }
+
+  .tier-table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 0.8rem; }
+  .tier-table th {
+    text-align: left; font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--muted); padding: 5px 8px; border-bottom: 1px solid var(--border);
+  }
+  .tier-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.45; }
+  .tier-table tr:last-child td { border-bottom: none; }
+  .tier-badge {
+    display: inline-block; font-size: 0.66rem; font-weight: 700; padding: 1px 6px;
+    border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+  }
+  .tier-1 { background: #dcfce7; color: #15803d; }
+  .tier-2 { background: #dbeafe; color: #1d4ed8; }
+  .tier-3 { background: #f3f4f6; color: #374151; }
+  .tier-flag { background: #fef3c7; color: #92400e; }
+  .tier-oos { background: #f1f5f9; color: #64748b; }
+
+  .q-box {
+    background: var(--amber-bg);
+    border: 1px solid rgba(217,119,6,0.22);
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 10px;
+  }
+  .q-box:last-child { margin-bottom: 0; }
+  .q-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--amber); margin-bottom: 4px; }
+  .q-main { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; }
+  .q-context { font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-bottom: 8px; }
+  .q-result { font-size: 0.79rem; line-height: 1.6; }
+  .q-result .yes { color: var(--green); font-weight: 600; }
+  .q-result .no  { color: var(--red); font-weight: 600; }
+
+  .resolved-box {
+    background: rgba(22,163,74,0.06);
+    border: 1px solid rgba(22,163,74,0.2);
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 10px;
+    font-size: 0.83rem; line-height: 1.5;
+  }
+  .resolved-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--green); margin-bottom: 4px; }
+  .resolved-main { font-weight: 600; margin-bottom: 4px; }
+  .resolved-detail { color: var(--muted); font-size: 0.79rem; }
+
+  .rule {
+    display: flex; gap: 9px; align-items: flex-start;
+    padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+    font-size: 0.83rem; line-height: 1.5;
+  }
+  .rule:last-child { border-bottom: none; }
+  .rule-num {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: white; width: 21px; height: 21px; border-radius: 5px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700; margin-top: 1px;
+  }
+  .rule strong { display: block; margin-bottom: 1px; }
+  .rule .detail { font-size: 0.78rem; color: var(--muted); }
+
+  footer { margin-top: 28px; font-size: 0.7rem; color: var(--muted); text-align: center; padding-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <h1>Ilma University &mdash; Payout Summary</h1>
+    <p>Syed Inshall Abbas &nbsp;&bull;&nbsp; 28 verified unique interviews</p>
+  </div>
+
+  <div class="payout-box">
+    <div class="payout-circle">
+      <div class="big">95%</div>
+      <div class="sm">Sent now</div>
+    </div>
+    <div class="payout-text">
+      <h2>You&rsquo;re receiving 95% of your payment now</h2>
+      <p>28 verified unique pairs (recording + form). We&rsquo;re holding 5% pending resolution of one unmatched recording (Rubab) and one duplicate form (Mubeen Javed submitted twice). The original Asad question is resolved &mdash; see below.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>What you did</div>
+
+    <div class="work-item">
+      <span class="work-icon">&#x2705;</span>
+      <div>
+        <div class="work-label">30 recordings submitted &mdash; 28 unique verified pairs</div>
+        <div class="work-detail">All recordings used the &ldquo;IU&rdquo; suffix (e.g., AbbasIU, SakinaIU). After resolving name variations and removing one unmatched recording (Rubab) and one duplicate form (Mubeen Javed), 28 clean recording&thinsp;+&thinsp;form pairs are confirmed.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x2705;</span>
+      <div>
+        <div class="work-label">Single-interviewer cohort &mdash; consistent delivery</div>
+        <div class="work-detail">All 29 form submissions are attributed to one interviewer. No delegation detected.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x2705;</span>
+      <div>
+        <div class="work-label">Asad resolved &mdash; transcript identifies the interviewee as Zayan Khan</div>
+        <div class="work-detail">The recording labeled &ldquo;Asad&rdquo; opens with the interviewee saying &ldquo;my name is Zain&rdquo; &mdash; matching the form row submitted under &ldquo;Zayan Khan.&rdquo; The file was saved under the wrong name. This interview counts. Original 5% Asad holdback is released.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x26A0;&#xFE0F;</span>
+      <div>
+        <div class="work-label">1 unmatched recording &mdash; Rubab</div>
+        <div class="work-detail">A recording named &ldquo;RubabIU&rdquo; has no matching form row in the Ilma University dataset. The transcript names the interviewee as &ldquo;Sagarabhav Jhera Rizvi&rdquo; (likely garbled Whisper transcription). Either the form was not submitted, or the file is from a different cohort. If the form is submitted this week, it counts.</div>
+      </div>
+    </div>
+    <div class="work-item">
+      <span class="work-icon">&#x26A0;&#xFE0F;</span>
+      <div>
+        <div class="work-label">1 duplicate form &mdash; Mubeen Javed submitted twice</div>
+        <div class="work-detail">The form was submitted twice for the same interviewee (same name, same interviewer, both rows in the Ilma dataset). One row is payable; the duplicate is discounted. Net Ilma unique interviews: 28.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Interview quality breakdown &mdash; 29 transcripts reviewed</div>
+    <p style="font-size:0.79rem;color:var(--muted);margin-bottom:10px;">Tier based on transcript length (Whisper medium, language=en). Strong = rich follow-up depth. Good = complete coverage. Acceptable = on-script, thinner responses. Flagged = very short or audio issues. One recording (Rubab) has no form match and is outside the payable dataset.</p>
+
+    <table class="tier-table">
+      <thead>
+        <tr>
+          <th>Tier</th>
+          <th>Count</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tier-badge tier-1">Strong</span></td>
+          <td>3</td>
+          <td>Ashar (5,065 chars), Khadija (4,659), Ali Abbas (4,210) &mdash; richest transcripts in the cohort</td>
+        </tr>
+        <tr>
+          <td><span class="tier-badge tier-2">Good</span></td>
+          <td>16</td>
+          <td>Sadia, Ali, Yousuf, Muhammad Javed (Mubeen), Muhammad Maaz, Muneeba, Noor ul Islam, Mehdi Hassan, Zayan Khan (Asad file), Faisal, Hasnat, Qalb-e-Abbas, Wajiha, Muzammil, Muhammad (Musa), Hadi Abbas</td>
+        </tr>
+        <tr>
+          <td><span class="tier-badge tier-3">Acceptable</span></td>
+          <td>9</td>
+          <td>Muhammad Hasan, Basit, Fawad Khan, Muntaha, Farwa, Javeria, Abbas (Waqas), Mohammad 2, Ahad</td>
+        </tr>
+        <tr>
+          <td><span class="tier-badge tier-flag">Flagged</span></td>
+          <td>1</td>
+          <td>Sakeena (2,081 chars) &mdash; shortest transcript; responses are very brief</td>
+        </tr>
+        <tr>
+          <td><span class="tier-badge tier-oos">Out of Scope</span></td>
+          <td>1</td>
+          <td>Rubab &mdash; no form match; outside payable dataset pending clarification</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Items to clear up &mdash; reply within 48 hours</div>
+
+    <div class="resolved-box">
+      <div class="resolved-label">&#x2714; Resolved &mdash; Asad = Zayan Khan</div>
+      <div class="resolved-main">The &ldquo;Asad&rdquo; recording is confirmed as Zayan Khan&rsquo;s interview.</div>
+      <div class="resolved-detail">Transcript opens: &ldquo;Hello, what&rsquo;s your name? My name is Zain&rdquo; &mdash; matches form row &ldquo;Zayan Khan.&rdquo; File was saved under the wrong name. This interview is in scope and counted. The original 5% holdback for Asad is released.</div>
+    </div>
+
+    <div class="q-box">
+      <div class="q-label">Item 1 &mdash; Rubab</div>
+      <div class="q-main">Recording labeled &ldquo;RubabIU&rdquo; has no matching form in the Ilma dataset.</div>
+      <div class="q-context">The transcript names the interviewee with a phonetically garbled string &mdash; possibly a name Whisper couldn&rsquo;t parse correctly. &ldquo;Rubab&rdquo; does not appear in any Ilma University form submission. Check your records: did this student submit a form under a different name, or is this from a different session?</div>
+      <div class="q-result">
+        If form is submitted this week or the matching row is identified &rarr; <span class="yes">counts, 5% holdback released.</span><br>
+        If no form can be found &rarr; <span class="no">Rubab&rsquo;s recording stays outside the dataset.</span>
+      </div>
+    </div>
+
+    <div class="q-box">
+      <div class="q-label">Item 2 &mdash; Mubeen Javed (duplicate form)</div>
+      <div class="q-main">Two form submissions exist for the same interviewee &mdash; Mubeen Javed.</div>
+      <div class="q-context">Both rows are attributed to you as the interviewer, both list Mubeen Javed, and both are filed under Ilma University. There is one recording (MuhammadJavedIU) for this person. One row is counted; the duplicate is discounted. No action needed from you unless you believe these are two different students with the same name &mdash; in which case tell us and we&rsquo;ll check the recordings.</div>
+      <div class="q-result">
+        If both are the same person &rarr; <span class="no">only one counts (already the case).</span><br>
+        If genuinely two different students &rarr; <span class="yes">let us know and we&rsquo;ll investigate; second recording would need to exist.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>For the next round &mdash; four rules</div>
+    <p style="font-size:0.79rem;color:var(--muted);margin-bottom:11px;">Not a critique of this round &mdash; just how we&rsquo;ll run things going forward.</p>
+
+    <div class="rule">
+      <div class="rule-num">1</div>
+      <div>
+        <strong>Audio timestamp in first 10 seconds &mdash; every recording</strong>
+        <span class="detail">State your name + date + interviewee&rsquo;s first name at the start. Makes verification instant and resolves name mismatches before they become issues.</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="rule-num">2</div>
+      <div>
+        <strong>Submit the form before you leave the session</strong>
+        <span class="detail">Record the interview, fill the form on the spot. Same-day submission is the rule. Retrospective entries are flagged as lower-confidence data.</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="rule-num">3</div>
+      <div>
+        <strong>Two-tier payout from next round &mdash; 70% base, 30% quality bonus</strong>
+        <span class="detail">70% released on delivery of recording + form. 30% bonus unlocked if the recording contains at least one unprompted follow-up per section. Verifiable in a &lt;2 min spot-check.</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="rule-num">4</div>
+      <div>
+        <strong>Interviewee states their university on tape</strong>
+        <span class="detail">Student mentions their university verbally in the recording (already Question 1 &mdash; just needs to be spoken, not only written). Prevents university field mismatches in the dataset.</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Ilma University Cohort &nbsp;&bull;&nbsp; Updated 2026-03-09 &nbsp;&bull;&nbsp; Transcription complete &mdash; 30 recordings reviewed, 28 verified pairs.
+  </footer>
+
+</div>
+</body>
+</html>
